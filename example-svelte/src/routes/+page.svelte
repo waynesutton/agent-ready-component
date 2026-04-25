@@ -1,5 +1,9 @@
 <script lang="ts">
   const appUrl = import.meta.env.VITE_CONVEX_SITE_URL as string;
+  const installGuideUrl =
+    "https://github.com/waynesutton/agent-ready-component/blob/main/docs/install.md";
+  const installHtmlUrl =
+    "https://htmlpreview.github.io/?https://github.com/waynesutton/agent-ready-component/blob/main/docs/install.html";
 
   let tab = $state("usage");
   const tabs = [
@@ -67,6 +71,10 @@
   </div>
   <div class="callout"><strong>npm install</strong> @waynesutton/agent-ready @convex-dev/crons @convex-dev/workpool</div>
   <div class="callout"><strong>npx</strong> agent-ready</div>
+  <div class="meta-row">
+    <a href={installGuideUrl} target="_blank" rel="noreferrer">Read the Markdown install guide</a>
+    <a href={installHtmlUrl} target="_blank" rel="noreferrer">Open the HTML install guide</a>
+  </div>
 {/if}
 
 {#if tab === "pipeline"}

@@ -4,8 +4,18 @@ All notable changes to `@waynesutton/agent-ready` (formerly `@convex-dev/llms-tx
 
 ## [Unreleased]
 
+### Added
+
+- Added `docs/install.md` and `docs/install.html` as consumer-facing install guides for Convex users adding `@waynesutton/agent-ready` to their own app
+- Added install guide links to the React and Svelte demo apps
+
 ### Changed
 
+- Split `SETUP.md` into an author-only release guide and moved consumer install instructions into `docs/install.md` and `docs/install.html`
+- Added the packaged Convex component codegen step to `SETUP.md` before build and typecheck
+- Updated `README.md` to point consumers to the Markdown and HTML install guides
+- Fixed the author clone instructions to use `cd agent-ready-component`
+- Updated npm package contents so `cli/`, `docs/`, and `SETUP.md` are included with the published package. This keeps `npx agent-ready` available after install
 - Renamed package from `@convex-dev/llms-txt` to `@waynesutton/agent-ready`
 - Updated repository URL from `github.com/waynesutton/llms-txt` to `github.com/waynesutton/agent-ready-component` across all source, docs, examples, mockups, and widgets
 - Renamed CLI binary from `llms-txt` to `agent-ready`. Running `npx agent-ready` with no command now runs the setup wizard (default flow)

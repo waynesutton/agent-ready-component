@@ -19,6 +19,8 @@ npx agent-ready
 
 The setup wizard asks for your app name, URL, description, analytics preference, and AI description preference. It writes `agent-ready.config.json`, syncs the config to your deployment, and schedules the cron.
 
+Need the full consumer flow? Start with `docs/install.md`. Prefer a browser page? Open `docs/install.html`.
+
 ## Quick wire-up
 
 ```ts
@@ -100,7 +102,9 @@ The demo URL becomes `https://your-deployment.convex.site`. The widget, the file
 
 ## Documentation
 
-- `SETUP.md` is the linear step-by-step setup, publish, and deploy guide. Start here.
+- `docs/install.md` is the Markdown install guide for Convex users adding `@waynesutton/agent-ready` to their app
+- `docs/install.html` is the same consumer install guide as a standalone HTML page
+- `SETUP.md` is the author release guide for shipping this package to GitHub, npm, and Convex static hosting
 - `INTEGRATION.md` covers every integration path in a format optimized for AI tools
 - `CONTRIBUTING.md` documents the widget contract for community ports (Vue, Solid, Angular)
 - `prds/agent-readiness-v1.md` is the canonical design spec
@@ -108,4 +112,3 @@ The demo URL becomes `https://your-deployment.convex.site`. The widget, the file
 ## License
 
 Apache 2.0. See `LICENSE`.
-# agent-ready-component

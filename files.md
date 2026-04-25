@@ -4,12 +4,14 @@ Plain text map of every file in the repo. Regenerate by hand as files are added 
 
 ## Root
 
-- `README.md`: Project overview, install and quick start
-- `SETUP.md`: Linear step-by-step setup and publish guide covering install, wire-up, demo deploy, GitHub + npm publish, ETag test, refresh banner test, go-live
+- `README.md`: Project overview, install quick start, demo commands, and links to consumer install docs
+- `SETUP.md`: Author release guide for shipping the package to GitHub, npm, and Convex static hosting, including component codegen and npm package checks
+- `docs/install.md`: Consumer install guide for adding `@waynesutton/agent-ready` to a Convex app
+- `docs/install.html`: Standalone HTML version of the consumer install guide
 - `INTEGRATION.md`: LLM-optimized integration guide covering React, Svelte, static hosting, and manual paths
 - `CONTRIBUTING.md`: Widget contract, local dev flow, publishing rules
 - `LICENSE`: Apache 2.0
-- `package.json`: Root package manifest, publishes `@waynesutton/agent-ready` with subpath exports
+- `package.json`: Root package manifest, publishes `@waynesutton/agent-ready` with subpath exports plus CLI and docs package contents
 - `tsconfig.json`: Base TypeScript config for component source
 - `tsconfig.build.json`: Build config for the publishable package
 - `task.md`: Milestone tracker, aligned with `prds/convex-llms-txt-prd-v6.md`
@@ -20,6 +22,7 @@ Plain text map of every file in the repo. Regenerate by hand as files are added 
 - `prds/convex-llms-txt-prd-v6.md`: Source of truth for the component design
 - `prds/setup-and-demo-posthog-redesign.md`: PRD covering the SETUP.md guide and the PostHog-inspired demo redesign
 - `prds/agent-readiness-v1.md`: PRD for the 10 agent-readiness features, widget tab visibility controls, CLI commands, and doc updates that turn any consumer app into an isitagentready.com pass
+- `prds/setup-docs-split.md`: PRD for splitting author setup docs from consumer install docs and linking the install guide from both demos
 - `mockup-react.html`: Standalone HTML mockup of the React demo's agent-readiness control panel. Shows the score ring, per-check grid, response headers, schema toggles, and the 3-tab widget with SCORE active
 - `mockup-svelte.html`: Standalone HTML mockup of the Svelte demo's analytics dashboard with agent-readiness signals layered in. Shows the 4-card metric grid (including markdown-negotiation count and readiness scans), agent and file breakdowns, signals panel, and 3-tab widget
 
@@ -86,7 +89,7 @@ Plain text map of every file in the repo. Regenerate by hand as files are added 
 - `example-react/convex/staticHosting.ts`: Re-exports `exposeUploadApi`
 - `example-react/convex/myApp.ts`: Example callbacks for `onGenerationComplete`, `onAnalyticsThreshold`
 - `example-react/src/main.tsx`: React root
-- `example-react/src/App.tsx`: Landing page with PostHog-inspired window chrome, sidebar, tabs, and widget
+- `example-react/src/App.tsx`: Landing page with PostHog-inspired window chrome, sidebar, tabs, widget, and install guide links
 - `example-react/src/Settings.tsx`: Settings panel with tabbed pages, cache status, and actions
 - `example-react/src/Analytics.tsx`: Analytics dashboard with metric grid plus agent and file breakdown
 - `example-react/src/index.css`: Global styles with PostHog cream palette, window chrome, tabs, buttons, pills
@@ -109,7 +112,7 @@ Plain text map of every file in the repo. Regenerate by hand as files are added 
 - `example-svelte/convex/staticHosting.ts`: Upload API re-exports
 - `example-svelte/src/app.html`: SvelteKit HTML shell
 - `example-svelte/src/app.css`: Global styles
-- `example-svelte/src/routes/+layout.svelte`: Root layout with widget
-- `example-svelte/src/routes/+page.svelte`: Landing page
+- `example-svelte/src/routes/+layout.svelte`: Root layout with widget and install guide topbar link
+- `example-svelte/src/routes/+page.svelte`: Landing page with usage panels and install guide links
 - `example-svelte/src/routes/settings/+page.svelte`: Settings panel
 - `example-svelte/src/routes/analytics/+page.svelte`: Analytics page

@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Install @waynesutton/agent-ready</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #eeefe9;
+        --surface: #ffffff;
+        --surface-alt: #f7f3ec;
+        --border: #151515;
+        --border-soft: #d8d3c4;
+        --text: #151515;
+        --muted: #5f5f5f;
+        --accent: #f54e00;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: Inter, "SF Pro Text", system-ui, sans-serif;
+        font-size: 16px;
+        line-height: 1.6;
+      }
+
+      main {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 48px 24px 80px;
+      }
+
+      article {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: 6px 6px 0 var(--border);
+        overflow: hidden;
+      }
+
+      header {
+        padding: 32px;
+        background: var(--surface-alt);
+        border-bottom: 1px solid var(--border);
+      }
+
+      section {
+        padding: 28px 32px;
+        border-bottom: 1px solid var(--border-soft);
+      }
+
+      section:last-child {
+        border-bottom: 0;
+      }
+
+      h1,
+      h2 {
+        margin: 0 0 12px;
+        line-height: 1.12;
+        letter-spacing: -0.025em;
+      }
+
+      h1 {
+        font-size: clamp(2rem, 5vw, 3.5rem);
+      }
+
+      h2 {
+        font-size: 1.5rem;
+      }
+
+      p {
+        margin: 0 0 16px;
+      }
+
+      ul,
+      ol {
+        margin: 0 0 16px;
+        padding-left: 1.4rem;
+      }
+
+      a {
+        color: var(--text);
+        text-underline-offset: 3px;
+      }
+
+      a:hover {
+        color: var(--accent);
+      }
+
+      code,
+      pre {
+        font-family: "JetBrains Mono", "Courier New", monospace;
+      }
+
+      code {
+        background: var(--surface-alt);
+        border: 1px solid var(--border-soft);
+        border-radius: 4px;
+        padding: 1px 5px;
+      }
+
+      pre {
+        margin: 14px 0 18px;
+        padding: 16px;
+        overflow-x: auto;
+        background: #151515;
+        color: #fff8ef;
+        border-radius: 8px;
+      }
+
+      pre code {
+        background: transparent;
+        border: 0;
+        padding: 0;
+        color: inherit;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 14px 0 18px;
+        font-size: 0.95rem;
+      }
+
+      th,
+      td {
+        padding: 10px 12px;
+        border: 1px solid var(--border-soft);
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        background: var(--surface-alt);
+      }
+
+      .lede {
+        color: var(--muted);
+        max-width: 680px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 32px;
+        padding: 4px 10px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: #fff3e9;
+        font-weight: 700;
+        font-size: 0.85rem;
+      }
+
+      @media (max-width: 720px) {
+        main {
+          padding: 24px 16px 56px;
+        }
+
+        header,
+        section {
+          padding: 24px 18px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <article>
+        <header>
+          <span class="pill">Convex install guide</span>
+          <h1>Install @waynesutton/agent-ready</h1>
+          <p class="lede">
+            Add generated <code>llms.txt</code>, <code>agents.md</code>, and
+            <code>llms-full.txt</code> files to an existing Convex app.
+          </p>
+        </header>
+
+        <section>
+          <h2>Before you start</h2>
+          <ul>
+            <li>A Convex app with <code>convex/convex.config.ts</code></li>
+            <li>Node 20 or newer</li>
+            <li>Convex CLI 1.36 or newer</li>
+            <li>A public app URL for generated files</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>1. Install the package</h2>
+          <pre><code>npm install @waynesutton/agent-ready @convex-dev/crons @convex-dev/workpool</code></pre>
+          <p>Install static hosting only if Convex will host your frontend too.</p>
+          <pre><code>npm install @convex-dev/static-hosting</code></pre>
+        </section>
+
+        <section>
+          <h2>2. Register the component</h2>
+          <pre><code>import { defineApp } from "convex/server";
+import agentReady from "@waynesutton/agent-ready/convex.config.js";
+import crons from "@convex-dev/crons/convex.config.js";
+import workpool from "@convex-dev/workpool/convex.config.js";
+
+const app = defineApp();
+
+app.use(crons);
+app.use(workpool);
+app.use(agentReady);
+
+export default app;</code></pre>
+        </section>
+
+        <section>
+          <h2>3. Mount the HTTP routes</h2>
+          <pre><code>import { httpRouter } from "convex/server";
+import { registerRoutes } from "@waynesutton/agent-ready";
+import { components } from "./_generated/api";
+
+const http = httpRouter();
+
+registerRoutes(http, components.agentReady);
+
+export default http;</code></pre>
+          <p>
+            This serves <code>/llms.txt</code>, <code>/agents.md</code>,
+            <code>/llms-full.txt</code>, <code>/llms-status</code>, and
+            <code>/llms-analytics</code>.
+          </p>
+        </section>
+
+        <section>
+          <h2>4. Add the widget</h2>
+          <p>React:</p>
+          <pre><code>import { AgentReadyWidget, UpdateBanner } from "@waynesutton/agent-ready/react";
+
+&lt;UpdateBanner appUrl={import.meta.env.VITE_CONVEX_SITE_URL} /&gt;
+&lt;AgentReadyWidget appUrl={import.meta.env.VITE_CONVEX_SITE_URL} /&gt;</code></pre>
+          <p>Svelte:</p>
+          <pre><code>&lt;script lang="ts"&gt;
+  import { AgentReadyWidget } from "@waynesutton/agent-ready/svelte";
+&lt;/script&gt;
+
+&lt;AgentReadyWidget appUrl={import.meta.env.VITE_CONVEX_SITE_URL} /&gt;</code></pre>
+        </section>
+
+        <section>
+          <h2>5. Run setup</h2>
+          <pre><code>npx agent-ready setup</code></pre>
+          <p>
+            The wizard writes <code>agent-ready.config.json</code>, syncs settings,
+            and keeps <code>testMode</code> on until you go live.
+          </p>
+        </section>
+
+        <section>
+          <h2>6. Verify locally</h2>
+          <pre><code>npx convex dev --start 'vite'
+curl -i http://127.0.0.1:3210/llms.txt
+npx agent-ready status</code></pre>
+          <p>The widget should show <code>HUMAN</code> and <code>MACHINE</code> tabs.</p>
+        </section>
+
+        <section>
+          <h2>7. Deploy and go live</h2>
+          <pre><code>npx convex deploy
+npx agent-ready sync
+npx agent-ready regenerate
+npx agent-ready go-live</code></pre>
+          <p>Verify public files:</p>
+          <pre><code>curl -i https://your-deployment.convex.site/llms.txt
+curl -i https://your-deployment.convex.site/agents.md
+curl -i https://your-deployment.convex.site/llms-status</code></pre>
+        </section>
+
+        <section>
+          <h2>CLI reference</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Command</th>
+                <th>What it does</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><code>setup</code></td><td>Runs the first-run wizard</td></tr>
+              <tr><td><code>sync</code></td><td>Applies <code>agent-ready.config.json</code></td></tr>
+              <tr><td><code>status</code></td><td>Prints cache status</td></tr>
+              <tr><td><code>regenerate</code></td><td>Builds fresh generated files</td></tr>
+              <tr><td><code>rollback</code></td><td>Restores previous cached content</td></tr>
+              <tr><td><code>go-live</code></td><td>Turns off test mode</td></tr>
+              <tr><td><code>analytics</code></td><td>Prints request summary</td></tr>
+              <tr><td><code>cleanup</code></td><td>Trims expired analytics and cache rows</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section>
+          <h2>Troubleshooting</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Symptom</th>
+                <th>Fix</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><code>403</code></td><td>Run <code>npx agent-ready go-live</code></td></tr>
+              <tr><td><code>503 "not configured"</code></td><td>Run <code>npx agent-ready setup</code> or <code>npx agent-ready sync</code></td></tr>
+              <tr><td><code>503 "not generated yet"</code></td><td>Run <code>npx agent-ready regenerate</code></td></tr>
+              <tr><td>Widget is offline</td><td>Check <code>registerRoutes</code> in <code>convex/http.ts</code></td></tr>
+            </tbody>
+          </table>
+          <p>
+            Full Markdown version:
+            <a href="./install.md"><code>docs/install.md</code></a>
+          </p>
+        </section>
+      </article>
+    </main>
+  </body>
+</html>

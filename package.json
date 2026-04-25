@@ -61,7 +61,10 @@
   "files": [
     "dist",
     "src",
+    "cli",
+    "docs",
     "README.md",
+    "SETUP.md",
     "INTEGRATION.md",
     "LICENSE"
   ],

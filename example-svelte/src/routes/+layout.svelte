@@ -4,6 +4,8 @@
   import { AgentReadyWidget } from "@waynesutton/agent-ready/svelte";
 
   const appUrl = import.meta.env.VITE_CONVEX_SITE_URL as string;
+  const installGuideUrl =
+    "https://github.com/waynesutton/agent-ready-component/blob/main/docs/install.md";
   let { children } = $props();
 
   const primary = [
@@ -35,6 +37,7 @@
       <span>@waynesutton/agent-ready</span>
     </div>
     <nav class="topbar-links">
+      <a href={installGuideUrl} target="_blank" rel="noreferrer">Install guide</a>
       <a href="https://llmstxt.org" target="_blank" rel="noreferrer">llms.txt spec</a>
       <a href="https://agents.md" target="_blank" rel="noreferrer">agents.md</a>
       <a href="https://www.convex.dev/components/static-hosting" target="_blank" rel="noreferrer">static hosting</a>
