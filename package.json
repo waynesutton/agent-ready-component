@@ -1,0 +1,106 @@
+{
+  "name": "@waynesutton/agent-ready",
+  "version": "0.1.0",
+  "description": "Convex component that auto-generates, caches, and serves llms.txt, agents.md, and llms-full.txt with ETag-aware HTTP handlers, dynamic cron scheduling, opt-in analytics, AI descriptions, and React + Svelte widgets.",
+  "keywords": [
+    "convex",
+    "convex-component",
+    "agent-ready",
+    "llms.txt",
+    "agents.md",
+    "ai",
+    "agents",
+    "seo",
+    "react",
+    "svelte"
+  ],
+  "homepage": "https://github.com/waynesutton/agent-ready-component#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/waynesutton/agent-ready-component.git"
+  },
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/client/index.js",
+  "types": "./dist/client/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/client/index.d.ts",
+      "import": "./dist/client/index.js"
+    },
+    "./convex.config.js": {
+      "types": "./dist/component/convex.config.d.ts",
+      "import": "./dist/component/convex.config.js"
+    },
+    "./convex.config": {
+      "types": "./dist/component/convex.config.d.ts",
+      "import": "./dist/component/convex.config.js"
+    },
+    "./_generated/component.js": {
+      "types": "./dist/component/_generated/component.d.ts",
+      "import": "./dist/component/_generated/component.js"
+    },
+    "./_generated/api.js": {
+      "types": "./dist/component/_generated/api.d.ts",
+      "import": "./dist/component/_generated/api.js"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "import": "./dist/react/index.js"
+    },
+    "./svelte": {
+      "types": "./dist/svelte/index.d.ts",
+      "import": "./dist/svelte/index.js",
+      "svelte": "./dist/svelte/index.js"
+    },
+    "./test": {
+      "types": "./dist/test/index.d.ts",
+      "import": "./dist/test/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "INTEGRATION.md",
+    "LICENSE"
+  ],
+  "bin": {
+    "agent-ready": "./cli/bin.mjs"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev:example-react": "npm run dev --workspace example-react",
+    "dev:example-svelte": "npm run dev --workspace example-svelte",
+    "clean": "rm -rf dist"
+  },
+  "workspaces": [
+    "example-react",
+    "example-svelte"
+  ],
+  "peerDependencies": {
+    "@convex-dev/crons": "^0.1.0",
+    "@convex-dev/workpool": "^0.2.0",
+    "convex": "^1.28.0",
+    "react": "^18.0.0 || ^19.0.0",
+    "svelte": "^4.0.0 || ^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "svelte": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "convex": "^1.36.0",
+    "convex-test": "^0.0.37",
+    "react": "^19.0.0",
+    "svelte": "^5.0.0",
+    "typescript": "^5.7.0"
+  }
+}

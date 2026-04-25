@@ -1,0 +1,31 @@
+{
+  "name": "example-react",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node setup.mjs && npx convex dev --start 'vite'",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "npx @convex-dev/static-hosting deploy",
+    "deploy:static": "npx @convex-dev/static-hosting upload --build --prod",
+    "seed": "node setup.mjs"
+  },
+  "dependencies": {
+    "@convex-dev/crons": "^0.1.0",
+    "@waynesutton/agent-ready": "file:..",
+    "@convex-dev/static-hosting": "^0.1.0",
+    "@convex-dev/workpool": "^0.2.0",
+    "convex": "^1.36.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^6.28.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0"
+  }
+}

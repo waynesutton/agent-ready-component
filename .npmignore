@@ -1,0 +1,10 @@
+example-react
+example-svelte
+prds
+task.md
+files.md
+.cursor
+.claude
+.agents
+*.log
+.DS_Store

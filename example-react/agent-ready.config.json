@@ -1,0 +1,58 @@
+{
+  "settings": {
+    "appName": "agent-ready React demo",
+    "appUrl": "https://your-deployment.convex.site",
+    "description": "Demo app for @waynesutton/agent-ready on React + Vite, hosted on Convex via static-hosting.",
+    "widgetPosition": "floating-bottom-right",
+    "theme": "dark",
+    "testMode": true,
+    "cronEnabled": true,
+    "cronIntervalHours": 24,
+    "analyticsEnabled": true,
+    "analyticsRequestRetentionDays": 90,
+    "aiDescriptionsEnabled": false,
+    "aiProvider": "claude",
+    "fullTxtEnabled": true,
+    "permissiveMode": true,
+    "versioningEnabled": true
+  },
+  "pages": [
+    {
+      "title": "Overview",
+      "path": "/",
+      "description": "Landing page for the React demo.",
+      "status": "published",
+      "order": 10
+    },
+    {
+      "title": "Settings",
+      "path": "/settings",
+      "description": "Settings panel with draft, publish, archive, rollback, and version history controls.",
+      "status": "published",
+      "order": 20
+    },
+    {
+      "title": "Analytics",
+      "path": "/analytics",
+      "description": "Agent request dashboard showing traffic by agent and by file type.",
+      "status": "published",
+      "order": 30
+    }
+  ],
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/llms.txt",
+      "description": "Returns the generated llms.txt summary.",
+      "group": "Discovery",
+      "status": "published"
+    },
+    {
+      "method": "GET",
+      "path": "/agents.md",
+      "description": "Returns the generated agents.md with API instructions.",
+      "group": "Discovery",
+      "status": "published"
+    }
+  ]
+}

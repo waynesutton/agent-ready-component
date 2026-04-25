@@ -1,0 +1,21 @@
+---
+description: Reflect before acting
+globs:
+alwaysApply: true
+---
+
+# Reflect before acting
+
+Before implementing any solution:
+
+1. Identify what's missing, incomplete, or incorrect based on the original request
+2. Theorize 2-3 possible root causes or approaches
+3. Distill to the 1-2 most probable. Only proceed after clear understanding.
+
+If anything is unclear: ask first. Never assume.
+
+Code confidence: don't write code until 98%+ confident in what needs to be done.
+
+Change scope: only update files directly necessary for the request. Do not change UI, layout, or design unless instructed. Never remove features unless directly requested.
+
+UI alerts: always use the site's existing design system for modals, alerts, and confirmations. Never use browser defaults.

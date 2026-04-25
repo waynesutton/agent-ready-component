@@ -1,0 +1,25 @@
+{
+  "settings": {
+    "appName": "agent-ready SvelteKit demo",
+    "appUrl": "https://your-deployment.convex.site",
+    "description": "Demo app for @waynesutton/agent-ready on SvelteKit, hosted on Convex via static-hosting.",
+    "widgetPosition": "floating-bottom-right",
+    "theme": "dark",
+    "testMode": true,
+    "cronEnabled": true,
+    "cronIntervalHours": 24,
+    "analyticsEnabled": true,
+    "analyticsRequestRetentionDays": 90,
+    "aiDescriptionsEnabled": false,
+    "aiProvider": "claude",
+    "fullTxtEnabled": true,
+    "permissiveMode": true,
+    "versioningEnabled": true
+  },
+  "pages": [
+    { "title": "Overview", "path": "/", "description": "Landing page for the Svelte demo.", "status": "published", "order": 10 },
+    { "title": "Settings", "path": "/settings", "description": "Settings controls.", "status": "published", "order": 20 },
+    { "title": "Analytics", "path": "/analytics", "description": "Analytics dashboard.", "status": "published", "order": 30 }
+  ],
+  "endpoints": []
+}

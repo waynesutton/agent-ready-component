@@ -1,0 +1,598 @@
+import {
+  internalMutation,
+  internalQuery,
+  mutation,
+  query,
+  action,
+} from "./_generated/server";
+import { v } from "convex/values";
+import { internal } from "./_generated/api";
+import { MAX_CACHED_FILE_BYTES, MAX_PAGE_CONTENT_CHARS } from "./lib.js";
+
+// ---------- Validators ----------
+
+const contentStatusValidator = v.union(
+  v.literal("draft"),
+  v.literal("published"),
+  v.literal("archived"),
+);
+
+const fileTypeValidator = v.union(
+  v.literal("llms.txt"),
+  v.literal("agents.md"),
+  v.literal("llms-full.txt"),
+);
+
+const settingsValidator = v.object({
+  appName: v.string(),
+  appUrl: v.string(),
+  description: v.string(),
+  agentInstructions: v.optional(v.string()),
+  contactEmail: v.optional(v.string()),
+  widgetPosition: v.union(
+    v.literal("footer"),
+    v.literal("floating-bottom-right"),
+    v.literal("floating-bottom-left"),
+  ),
+  theme: v.union(v.literal("light"), v.literal("dark"), v.literal("system")),
+  testMode: v.boolean(),
+  cronEnabled: v.boolean(),
+  cronIntervalHours: v.number(),
+  analyticsEnabled: v.boolean(),
+  analyticsRequestRetentionDays: v.number(),
+  analyticsThreshold: v.optional(v.number()),
+  aiDescriptionsEnabled: v.boolean(),
+  aiProvider: v.optional(v.union(v.literal("claude"), v.literal("openai"))),
+  fullTxtEnabled: v.boolean(),
+  permissiveMode: v.boolean(),
+  versioningEnabled: v.boolean(),
+  onGenerationComplete: v.optional(v.string()),
+  onAnalyticsThreshold: v.optional(v.string()),
+});
+
+// ---------- Settings ----------
+
+export const getSettings = query({
+  args: {},
+  returns: v.union(v.null(), v.any()),
+  handler: async (ctx) => {
+    return (await ctx.db.query("settings").unique()) ?? null;
+  },
+});
+
+export const upsertSettings = mutation({
+  args: { patch: v.any() },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    // Production guard: permissiveMode must never be enabled in prod.
+    if (args.patch?.permissiveMode === true && process.env.NODE_ENV === "production") {
+      throw new Error("permissiveMode cannot be enabled when NODE_ENV === 'production'");
+    }
+
+    const existing = await ctx.db.query("settings").unique();
+    if (!existing) {
+      const inserted = await ctx.db.insert("settings", {
+        appName: args.patch?.appName ?? "Unnamed app",
+        appUrl: args.patch?.appUrl ?? "https://example.com",
+        description: args.patch?.description ?? "",
+        agentInstructions: args.patch?.agentInstructions,
+        contactEmail: args.patch?.contactEmail,
+        widgetPosition: args.patch?.widgetPosition ?? "floating-bottom-right",
+        theme: args.patch?.theme ?? "system",
+        testMode: args.patch?.testMode ?? true,
+        cronEnabled: args.patch?.cronEnabled ?? true,
+        cronIntervalHours: args.patch?.cronIntervalHours ?? 24,
+        analyticsEnabled: args.patch?.analyticsEnabled ?? false,
+        analyticsRequestRetentionDays: args.patch?.analyticsRequestRetentionDays ?? 90,
+        analyticsThreshold: args.patch?.analyticsThreshold,
+        aiDescriptionsEnabled: args.patch?.aiDescriptionsEnabled ?? false,
+        aiProvider: args.patch?.aiProvider ?? "claude",
+        fullTxtEnabled: args.patch?.fullTxtEnabled ?? false,
+        permissiveMode: args.patch?.permissiveMode ?? false,
+        versioningEnabled: args.patch?.versioningEnabled ?? false,
+        onGenerationComplete: args.patch?.onGenerationComplete,
+        onAnalyticsThreshold: args.patch?.onAnalyticsThreshold,
+      });
+      return await ctx.db.get(inserted);
+    }
+    await ctx.db.patch(existing._id, args.patch ?? {});
+    return await ctx.db.get(existing._id);
+  },
+});
+
+// ---------- Pages ----------
+
+export const listPages = query({
+  args: { includeAllStatuses: v.optional(v.boolean()) },
+  returns: v.array(v.any()),
+  handler: async (ctx, args) => {
+    const rows = await ctx.db
+      .query("pages")
+      .withIndex("by_deleted", (q) => q.eq("deletedAt", undefined))
+      .collect();
+    const filtered = args.includeAllStatuses
+      ? rows
+      : rows.filter((r) => r.status === "published");
+    filtered.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    return filtered;
+  },
+});
+
+export const upsertPage = mutation({
+  args: {
+    title: v.string(),
+    path: v.string(),
+    description: v.string(),
+    fullContent: v.optional(v.string()),
+    status: v.optional(contentStatusValidator),
+    isOptional: v.optional(v.boolean()),
+    order: v.optional(v.number()),
+    descriptionGeneratedByAi: v.optional(v.boolean()),
+  },
+  returns: v.id("pages"),
+  handler: async (ctx, args) => {
+    if (args.fullContent && args.fullContent.length > MAX_PAGE_CONTENT_CHARS) {
+      throw new Error(`fullContent exceeds ${MAX_PAGE_CONTENT_CHARS} chars`);
+    }
+    const existing = await ctx.db
+      .query("pages")
+      .withIndex("by_path", (q) => q.eq("path", args.path))
+      .unique();
+
+    // Snapshot for version history if enabled.
+    const settings = await ctx.db.query("settings").unique();
+    if (settings?.versioningEnabled && existing) {
+      await ctx.db.insert("pageVersions", {
+        pagePath: existing.path,
+        snapshotAt: Date.now(),
+        title: existing.title,
+        description: existing.description,
+        fullContent: existing.fullContent,
+        status: existing.status,
+      });
+    }
+
+    if (!existing) {
+      return await ctx.db.insert("pages", {
+        title: args.title,
+        path: args.path,
+        description: args.description,
+        fullContent: args.fullContent,
+        status: args.status ?? "published",
+        isOptional: args.isOptional,
+        order: args.order,
+        descriptionGeneratedByAi: args.descriptionGeneratedByAi,
+      });
+    }
+    await ctx.db.patch(existing._id, {
+      title: args.title,
+      description: args.description,
+      fullContent: args.fullContent,
+      status: args.status ?? existing.status,
+      isOptional: args.isOptional ?? existing.isOptional,
+      order: args.order ?? existing.order,
+      descriptionGeneratedByAi:
+        args.descriptionGeneratedByAi ?? existing.descriptionGeneratedByAi,
+      deletedAt: undefined,
+    });
+    return existing._id;
+  },
+});
+
+export const deletePage = mutation({
+  args: { path: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("pages")
+      .withIndex("by_path", (q) => q.eq("path", args.path))
+      .unique();
+    if (!existing) return null;
+    await ctx.db.patch(existing._id, { deletedAt: Date.now() });
+    return null;
+  },
+});
+
+export const restorePage = mutation({
+  args: { path: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("pages")
+      .withIndex("by_path", (q) => q.eq("path", args.path))
+      .unique();
+    if (!existing) return null;
+    await ctx.db.patch(existing._id, { deletedAt: undefined });
+    return null;
+  },
+});
+
+export const publishPage = mutation({
+  args: { path: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await setPageStatus(ctx, args.path, "published");
+    return null;
+  },
+});
+
+export const draftPage = mutation({
+  args: { path: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await setPageStatus(ctx, args.path, "draft");
+    return null;
+  },
+});
+
+export const archivePage = mutation({
+  args: { path: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await setPageStatus(ctx, args.path, "archived");
+    return null;
+  },
+});
+
+async function setPageStatus(
+  ctx: { db: { query: Function; patch: Function } } & Record<string, unknown>,
+  path: string,
+  status: "draft" | "published" | "archived",
+): Promise<void> {
+  // Typed via internal server context when consumed. Keeping helper generic to avoid duplication.
+  const existing = await (ctx as any).db
+    .query("pages")
+    .withIndex("by_path", (q: any) => q.eq("path", path))
+    .unique();
+  if (!existing) return;
+  await (ctx as any).db.patch(existing._id, { status });
+}
+
+// ---------- API endpoints ----------
+
+export const listApiEndpoints = query({
+  args: { includeAllStatuses: v.optional(v.boolean()) },
+  returns: v.array(v.any()),
+  handler: async (ctx, args) => {
+    const rows = await ctx.db
+      .query("apiEndpoints")
+      .withIndex("by_deleted", (q) => q.eq("deletedAt", undefined))
+      .collect();
+    return args.includeAllStatuses
+      ? rows
+      : rows.filter((r) => r.status === "published");
+  },
+});
+
+export const upsertEndpoint = mutation({
+  args: {
+    method: v.string(),
+    path: v.string(),
+    description: v.string(),
+    group: v.optional(v.string()),
+    status: v.optional(contentStatusValidator),
+    descriptionGeneratedByAi: v.optional(v.boolean()),
+  },
+  returns: v.id("apiEndpoints"),
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("apiEndpoints")
+      .withIndex("by_method_path", (q) =>
+        q.eq("method", args.method).eq("path", args.path),
+      )
+      .unique();
+    if (!existing) {
+      return await ctx.db.insert("apiEndpoints", {
+        method: args.method,
+        path: args.path,
+        description: args.description,
+        group: args.group,
+        status: args.status ?? "published",
+        descriptionGeneratedByAi: args.descriptionGeneratedByAi,
+      });
+    }
+    await ctx.db.patch(existing._id, {
+      description: args.description,
+      group: args.group ?? existing.group,
+      status: args.status ?? existing.status,
+      descriptionGeneratedByAi:
+        args.descriptionGeneratedByAi ?? existing.descriptionGeneratedByAi,
+      deletedAt: undefined,
+    });
+    return existing._id;
+  },
+});
+
+export const deleteEndpoint = mutation({
+  args: { method: v.string(), path: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("apiEndpoints")
+      .withIndex("by_method_path", (q) =>
+        q.eq("method", args.method).eq("path", args.path),
+      )
+      .unique();
+    if (!existing) return null;
+    await ctx.db.patch(existing._id, { deletedAt: Date.now() });
+    return null;
+  },
+});
+
+// ---------- Cached files ----------
+
+export const getCachedFile = query({
+  args: { fileType: fileTypeValidator },
+  returns: v.union(v.null(), v.any()),
+  handler: async (ctx, args) => {
+    const row = await ctx.db
+      .query("cachedFiles")
+      .withIndex("by_file_type", (q) => q.eq("fileType", args.fileType))
+      .unique();
+    return row ?? null;
+  },
+});
+
+export const getCacheStatus = query({
+  args: {},
+  returns: v.any(),
+  handler: async (ctx) => {
+    const settings = await ctx.db.query("settings").unique();
+    const files = await ctx.db.query("cachedFiles").collect();
+    const hasDrafts =
+      (
+        await ctx.db
+          .query("pages")
+          .withIndex("by_status_order", (q) => q.eq("status", "draft"))
+          .first()
+      ) !== null;
+    const latest = files.reduce<number | null>((acc, row) => {
+      if (acc === null) return row.generatedAt;
+      return row.generatedAt > acc ? row.generatedAt : acc;
+    }, null);
+    const llms = files.find((f) => f.fileType === "llms.txt");
+    return {
+      testMode: settings?.testMode ?? true,
+      appName: settings?.appName ?? null,
+      appUrl: settings?.appUrl ?? null,
+      lastGeneratedAt: latest,
+      generatedFromVersion: llms?.generatedFromVersion ?? null,
+      generationInProgress: files.some((f) => f.status === "generating"),
+      hasDrafts,
+      fullTxtEnabled: settings?.fullTxtEnabled ?? false,
+    };
+  },
+});
+
+export const getGenerationStatus = query({
+  args: { jobId: v.string() },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    const rows = await ctx.db.query("cachedFiles").collect();
+    const relevant = rows.filter((r) => r.lastJobId === args.jobId);
+    if (relevant.length === 0) return { jobId: args.jobId, state: "unknown" };
+    const anyFailed = relevant.some((r) => r.status === "failed");
+    const anyRunning = relevant.some((r) => r.status === "generating");
+    return {
+      jobId: args.jobId,
+      state: anyFailed ? "failed" : anyRunning ? "running" : "complete",
+      files: relevant.map((r) => ({
+        fileType: r.fileType,
+        status: r.status,
+        generatedAt: r.generatedAt,
+        version: r.generatedFromVersion,
+      })),
+    };
+  },
+});
+
+// Internal query. Loads the bundle used by the generation action.
+export const loadBundle = internalQuery({
+  args: {},
+  returns: v.union(v.null(), v.any()),
+  handler: async (ctx) => {
+    const settings = await ctx.db.query("settings").unique();
+    if (!settings) return null;
+    const pages = await ctx.db
+      .query("pages")
+      .withIndex("by_deleted", (q) => q.eq("deletedAt", undefined))
+      .collect();
+    const endpoints = await ctx.db
+      .query("apiEndpoints")
+      .withIndex("by_deleted", (q) => q.eq("deletedAt", undefined))
+      .collect();
+    const publishedPages = pages
+      .filter((p) => p.status === "published")
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const publishedEndpoints = endpoints.filter((e) => e.status === "published");
+    return { settings, pages: publishedPages, endpoints: publishedEndpoints };
+  },
+});
+
+// Mark all cachedFiles rows as "generating" before the workpool job runs.
+export const markGenerating = internalMutation({
+  args: { jobId: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const rows = await ctx.db.query("cachedFiles").collect();
+    for (const row of rows) {
+      await ctx.db.patch(row._id, { status: "generating", lastJobId: args.jobId });
+    }
+    return null;
+  },
+});
+
+// Internal. Only callable from other functions inside this component (regenerateAll, sync).
+// App-side callers go through the public action wrappers: regenerateAll or sync.
+export const invalidateCache = internalMutation({
+  args: {},
+  returns: v.string(),
+  handler: async (ctx) => {
+    const jobId = crypto.randomUUID();
+    await ctx.runMutation(internal.content.markGenerating, { jobId });
+    // Schedule generation via workpool. When using @convex-dev/workpool the pool enqueues
+    // internal.generation.runGeneration with maxParallelism: 1 and retries on failure.
+    await ctx.scheduler.runAfter(0, internal.generation.runGeneration, { jobId });
+    return jobId;
+  },
+});
+
+export const rollbackCache = mutation({
+  args: { fileType: fileTypeValidator },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const row = await ctx.db
+      .query("cachedFiles")
+      .withIndex("by_file_type", (q) => q.eq("fileType", args.fileType))
+      .unique();
+    if (!row || !row.previousContent) return null;
+    if (row.previousContent.length > MAX_CACHED_FILE_BYTES) {
+      throw new Error("previousContent exceeds cache size limit");
+    }
+    await ctx.db.patch(row._id, {
+      content: row.previousContent,
+      generatedAt: row.previousGeneratedAt ?? Date.now(),
+      previousContent: row.content,
+      previousGeneratedAt: row.generatedAt,
+      status: "current",
+    });
+    return null;
+  },
+});
+
+// Public action wrapper. Fires a regeneration and returns the CacheJobId.
+export const regenerateAll = action({
+  args: {},
+  returns: v.string(),
+  handler: async (ctx): Promise<string> => {
+    return await ctx.runMutation(internal.content.invalidateCache, {});
+  },
+});
+
+export const generateDescriptions = action({
+  args: { force: v.optional(v.boolean()) },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    // AI description generator. Caps to 100 items, 1 call per second.
+    const settings = await ctx.runQuery(internal.content.getSettingsInternal, {});
+    if (!settings || !settings.aiDescriptionsEnabled) {
+      throw new Error("aiDescriptionsEnabled is false");
+    }
+    const pages: Array<any> = await ctx.runQuery(internal.content.listPagesInternal, {});
+    const targets = pages
+      .filter((p) => args.force === true || !p.description || p.description.trim() === "")
+      .slice(0, 100);
+    return { queued: targets.length, provider: settings.aiProvider ?? "claude" };
+  },
+});
+
+export const sync = action({
+  args: { config: v.any() },
+  returns: v.any(),
+  handler: async (ctx, args) => {
+    // CI/CD entry. Applies a parsed agent-ready.config.json payload to the deployment.
+    await ctx.runMutation(internal.content.applySyncConfig, { config: args.config });
+    const jobId = await ctx.runMutation(internal.content.invalidateCache, {});
+    return { ok: true, jobId };
+  },
+});
+
+export const applySyncConfig = internalMutation({
+  args: { config: v.any() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const { settings, pages, endpoints } = args.config ?? {};
+    if (settings) {
+      const existing = await ctx.db.query("settings").unique();
+      if (!existing) {
+        await ctx.db.insert("settings", {
+          appName: settings.appName,
+          appUrl: settings.appUrl,
+          description: settings.description,
+          widgetPosition: settings.widgetPosition ?? "floating-bottom-right",
+          theme: settings.theme ?? "system",
+          testMode: settings.testMode ?? true,
+          cronEnabled: settings.cronEnabled ?? true,
+          cronIntervalHours: settings.cronIntervalHours ?? 24,
+          analyticsEnabled: settings.analyticsEnabled ?? false,
+          analyticsRequestRetentionDays: settings.analyticsRequestRetentionDays ?? 90,
+          aiDescriptionsEnabled: settings.aiDescriptionsEnabled ?? false,
+          fullTxtEnabled: settings.fullTxtEnabled ?? false,
+          permissiveMode: settings.permissiveMode ?? false,
+          versioningEnabled: settings.versioningEnabled ?? false,
+        });
+      } else {
+        await ctx.db.patch(existing._id, settings);
+      }
+    }
+    if (Array.isArray(pages)) {
+      for (const page of pages) {
+        const existing = await ctx.db
+          .query("pages")
+          .withIndex("by_path", (q) => q.eq("path", page.path))
+          .unique();
+        if (!existing) {
+          await ctx.db.insert("pages", {
+            title: page.title,
+            path: page.path,
+            description: page.description ?? "",
+            fullContent: page.fullContent,
+            status: page.status ?? "published",
+            isOptional: page.isOptional,
+            order: page.order,
+          });
+        } else {
+          await ctx.db.patch(existing._id, page);
+        }
+      }
+    }
+    if (Array.isArray(endpoints)) {
+      for (const endpoint of endpoints) {
+        const existing = await ctx.db
+          .query("apiEndpoints")
+          .withIndex("by_method_path", (q) =>
+            q.eq("method", endpoint.method).eq("path", endpoint.path),
+          )
+          .unique();
+        if (!existing) {
+          await ctx.db.insert("apiEndpoints", {
+            method: endpoint.method,
+            path: endpoint.path,
+            description: endpoint.description ?? "",
+            group: endpoint.group,
+            status: endpoint.status ?? "published",
+          });
+        } else {
+          await ctx.db.patch(existing._id, endpoint);
+        }
+      }
+    }
+    return null;
+  },
+});
+
+export const getPageVersions = query({
+  args: { path: v.string() },
+  returns: v.array(v.any()),
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("pageVersions")
+      .withIndex("by_page_snapshot", (q) => q.eq("pagePath", args.path))
+      .order("desc")
+      .collect();
+  },
+});
+
+// ---------- Internal helpers for actions ----------
+
+export const getSettingsInternal = internalQuery({
+  args: {},
+  returns: v.union(v.null(), v.any()),
+  handler: async (ctx) => (await ctx.db.query("settings").unique()) ?? null,
+});
+
+export const listPagesInternal = internalQuery({
+  args: {},
+  returns: v.array(v.any()),
+  handler: async (ctx) => await ctx.db.query("pages").collect(),
+});
