@@ -27,7 +27,15 @@
     "aiProvider": "claude",
     "fullTxtEnabled": true,
     "permissiveMode": true,
-    "versioningEnabled": true
+    "versioningEnabled": true,
+    "contentSignals": { "aiTrain": true, "search": true, "aiInput": true },
+    "markdownNegotiation": true,
+    "discoveryHeaders": true,
+    "robotsTxtEnabled": true,
+    "robotsTxtAllowAiBots": true,
+    "sitemapEnabled": true,
+    "agentSkillsEnabled": true,
+    "readinessEndpointEnabled": true
   },
   "pages": [
     { "title": "Overview", "path": "/", "description": "Landing page for the Svelte demo.", "status": "published", "order": 10 },

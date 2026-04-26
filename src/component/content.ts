@@ -62,6 +62,15 @@ export const upsertSettings = mutation({
         versioningEnabled: args.patch?.versioningEnabled ?? false,
         onGenerationComplete: args.patch?.onGenerationComplete,
         onAnalyticsThreshold: args.patch?.onAnalyticsThreshold,
+        contentSignals: args.patch?.contentSignals,
+        markdownNegotiation: args.patch?.markdownNegotiation,
+        discoveryHeaders: args.patch?.discoveryHeaders,
+        robotsTxtEnabled: args.patch?.robotsTxtEnabled,
+        robotsTxtAllowAiBots: args.patch?.robotsTxtAllowAiBots,
+        robotsTxtDisallowPaths: args.patch?.robotsTxtDisallowPaths,
+        sitemapEnabled: args.patch?.sitemapEnabled,
+        agentSkillsEnabled: args.patch?.agentSkillsEnabled,
+        readinessEndpointEnabled: args.patch?.readinessEndpointEnabled,
       });
       const doc = await ctx.db.get(inserted);
       if (!doc) throw new Error("settings insert failed");
@@ -322,6 +331,12 @@ export const getCacheStatus = query({
     widgetShowAppName: v.boolean(),
     widgetShowDescription: v.boolean(),
     widgetShowMeta: v.boolean(),
+    readinessEndpointEnabled: v.boolean(),
+    robotsTxtEnabled: v.boolean(),
+    sitemapEnabled: v.boolean(),
+    agentSkillsEnabled: v.boolean(),
+    discoveryHeaders: v.boolean(),
+    markdownNegotiation: v.boolean(),
   }),
   handler: async (ctx) => {
     const settings = await ctx.db.query("settings").unique();
@@ -352,6 +367,12 @@ export const getCacheStatus = query({
       widgetShowAppName: settings?.widgetShowAppName ?? true,
       widgetShowDescription: settings?.widgetShowDescription ?? true,
       widgetShowMeta: settings?.widgetShowMeta ?? true,
+      readinessEndpointEnabled: settings?.readinessEndpointEnabled ?? false,
+      robotsTxtEnabled: settings?.robotsTxtEnabled ?? false,
+      sitemapEnabled: settings?.sitemapEnabled ?? false,
+      agentSkillsEnabled: settings?.agentSkillsEnabled ?? false,
+      discoveryHeaders: settings?.discoveryHeaders ?? false,
+      markdownNegotiation: settings?.markdownNegotiation ?? false,
     };
   },
 });

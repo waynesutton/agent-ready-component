@@ -6,6 +6,24 @@ All notable changes to `@waynesutton/agent-ready` (formerly `@convex-dev/llms-tx
 
 ### Added
 
+- Agent readiness v1 (M31 through M45) implementing Cloudflare's agent readiness standards
+- `Content-Signal` response header on all content routes with configurable `aiTrain`, `search`, `aiInput` signals
+- `x-markdown-tokens` response header reporting estimated token count for each file
+- RFC 8288 `Link` discovery headers pointing to `llms.txt`, `agents.md`, and `sitemap.xml`
+- `GET /robots.txt` route with AI bot directives, configurable allow/disallow
+- `GET /sitemap.xml` route with XML escaping and per-page URL generation
+- `GET /.well-known/agent-skills` endpoint advertising pages and API endpoints as agent skills
+- `GET /llms-readiness` self-score endpoint with 11 checks across discoverability, content, bots, and protocol
+- SCORE tab in React and Svelte widgets with readiness polling (60s), color-coded score, and check list
+- `npx agent-ready agent-ready` CLI command enables all readiness flags, syncs, and regenerates
+- `npx agent-ready scan` CLI command audits deployment endpoints and prints a pass/fail table
+- `Vary: Accept` header for markdown content negotiation support
+- 9 new optional settings: `contentSignals`, `markdownNegotiation`, `discoveryHeaders`, `robotsTxtEnabled`, `robotsTxtAllowAiBots`, `robotsTxtDisallowPaths`, `sitemapEnabled`, `agentSkillsEnabled`, `readinessEndpointEnabled`
+- File type union expanded to include `robots.txt`, `sitemap.xml`, `agent-skills.json`
+- Security: `escapeXml()`, `sanitizePath()` helpers, testMode gating on readiness endpoint
+- Both example app configs updated with readiness flags enabled by default
+- Both example wrapper validators updated for new `getCacheStatus` return shape
+
 - Exported `<AgentReadySettingsPanel />` from `@waynesutton/agent-ready/react`. Drop-in settings panel for managing pages, cache status, and actions. Framework-agnostic design: consumers pass Convex query results and mutation callbacks as props. Ships with inline styles and needs no external CSS
 - CLI `npx agent-ready setup` now scaffolds Convex wrapper files at `convex/agentReady/content.ts` and `convex/agentReady/analytics.ts` automatically. These bridge the component API to browser clients so consumers do not have to write them from scratch. Existing files are not overwritten
 - Added copy-paste Convex wrapper code to INTEGRATION.md for consumers who skip the CLI wizard

@@ -13,6 +13,9 @@ const fileType = v.union(
   v.literal("llms.txt"),
   v.literal("agents.md"),
   v.literal("llms-full.txt"),
+  v.literal("robots.txt"),
+  v.literal("sitemap.xml"),
+  v.literal("agent-skills.json"),
 );
 
 export default defineSchema({
@@ -56,6 +59,22 @@ export default defineSchema({
     fullTxtEnabled: v.boolean(),
     permissiveMode: v.boolean(),
     versioningEnabled: v.boolean(),
+    // Agent readiness features (M31-M45). All optional for backward compatibility.
+    contentSignals: v.optional(
+      v.object({
+        aiTrain: v.boolean(),
+        search: v.boolean(),
+        aiInput: v.boolean(),
+      }),
+    ),
+    markdownNegotiation: v.optional(v.boolean()),
+    discoveryHeaders: v.optional(v.boolean()),
+    robotsTxtEnabled: v.optional(v.boolean()),
+    robotsTxtAllowAiBots: v.optional(v.boolean()),
+    robotsTxtDisallowPaths: v.optional(v.array(v.string())),
+    sitemapEnabled: v.optional(v.boolean()),
+    agentSkillsEnabled: v.optional(v.boolean()),
+    readinessEndpointEnabled: v.optional(v.boolean()),
     // Stored function handles for event callbacks. Populated by registerRoutes options.
     onGenerationComplete: v.optional(v.string()),
     onAnalyticsThreshold: v.optional(v.string()),

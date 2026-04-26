@@ -62,24 +62,25 @@ Source of truth: `prds/convex-llms-txt-prd-v6.md`. Agent readiness work tracked 
 
 PRD: `prds/agent-readiness-v1.md`. Each milestone is independently shippable.
 
-- [ ] M31: `Content-Signal` response headers on existing file routes plus optional per-signal config (`aiTrain`, `search`, `aiInput`)
-- [ ] M32: `x-markdown-tokens` response header on `/llms.txt`, `/agents.md`, `/llms-full.txt`
-- [ ] M33: RFC 8288 `Link` discovery headers wired through `discoveryHeaders` setting
-- [ ] M34: Widget tab visibility props (`showHumanTab`, `showMachineTab`, `showScoreTab`, `defaultTab`, `tabs`) and SCORE tab skeleton in React widget
-- [ ] M35: `GET /robots.txt` route, `renderRobotsTxt` generator, sanitization, CLI fragment printer
-- [ ] M36: `GET /sitemap.xml` route, `renderSitemap` with `escapeXml` helper, cached file plumbing
-- [ ] M37: `GET /.well-known/agent-skills` route returning JSON built from pages plus endpoints
-- [ ] M38: Markdown content negotiation helper (`mountMarkdownNegotiation`) plus `markdownNegotiation` setting
-- [ ] M39: `GET /llms-readiness` self-score endpoint with optional `AGENT_READY_READINESS_SECRET` bearer auth (legacy `LLMS_READINESS_SECRET` honored as fallback)
-- [ ] M40: Wire SCORE tab to `/llms-readiness` with 60 second polling and color thresholds
-- [ ] M41: `npx agent-ready` default flow that flips all flags, syncs config, regenerates, prints score
-- [ ] M42: `npx agent-ready scan` command that curls every agent-readiness endpoint and prints a pass or fail table
-- [ ] M43: Security hardening pass across all new routes: testMode gate, output escaping, secret handling, no path leakage
-- [ ] M44: `SETUP.md` and `INTEGRATION.md` updates split into author docs (one section) and consumer docs (eight sections)
-- [ ] M45: Svelte widget parity: SCORE tab, visibility props, readiness store
+- [x] M31: `Content-Signal` response headers on existing file routes plus optional per-signal config (`aiTrain`, `search`, `aiInput`)
+- [x] M32: `x-markdown-tokens` response header on all content routes
+- [x] M33: RFC 8288 `Link` discovery headers wired through `discoveryHeaders` setting
+- [x] M34: Widget SCORE tab with readiness endpoint polling and color thresholds (React)
+- [x] M35: `GET /robots.txt` route, `renderRobotsTxt` generator, sanitization
+- [x] M36: `GET /sitemap.xml` route, `renderSitemap` with `escapeXml` helper, cached file plumbing
+- [x] M37: `GET /.well-known/agent-skills` route returning JSON built from pages plus endpoints
+- [x] M38: Markdown content negotiation via `Vary: Accept` header and `markdownNegotiation` setting
+- [x] M39: `GET /llms-readiness` self-score endpoint with 11 checks across discoverability, content, bots, and protocol categories
+- [x] M40: Wire SCORE tab to `/llms-readiness` with 60 second polling and color thresholds
+- [x] M41: `npx agent-ready agent-ready` command enables all flags, syncs config, regenerates
+- [x] M42: `npx agent-ready scan` command checks every agent-readiness endpoint and prints pass/fail table
+- [x] M43: Security hardening pass: testMode gate on readiness, `escapeXml`/`sanitizePath` output escaping, no path leakage
+- [x] M44: `SETUP.md` and `INTEGRATION.md` updates with agent readiness documentation
+- [x] M45: Svelte widget parity: SCORE tab, visibility props, readiness polling
 
 ## Completed
 
+- [x] 2026-04-25 Agent readiness v1 (M31 through M45). Added Content-Signal, x-markdown-tokens, and Link discovery headers to all content routes. New routes: `/robots.txt`, `/sitemap.xml`, `/.well-known/agent-skills`, `/llms-readiness`. SCORE tab in React and Svelte widgets with 60s readiness polling. CLI commands `agent-ready` (enable all) and `scan` (audit). Security hardening with escapeXml, sanitizePath, and testMode gating. Updated both example app configs and wrapper validators. Schema expanded with 9 new optional settings fields, fileType union expanded to 6 values.
 - [x] 2026-04-25 Exported `<AgentReadySettingsPanel />` from `@waynesutton/agent-ready/react` as an optional drop-in settings panel. CLI setup wizard now scaffolds Convex wrapper files at `convex/agentReady/`. Updated README with `npm i` install command and settings panel docs. Added wrapper code and settings panel section to INTEGRATION.md. PRD: `prds/settings-panel-export.md`
 - [x] 2026-04-25 Config-driven widget visibility. The `/llms-status` endpoint now returns `widgetShowFiles`, `widgetShowAppName`, `widgetShowDescription`, `widgetShowMeta`, and `widgetStatusVisible` from the settings table. Both React and Svelte widgets resolve `show*` props as: explicit prop > config value from status endpoint > `true`. Changing values in `agent-ready.config.json` and running `npx agent-ready sync` updates the widget without code changes. Updated `AgentReadyStatus` type, `getCacheStatus` query, component schema, validators, CLI setup defaults, both example configs, build script (copies `.svelte` to dist), and all docs (CONTRIBUTING, INTEGRATION, README, docs/install.md, files.md, changelog.md)
 - [x] 2026-04-25 Widget v2: center position, HUMAN tab AI chat links, MACHINE tab Phosphor icons, status hide, custom hex colors. Updated types, React widget, Svelte widget, component schema, validators, CLI setup defaults, both example configs, CONTRIBUTING.md, INTEGRATION.md, README.md, docs/install.md, files.md, changelog.md. PRD: `prds/widget-v2-config.md`

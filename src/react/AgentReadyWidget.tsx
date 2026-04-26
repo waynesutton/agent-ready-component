@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import type { WidgetColors, WidgetPosition, WidgetTheme } from "../client/types.js";
+import type { ReadinessReport, WidgetColors, WidgetPosition, WidgetTheme } from "../client/types.js";
 import { useAgentReadyStatus } from "./useAgentReadyStatus.js";
+import { useAgentReadyReadiness } from "./useAgentReadyReadiness.js";
 
 export type AgentReadyWidgetProps = {
   appUrl: string;
@@ -17,9 +18,11 @@ export type AgentReadyWidgetProps = {
   agentsMdPath?: string;
   fullTxtPath?: string;
   statusPath?: string;
+  readinessPath?: string;
+  showScoreTab?: boolean;
 };
 
-type Tab = "HUMAN" | "MACHINE";
+type Tab = "HUMAN" | "MACHINE" | "SCORE";
 
 // Inline Phosphor ArrowSquareOut icon (16x16, regular weight).
 function ArrowSquareOutIcon({ color = "currentColor" }: { color?: string }) {
@@ -45,8 +48,10 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
   const agentsMdPath = props.agentsMdPath ?? "/agents.md";
   const fullTxtPath = props.fullTxtPath ?? "/llms-full.txt";
   const statusPath = props.statusPath ?? "/llms-status";
+  const readinessPath = props.readinessPath ?? "/llms-readiness";
 
   const status = useAgentReadyStatus({ appUrl: props.appUrl, statusPath });
+  const readiness = useAgentReadyReadiness({ appUrl: props.appUrl, readinessPath });
 
   // Props override config. When prop is undefined, fall back to status endpoint (config-driven).
   const showStatus = props.showStatus ?? status?.widgetStatusVisible ?? true;
@@ -54,6 +59,7 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
   const showAppName = props.showAppName ?? status?.widgetShowAppName ?? true;
   const showDescription = props.showDescription ?? status?.widgetShowDescription ?? true;
   const showMeta = props.showMeta ?? status?.widgetShowMeta ?? true;
+  const scoreTabVisible = props.showScoreTab ?? status?.readinessEndpointEnabled ?? false;
   const [tab, setTab] = useState<Tab>("HUMAN");
   const [initialVersion, setInitialVersion] = useState<string | null>(null);
 
@@ -120,9 +126,14 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
       <div style={toggleRowStyle}>
         <TabButton label="HUMAN" active={tab === "HUMAN"} onClick={() => setTab("HUMAN")} />
         <TabButton label="MACHINE" active={tab === "MACHINE"} onClick={() => setTab("MACHINE")} />
+        {scoreTabVisible ? (
+          <TabButton label="SCORE" active={tab === "SCORE"} onClick={() => setTab("SCORE")} />
+        ) : null}
       </div>
 
-      {tab === "HUMAN" ? (
+      {tab === "SCORE" ? (
+        <ScorePanel readiness={readiness} />
+      ) : tab === "HUMAN" ? (
         <div style={panelStyle}>
           {showAppName ? (
             <p style={paragraphStyle}>
@@ -266,6 +277,71 @@ function ExternalLink(props: { label: string; url: string }) {
   );
 }
 
+/** SCORE tab: readiness score, colored dot, check list. */
+function ScorePanel(props: { readiness: ReadinessReport | null }) {
+  const { readiness } = props;
+  if (!readiness) {
+    return (
+      <div style={panelStyle}>
+        <p style={{ ...metaStyle, margin: 0 }}>Loading readiness...</p>
+      </div>
+    );
+  }
+
+  const { score, checks } = readiness;
+  const dotColor = score >= 80 ? "#22c55e" : score >= 50 ? "#eab308" : "#ef4444";
+
+  return (
+    <div style={panelStyle}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+        <span
+          style={{
+            width: 10,
+            height: 10,
+            borderRadius: "50%",
+            background: dotColor,
+            flexShrink: 0,
+          }}
+        />
+        <span
+          style={{
+            fontFamily: "'Courier New', Courier, monospace",
+            fontSize: 24,
+            fontWeight: 700,
+            lineHeight: 1,
+          }}
+        >
+          {score}
+        </span>
+        <span style={{ color: "#888888", fontSize: 11 }}>/100</span>
+      </div>
+
+      <div style={dividerStyle} />
+
+      {checks.map((check) => (
+        <div key={check.id} style={scoreCheckRowStyle}>
+          <span style={{ color: check.status === "pass" ? "#22c55e" : check.status === "warn" ? "#eab308" : "#ef4444", flexShrink: 0 }}>
+            {check.status === "pass" ? "[OK]" : check.status === "warn" ? "[!!]" : "[XX]"}
+          </span>
+          <span style={{ flex: 1, fontSize: 11, color: "#cccccc" }}>{check.label}</span>
+          <span style={{ color: "#666666", fontSize: 10 }}>
+            {check.points}/{check.maxPoints}
+          </span>
+        </div>
+      ))}
+
+      {score < 80 ? (
+        <>
+          <div style={dividerStyle} />
+          <p style={{ margin: 0, color: "#888888", fontSize: 10 }}>
+            Run npx agent-ready agent-ready to improve
+          </p>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
 function TestModeBadge() {
   return (
     <a
@@ -362,6 +438,13 @@ const dividerStyle: React.CSSProperties = {
   height: 1,
   background: "var(--agent-ready-panel-border, #333333)",
   margin: "4px 0",
+};
+const scoreCheckRowStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 6,
+  fontSize: 11,
+  fontFamily: "'Courier New', Courier, monospace",
 };
 const metaStyle: React.CSSProperties = { margin: "6px 0 0", color: "#666666", fontSize: 10 };
 const staleBannerStyle: React.CSSProperties = {

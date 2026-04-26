@@ -13,6 +13,8 @@ import { restorePage } from "./commands/restore-page.mjs";
 import { analytics } from "./commands/analytics.mjs";
 import { cleanup } from "./commands/cleanup.mjs";
 import { versions } from "./commands/versions.mjs";
+import { agentReady } from "./commands/agent-ready.mjs";
+import { scan } from "./commands/scan.mjs";
 
 const COMMANDS = {
   setup,
@@ -29,6 +31,8 @@ const COMMANDS = {
   analytics,
   cleanup,
   versions,
+  "agent-ready": agentReady,
+  scan,
 };
 
 function printHelp() {
@@ -54,6 +58,8 @@ Commands:
   analytics                     Print agent request summary
   cleanup [--older-than 7d]     Prune old analytics rows
   versions --path <path>        Show page version history
+  agent-ready                     Enable all agent-readiness features
+  scan [--url <url>]              Scan deployment for agent readiness score
 `);
 }
 

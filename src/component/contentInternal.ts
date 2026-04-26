@@ -58,6 +58,15 @@ export const applySyncConfig = internalMutation({
           fullTxtEnabled: settings.fullTxtEnabled ?? false,
           permissiveMode: settings.permissiveMode ?? false,
           versioningEnabled: settings.versioningEnabled ?? false,
+          contentSignals: settings.contentSignals,
+          markdownNegotiation: settings.markdownNegotiation,
+          discoveryHeaders: settings.discoveryHeaders,
+          robotsTxtEnabled: settings.robotsTxtEnabled,
+          robotsTxtAllowAiBots: settings.robotsTxtAllowAiBots,
+          robotsTxtDisallowPaths: settings.robotsTxtDisallowPaths,
+          sitemapEnabled: settings.sitemapEnabled,
+          agentSkillsEnabled: settings.agentSkillsEnabled,
+          readinessEndpointEnabled: settings.readinessEndpointEnabled,
         });
       } else {
         await ctx.db.patch(existing._id, settings);

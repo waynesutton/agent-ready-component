@@ -6,24 +6,28 @@ import type {
   AgentReadyEndpoint,
   AgentReadySettings,
   AgentReadyStatus,
+  ReadinessReport,
+  ReadinessCheck,
   RegisterRoutesOptions,
   RouteName,
 } from "./types.js";
 
 export * from "./types.js";
 
-// Default paths. Every path is overridable via RegisterRoutesOptions.
-// File paths follow the llms.txt + agents.md ecosystem standards and are intentionally stable.
 const DEFAULT_PATHS = {
   llmsTxt: "/llms.txt",
   agentsMd: "/agents.md",
   fullTxt: "/llms-full.txt",
   analytics: "/llms-analytics",
   status: "/llms-status",
+  robotsTxt: "/robots.txt",
+  sitemap: "/sitemap.xml",
+  agentSkills: "/.well-known/agent-skills",
+  readiness: "/llms-readiness",
 } as const;
 
-// Cache-Control header used when the component serves cached file content.
 const CACHE_CONTROL = "public, max-age=3600";
+const READINESS_CACHE = "public, max-age=300";
 const STATUS_CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, OPTIONS",
@@ -62,8 +66,12 @@ export function registerRoutes(
   const fullTxtPath = options.fullTxtPath ?? DEFAULT_PATHS.fullTxt;
   const analyticsPath = options.analyticsPath ?? DEFAULT_PATHS.analytics;
   const statusPath = options.statusPath ?? DEFAULT_PATHS.status;
+  const robotsTxtPath = options.robotsTxtPath ?? DEFAULT_PATHS.robotsTxt;
+  const sitemapPath = options.sitemapPath ?? DEFAULT_PATHS.sitemap;
+  const agentSkillsPath = options.agentSkillsPath ?? DEFAULT_PATHS.agentSkills;
+  const readinessPath = options.readinessPath ?? DEFAULT_PATHS.readiness;
 
-  // File routes.
+  // Content file routes
   http.route({
     path: llmsTxtPath,
     method: "GET",
@@ -74,21 +82,37 @@ export function registerRoutes(
     method: "GET",
     handler: buildFileRoute(component, "agents.md", "agents.md", options),
   });
-  // fullTxt is always registered but returns 404 when disabled in settings.
   http.route({
     path: fullTxtPath,
     method: "GET",
     handler: buildFileRoute(component, "llms-full.txt", "llms-full.txt", options),
   });
 
-  // Analytics route.
+  // Agent readiness file routes
+  http.route({
+    path: robotsTxtPath,
+    method: "GET",
+    handler: buildFileRoute(component, "robots.txt", "robots.txt", options),
+  });
+  http.route({
+    path: sitemapPath,
+    method: "GET",
+    handler: buildFileRoute(component, "sitemap.xml", "sitemap.xml", options),
+  });
+  http.route({
+    path: agentSkillsPath,
+    method: "GET",
+    handler: buildFileRoute(component, "agent-skills", "agent-skills.json", options),
+  });
+
+  // Analytics route
   http.route({
     path: analyticsPath,
     method: "GET",
     handler: buildAnalyticsRoute(component, "llms-analytics", options),
   });
 
-  // Status route.
+  // Status route
   http.route({
     path: statusPath,
     method: "OPTIONS",
@@ -100,14 +124,88 @@ export function registerRoutes(
     handler: buildStatusRoute(component, "llms-status", options),
   });
 
-  // Persist callback handles on the settings row if provided.
-  // Stored as string tokens; the app-level wrapper is responsible for resolving them at runtime.
-  if (options.onGenerationComplete || options.onAnalyticsThreshold) {
-    // Intentionally fire-and-forget. If the settings row doesn't exist yet, `upsertSettings`
-    // creates it with defaults and then patches the callback fields.
-    // Cannot await here because registerRoutes is synchronous. Apps must call upsertSettings
-    // themselves if they need deterministic persistence at deploy time.
+  // Readiness self-score route
+  http.route({
+    path: readinessPath,
+    method: "OPTIONS",
+    handler: buildCorsPreflightRoute(),
+  });
+  http.route({
+    path: readinessPath,
+    method: "GET",
+    handler: buildReadinessRoute(component, "llms-readiness", options),
+  });
+}
+
+// Content type map for each file type
+function contentTypeForFile(fileType: AgentReadyFileType): string {
+  switch (fileType) {
+    case "agents.md":
+      return "text/markdown; charset=utf-8";
+    case "sitemap.xml":
+      return "application/xml; charset=utf-8";
+    case "agent-skills.json":
+      return "application/json; charset=utf-8";
+    default:
+      return "text/plain; charset=utf-8";
   }
+}
+
+// Feature gate: returns 404 for disabled optional file types.
+function isFileEnabled(fileType: AgentReadyFileType, settings: AgentReadySettings): boolean {
+  switch (fileType) {
+    case "llms-full.txt":
+      return !!settings.fullTxtEnabled;
+    case "robots.txt":
+      return !!settings.robotsTxtEnabled;
+    case "sitemap.xml":
+      return !!settings.sitemapEnabled;
+    case "agent-skills.json":
+      return !!settings.agentSkillsEnabled;
+    default:
+      return true;
+  }
+}
+
+// Build response headers with agent readiness signals
+function buildAgentHeaders(
+  settings: AgentReadySettings,
+  etag: string,
+  contentType: string,
+  tokenCount: number,
+): Record<string, string> {
+  const headers: Record<string, string> = {
+    ETag: etag,
+    "Cache-Control": CACHE_CONTROL,
+    "Content-Type": contentType,
+  };
+
+  // M31: Content-Signal header
+  const signals = settings.contentSignals ?? { aiTrain: true, search: true, aiInput: true };
+  headers["Content-Signal"] = `ai-train=${signals.aiTrain ? "yes" : "no"}, search=${signals.search ? "yes" : "no"}, ai-input=${signals.aiInput ? "yes" : "no"}`;
+
+  // M32: Token count header
+  headers["x-markdown-tokens"] = String(tokenCount);
+
+  // M33: Discovery Link headers
+  if (settings.discoveryHeaders) {
+    const base = settings.appUrl.replace(/\/$/, "");
+    const parts: Array<string> = [
+      `<${base}/llms.txt>; rel="alternate"; type="text/plain"`,
+      `<${base}/agents.md>; rel="alternate"; type="text/markdown"`,
+    ];
+    if (settings.sitemapEnabled) {
+      parts.push(`<${base}/sitemap.xml>; rel="sitemap"; type="application/xml"`);
+    }
+    headers["Link"] = parts.join(", ");
+  }
+
+  // Vary header for markdown negotiation
+  if (settings.markdownNegotiation) {
+    headers["Vary"] = "Accept";
+  }
+
+  return headers;
 }
 
 function buildFileRoute(
@@ -128,24 +226,23 @@ function buildFileRoute(
       return new Response("agent-ready not configured", { status: 503 });
     }
     if (settings.testMode && !isLocalhostRequest(req)) {
-      return new Response("testMode enabled — run `npx agent-ready go-live`", {
+      return new Response("testMode enabled - run `npx agent-ready go-live`", {
         status: 403,
       });
     }
-    if (fileType === "llms-full.txt" && !settings.fullTxtEnabled) {
-      return new Response("llms-full.txt is not enabled", { status: 404 });
+    if (!isFileEnabled(fileType, settings)) {
+      return new Response(`${fileType} is not enabled`, { status: 404 });
     }
 
     const cached = await ctx.runQuery(component.content.getCachedFile, {
       fileType,
     });
     if (!cached) {
-      return new Response("not generated yet — run `npx agent-ready regenerate`", {
+      return new Response("not generated yet - run `npx agent-ready regenerate`", {
         status: 503,
       });
     }
 
-    // ETag short-circuit.
     const etag = `"${cached.generatedFromVersion}"`;
     if (req.headers.get("if-none-match") === etag) {
       return new Response(null, {
@@ -162,19 +259,15 @@ function buildFileRoute(
       });
     }
 
-    const contentType =
-      fileType === "agents.md"
-        ? "text/markdown; charset=utf-8"
-        : "text/plain; charset=utf-8";
+    const tokenCount = Math.ceil(cached.content.length / 4);
+    const headers = buildAgentHeaders(
+      settings,
+      etag,
+      contentTypeForFile(fileType),
+      tokenCount,
+    );
 
-    return new Response(cached.content, {
-      status: 200,
-      headers: {
-        ETag: etag,
-        "Cache-Control": CACHE_CONTROL,
-        "Content-Type": contentType,
-      },
-    });
+    return new Response(cached.content, { status: 200, headers });
   });
 }
 
@@ -251,6 +344,159 @@ function buildStatusRoute(
         ...STATUS_CORS_HEADERS,
         "Content-Type": "application/json",
         "Cache-Control": "public, max-age=30",
+      },
+    });
+  });
+}
+
+function buildReadinessRoute(
+  component: ComponentApi,
+  route: RouteName,
+  options: RegisterRoutesOptions,
+) {
+  return httpActionGeneric(async (ctx, req) => {
+    await maybeOnEvent(options, ctx, req, route);
+    const override = await maybeRouteHandler(options, ctx, req, route);
+    if (override) return override;
+
+    const settings = (await ctx.runQuery(component.content.getSettings, {})) as
+      | AgentReadySettings
+      | null;
+    if (!settings) {
+      return new Response(JSON.stringify({ error: "not configured" }), {
+        status: 503,
+        headers: { ...STATUS_CORS_HEADERS, "Content-Type": "application/json" },
+      });
+    }
+    if (!settings.readinessEndpointEnabled) {
+      return new Response(JSON.stringify({ error: "readiness endpoint disabled" }), {
+        status: 404,
+        headers: { ...STATUS_CORS_HEADERS, "Content-Type": "application/json" },
+      });
+    }
+    if (settings.testMode && !isLocalhostRequest(req)) {
+      return new Response("testMode enabled", { status: 403 });
+    }
+
+    const files = await ctx.runQuery(component.content.getCacheStatus, {});
+    const allCached = await Promise.all(
+      (["llms.txt", "agents.md", "robots.txt", "sitemap.xml", "agent-skills.json"] as const).map(
+        async (ft) => {
+          const f = await ctx.runQuery(component.content.getCachedFile, { fileType: ft });
+          return { fileType: ft, exists: f !== null };
+        },
+      ),
+    );
+    const cached = new Map(allCached.map((c) => [c.fileType, c.exists]));
+
+    const checks: Array<ReadinessCheck> = [
+      {
+        id: "llms_txt_present",
+        label: "llms.txt served",
+        category: "content",
+        status: cached.get("llms.txt") ? "pass" : "fail",
+        points: cached.get("llms.txt") ? 10 : 0,
+        maxPoints: 10,
+      },
+      {
+        id: "agents_md_present",
+        label: "agents.md served",
+        category: "content",
+        status: cached.get("agents.md") ? "pass" : "fail",
+        points: cached.get("agents.md") ? 10 : 0,
+        maxPoints: 10,
+      },
+      {
+        id: "content_signals_header",
+        label: "Content-Signal header",
+        category: "bots",
+        status: settings.contentSignals ? "pass" : "warn",
+        detail: settings.contentSignals ? undefined : "Using defaults (all-yes)",
+        points: settings.contentSignals ? 10 : 5,
+        maxPoints: 10,
+      },
+      {
+        id: "markdown_tokens_header",
+        label: "x-markdown-tokens header",
+        category: "content",
+        status: "pass",
+        detail: "Always on",
+        points: 5,
+        maxPoints: 5,
+      },
+      {
+        id: "markdown_negotiation",
+        label: "Markdown content negotiation",
+        category: "content",
+        status: settings.markdownNegotiation ? "pass" : "fail",
+        points: settings.markdownNegotiation ? 10 : 0,
+        maxPoints: 10,
+      },
+      {
+        id: "discovery_link_headers",
+        label: "Discovery Link headers",
+        category: "discoverability",
+        status: settings.discoveryHeaders ? "pass" : "fail",
+        points: settings.discoveryHeaders ? 5 : 0,
+        maxPoints: 5,
+      },
+      {
+        id: "robots_txt_present",
+        label: "robots.txt with AI bot rules",
+        category: "discoverability",
+        status: settings.robotsTxtEnabled && cached.get("robots.txt") ? "pass" : "fail",
+        points: settings.robotsTxtEnabled && cached.get("robots.txt") ? 10 : 0,
+        maxPoints: 10,
+      },
+      {
+        id: "sitemap_xml_present",
+        label: "sitemap.xml served",
+        category: "discoverability",
+        status: settings.sitemapEnabled && cached.get("sitemap.xml") ? "pass" : settings.sitemapEnabled ? "warn" : "fail",
+        points: settings.sitemapEnabled && cached.get("sitemap.xml") ? 10 : settings.sitemapEnabled ? 5 : 0,
+        maxPoints: 10,
+      },
+      {
+        id: "agent_skills_endpoint",
+        label: "/.well-known/agent-skills",
+        category: "protocol",
+        status: settings.agentSkillsEnabled && cached.get("agent-skills.json") ? "pass" : "fail",
+        points: settings.agentSkillsEnabled && cached.get("agent-skills.json") ? 10 : 0,
+        maxPoints: 10,
+      },
+      {
+        id: "test_mode_off",
+        label: "testMode disabled (production)",
+        category: "protocol",
+        status: settings.testMode ? "fail" : "pass",
+        detail: settings.testMode ? "Run npx agent-ready go-live" : undefined,
+        points: settings.testMode ? 0 : 15,
+        maxPoints: 15,
+      },
+      {
+        id: "etag_supported",
+        label: "ETag caching supported",
+        category: "content",
+        status: "pass",
+        detail: "Always on",
+        points: 5,
+        maxPoints: 5,
+      },
+    ];
+
+    const score = checks.reduce((sum, c) => sum + c.points, 0);
+    const report: ReadinessReport = {
+      score,
+      checks,
+      generatedAt: Date.now(),
+    };
+
+    return new Response(JSON.stringify(report), {
+      status: 200,
+      headers: {
+        ...STATUS_CORS_HEADERS,
+        "Content-Type": "application/json",
+        "Cache-Control": READINESS_CACHE,
       },
     });
   });

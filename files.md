@@ -34,18 +34,18 @@ Plain text map of every file in the repo. Regenerate by hand as files are added 
 
 ## Component source — `src/`
 
-- `src/client/index.ts`: Public package entry, exports `registerRoutes`, `AgentReady` class client, `createTypedAgentReadyClient`, types, and status route CORS handling
-- `src/client/types.ts`: Shared type definitions for settings, pages, endpoints, cached files, route names, event payloads, `WidgetColors`, widget position including `floating-center`, and `AgentReadyStatus` with config-driven visibility fields (`widgetShowFiles`, `widgetShowAppName`, `widgetShowDescription`, `widgetShowMeta`, `widgetStatusVisible`)
+- `src/client/index.ts`: Public package entry, exports `registerRoutes`, `AgentReady` class client, `createTypedAgentReadyClient`, types, CORS handling, and all agent readiness routes (`/robots.txt`, `/sitemap.xml`, `/.well-known/agent-skills`, `/llms-readiness`)
+- `src/client/types.ts`: Shared type definitions for settings, pages, endpoints, cached files, route names, event payloads, `WidgetColors`, widget position, `ContentSignals`, `ReadinessReport`, `ReadinessCheck`, and `AgentReadyStatus` with readiness fields
 - `src/component/convex.config.ts`: Component declaration via `defineComponent("agentReady")`
 - `src/component/_generated/`: Generated Convex component bindings created by `npx convex codegen --component-dir ./src/component`
-- `src/component/schema.ts`: `settings`, `pages`, `apiEndpoints`, `cachedFiles`, `agentRequests`, `pageVersions` tables with indexes
-- `src/component/content.ts`: Public settings, page, endpoint, cache, and version functions, plus stable `regenerateAll`, `generateDescriptions`, and `sync` action wrappers. `getCacheStatus` returns widget visibility flags from the settings table
-- `src/component/contentInternal.ts`: Internal action support for settings reads, page reads, sync application, cache invalidation, and generation scheduling
+- `src/component/schema.ts`: `settings`, `pages`, `apiEndpoints`, `cachedFiles`, `agentRequests`, `pageVersions` tables with indexes. Settings include 9 agent readiness fields
+- `src/component/content.ts`: Public settings, page, endpoint, cache, and version functions. `getCacheStatus` returns widget visibility and readiness feature flags
+- `src/component/contentInternal.ts`: Internal action support for settings reads, page reads, sync application (handles readiness fields), cache invalidation, and generation scheduling
 - `src/component/analytics.ts`: `recordRequest` public mutation (called across the boundary from `registerRoutes`), `getSummary`, `getTimeSeries`, `cleanupOldRequests`, `cleanupOrphanedCacheEntries`
-- `src/component/generation.ts`: Workpool-backed generation of `llms.txt`, `agents.md`, `llms-full.txt`
+- `src/component/generation.ts`: Workpool-backed generation of `llms.txt`, `agents.md`, `llms-full.txt`, `robots.txt`, `sitemap.xml`, `agent-skills.json`
 - `src/component/cronWorker.ts`: Dynamic cron worker that refreshes content and trims analytics via `api.analytics.cleanupOldRequests`
-- `src/component/lib.ts`: Shared helpers: SHA-256 hashing, user-agent classification, origin check, config diffing
-- `src/component/validators.ts`: Shared Convex validators for component documents, sync config payloads, and typed action/query return values
+- `src/component/lib.ts`: Shared helpers: SHA-256 hashing, user-agent classification, origin check, config diffing, `escapeXml`, `sanitizePath`, `estimateTokens`, `buildContentSignalHeader`, `buildDiscoveryLinkHeader`, `KNOWN_AI_BOTS`
+- `src/component/validators.ts`: Shared Convex validators for component documents, sync config payloads, content signals, and typed action/query return values
 
 ## Root Convex scaffolding — `convex/`
 
@@ -56,8 +56,9 @@ Plain text map of every file in the repo. Regenerate by hand as files are added 
 
 ## React widget — `src/react/`
 
-- `src/react/index.ts`: Barrel export
-- `src/react/AgentReadyWidget.tsx`: HUMAN or MACHINE toggle widget with terminal aesthetic. HUMAN tab shows file URLs with copy buttons and "Open in ChatGPT / Claude / Perplexity" links. MACHINE tab shows file links with Phosphor ArrowSquareOut icons. All `show*` props resolve as: explicit prop > config value from `/llms-status` > `true`, making the widget config-driven
+- `src/react/index.ts`: Barrel export for widget, hooks, and settings panel
+- `src/react/AgentReadyWidget.tsx`: HUMAN, MACHINE, SCORE toggle widget with terminal aesthetic. SCORE tab shows readiness score, color dot, and check list from `/llms-readiness`
+- `src/react/useAgentReadyReadiness.ts`: Hook that polls `/llms-readiness` every 60 seconds and returns `ReadinessReport | null`
 - `src/react/AgentReadySettingsPanel.tsx`: Optional drop-in settings panel for managing pages, cache, and actions. Framework-agnostic design: consumers pass Convex query results and mutation callbacks as props. Ships with inline styles so it works without external CSS
 - `src/react/useAgentReadyStatus.ts`: Live subscription hook for cached file status and staleness detection
 - `src/react/UpdateBanner.tsx`: Optional banner wrapper on top of `useAgentReadyStatus` for version change notifications
@@ -86,9 +87,8 @@ Plain text map of every file in the repo. Regenerate by hand as files are added 
 - `cli/commands/analytics.mjs`: Prints agent request summary
 - `cli/commands/cleanup.mjs`: Runs analytics and cache cleanup
 - `cli/commands/versions.mjs`: Shows version history for a page
-- `cli/commands/agent-ready.mjs`: Planned. One-command flag flip that enables every agent-readiness feature, syncs config, regenerates files, and prints the readiness score
-- `cli/commands/scan.mjs`: Planned. Pure HTTP auditor that curls every agent-readiness endpoint and prints a pass-fail table. Exits non-zero when score drops below 80 so it works in CI
-- `cli/commands/robots.mjs`: Planned. Prints the recommended `robots.txt` fragment for the operator to inspect. No deployment required
+- `cli/commands/agent-ready.mjs`: One-command flag flip that enables every agent-readiness feature, syncs config, and regenerates files
+- `cli/commands/scan.mjs`: Pure HTTP auditor that checks every agent-readiness endpoint and prints a pass/fail table. Exits non-zero when score drops below 80 for CI use
 - `cli/lib/prompts.mjs`: Prompt helpers for the setup wizard
 - `cli/lib/convex.mjs`: Convex deployment helpers, auto-detects `agentReady:` prefix and converts to `--component agentReady` for the current Convex CLI
 

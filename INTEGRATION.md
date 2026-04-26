@@ -465,6 +465,73 @@ export const { generateUploadUrl, recordAsset, gcOldAssets, listAssets } =
 }
 ```
 
+## SECTION: agent readiness (Cloudflare standards)
+
+The component supports the full agent readiness standard from Cloudflare. To enable all features at once:
+
+```bash
+npx agent-ready agent-ready
+```
+
+This sets all readiness flags in `agent-ready.config.json`, syncs to your deployment, and triggers regeneration.
+
+### What gets enabled
+
+| Feature | Route | Config flag |
+|---|---|---|
+| Content-Signal headers | All content routes | `contentSignals` |
+| Token count header | All content routes | Always on |
+| Link discovery headers | All content routes | `discoveryHeaders` |
+| robots.txt with AI bot rules | `/robots.txt` | `robotsTxtEnabled` |
+| sitemap.xml | `/sitemap.xml` | `sitemapEnabled` |
+| Agent skills endpoint | `/.well-known/agent-skills` | `agentSkillsEnabled` |
+| Readiness self-score | `/llms-readiness` | `readinessEndpointEnabled` |
+| Markdown negotiation | Vary header | `markdownNegotiation` |
+
+### Scanning your score
+
+```bash
+npx agent-ready scan --url https://your-deployment.convex.site
+```
+
+Prints a pass/fail table for every endpoint and exits non-zero when below 80 (CI friendly).
+
+### Content-Signal configuration
+
+Default is all-yes. Override in `agent-ready.config.json`:
+
+```json
+{
+  "settings": {
+    "contentSignals": {
+      "aiTrain": true,
+      "search": true,
+      "aiInput": false
+    }
+  }
+}
+```
+
+### robots.txt configuration
+
+```json
+{
+  "settings": {
+    "robotsTxtEnabled": true,
+    "robotsTxtAllowAiBots": true,
+    "robotsTxtDisallowPaths": ["/admin", "/api/internal"]
+  }
+}
+```
+
+### Widget SCORE tab
+
+The SCORE tab appears automatically when `readinessEndpointEnabled` is true. Override with the `showScoreTab` prop:
+
+```tsx
+<AgentReadyWidget appUrl={convexSiteUrl} showScoreTab={true} />
+```
+
 ## SECTION: testMode — going to production
 
 Default is `testMode: true`. File endpoints respond `403` to non-localhost requests until you run:

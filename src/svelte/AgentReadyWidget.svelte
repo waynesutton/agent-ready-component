@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
   import { createAgentReadyStatusStore } from "./store.js";
-  import type { AgentReadyStatus, WidgetColors, WidgetPosition, WidgetTheme } from "../client/types.js";
+  import type { AgentReadyStatus, ReadinessReport, WidgetColors, WidgetPosition, WidgetTheme } from "../client/types.js";
 
   export let appUrl: string;
   export let position: WidgetPosition = "floating-bottom-right";
@@ -12,13 +12,15 @@
   export let showAppName: boolean | undefined = undefined;
   export let showDescription: boolean | undefined = undefined;
   export let showMeta: boolean | undefined = undefined;
+  export let showScoreTab: boolean | undefined = undefined;
   export let colors: Partial<WidgetColors> = {};
   export let llmsTxtPath: string = "/llms.txt";
   export let agentsMdPath: string = "/agents.md";
   export let fullTxtPath: string = "/llms-full.txt";
   export let statusPath: string = "/llms-status";
+  export let readinessPath: string = "/llms-readiness";
 
-  type Tab = "HUMAN" | "MACHINE";
+  type Tab = "HUMAN" | "MACHINE" | "SCORE";
   let tab: Tab = "HUMAN";
 
   const status = createAgentReadyStatusStore({ appUrl, statusPath });
@@ -38,6 +40,44 @@
   });
 
   onDestroy(() => unsubscribe());
+
+  // Readiness report polling (60s interval, matches React hook)
+  let readiness: ReadinessReport | null = null;
+  let readinessInterval: ReturnType<typeof setInterval> | null = null;
+
+  $: readinessUrl = `${appUrl.replace(/\/$/, "")}${readinessPath}`;
+
+  async function fetchReadiness(): Promise<void> {
+    try {
+      const res = await fetch(readinessUrl, { cache: "no-store" });
+      if (!res.ok) return;
+      readiness = (await res.json()) as ReadinessReport;
+    } catch {
+      // Degrade gracefully when endpoint unreachable.
+    }
+  }
+
+  $: scoreTabVisible = showScoreTab ?? currentStatus?.readinessEndpointEnabled ?? false;
+
+  $: if (scoreTabVisible) {
+    void fetchReadiness();
+    if (!readinessInterval) {
+      readinessInterval = setInterval(() => void fetchReadiness(), 60_000);
+    }
+  } else if (readinessInterval) {
+    clearInterval(readinessInterval);
+    readinessInterval = null;
+  }
+
+  onDestroy(() => {
+    if (readinessInterval) clearInterval(readinessInterval);
+  });
+
+  // Score display helpers
+  $: scoreDotColor =
+    readiness
+      ? readiness.score >= 80 ? "#22c55e" : readiness.score >= 50 ? "#eab308" : "#ef4444"
+      : "#666666";
 
   // Props override config. When prop is undefined, fall back to status endpoint (config-driven).
   $: resolvedShowStatus = showStatus ?? currentStatus?.widgetStatusVisible ?? true;
@@ -92,9 +132,43 @@
   <div class="tabs">
     <button class:active={tab === "HUMAN"} on:click={() => (tab = "HUMAN")}>HUMAN</button>
     <button class:active={tab === "MACHINE"} on:click={() => (tab = "MACHINE")}>MACHINE</button>
+    {#if scoreTabVisible}
+      <button class:active={tab === "SCORE"} on:click={() => (tab = "SCORE")}>SCORE</button>
+    {/if}
   </div>
 
-  {#if tab === "HUMAN"}
+  {#if tab === "SCORE"}
+    <div class="panel">
+      {#if !readiness}
+        <p class="meta" style="margin: 0;">Loading readiness...</p>
+      {:else}
+        <div class="score-header">
+          <span class="score-dot" style="background: {scoreDotColor};"></span>
+          <span class="score-value">{readiness.score}</span>
+          <span class="score-label">/100</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="checks-list">
+          {#each readiness.checks as check (check.id)}
+            <div class="check-row">
+              <span class={check.status === "pass" ? "check-pass" : check.status === "warn" ? "check-warn" : "check-fail"}>
+                {check.status === "pass" ? "[OK]" : check.status === "warn" ? "[!!]" : "[XX]"}
+              </span>
+              <span class="check-label">{check.label}</span>
+              <span class="check-points">{check.points}/{check.maxPoints}</span>
+            </div>
+          {/each}
+        </div>
+
+        {#if readiness.score < 80}
+          <div class="divider"></div>
+          <p class="hint">Run npx agent-ready agent-ready to improve</p>
+        {/if}
+      {/if}
+    </div>
+  {:else if tab === "HUMAN"}
     <div class="panel">
       {#if resolvedShowAppName}
         <p class="title">{currentStatus?.appName ?? "LLMs discovery"}</p>
@@ -284,5 +358,71 @@
     font-size: 10px;
     letter-spacing: 0.1em;
     margin-bottom: 8px;
+  }
+  .score-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .score-dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .score-value {
+    font-family: "Courier New", Courier, monospace;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .score-label {
+    color: #888888;
+    font-size: 11px;
+    font-weight: 400;
+  }
+  .checks-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 10px;
+    color: #888888;
+  }
+  .check-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-family: "Courier New", Courier, monospace;
+  }
+  .check-pass {
+    color: #22c55e;
+    flex-shrink: 0;
+  }
+  .check-fail {
+    color: #ef4444;
+    flex-shrink: 0;
+  }
+  .check-warn {
+    color: #eab308;
+    flex-shrink: 0;
+  }
+  .check-label {
+    flex: 1;
+    font-size: 11px;
+    color: #cccccc;
+  }
+  .check-points {
+    color: #666666;
+    font-size: 10px;
+  }
+  .hint {
+    margin: 0;
+    color: #888888;
+    font-size: 10px;
   }
 </style>

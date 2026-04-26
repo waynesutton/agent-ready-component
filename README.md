@@ -74,6 +74,28 @@ Your files are live at:
 - `https://your-deployment.convex.site/llms-full.txt` (opt-in)
 - `https://your-deployment.convex.site/llms-analytics`
 - `https://your-deployment.convex.site/llms-status`
+- `https://your-deployment.convex.site/robots.txt` (opt-in)
+- `https://your-deployment.convex.site/sitemap.xml` (opt-in)
+- `https://your-deployment.convex.site/.well-known/agent-skills` (opt-in)
+- `https://your-deployment.convex.site/llms-readiness` (opt-in)
+
+## Agent readiness
+
+Make your app pass the [isitagentready.com](https://isitagentready.com/) scan with one command:
+
+```bash
+npx agent-ready agent-ready
+```
+
+This enables all Cloudflare agent readiness features: `Content-Signal` headers, `x-markdown-tokens`, discovery `Link` headers, `robots.txt` with AI bot rules, `sitemap.xml`, `/.well-known/agent-skills`, the `/llms-readiness` self-score endpoint, and markdown content negotiation.
+
+Scan your deployment to verify:
+
+```bash
+npx agent-ready scan --url https://your-deployment.convex.site
+```
+
+The SCORE tab in the widget shows your readiness score in real time.
 
 ## Settings panel (optional)
 
@@ -120,11 +142,15 @@ Not using React? The Convex wrapper functions work with any framework. Build you
 - Runtime cron interval updates via `@convex-dev/crons`
 - Optional agent analytics with threshold callbacks
 - AI description generation via Claude or OpenAI, opt-in, 100 item cap, rate-limited
-- React widget with HUMAN and MACHINE tabs, live staleness detection, `useAgentReadyStatus()` hook. HUMAN tab includes "Open in ChatGPT / Claude / Perplexity" links. MACHINE tab shows Phosphor ArrowSquareOut icons for opening raw files
-- Svelte widget with `createAgentReadyStatusStore()` and the same tab layout
-- Config-driven widget visibility: `widgetShowFiles`, `widgetShowAppName`, `widgetShowDescription`, `widgetShowMeta`, and `widgetStatusVisible` in `agent-ready.config.json` control the widget without code changes. Props still work as overrides
-- Configurable widget position including `floating-center` and custom hex colors via `WidgetColors`
-- CLI covering setup, sync, status, regenerate, rollback, go-live, analytics, cleanup, versions, and per-page state transitions
+- React and Svelte widgets with HUMAN, MACHINE, and SCORE tabs. Live staleness detection, `useAgentReadyStatus()` hook, config-driven visibility
+- SCORE tab shows readiness score with color-coded checks from `/llms-readiness`
+- `Content-Signal`, `x-markdown-tokens`, `Link` discovery headers on every content response
+- Auto-generated `robots.txt` with AI bot directives, `sitemap.xml`, and `/.well-known/agent-skills`
+- Readiness self-score endpoint (`/llms-readiness`) with 11 checks across discoverability, content, bots, and protocol
+- `npx agent-ready agent-ready` enables all readiness flags in one command
+- `npx agent-ready scan` audits your deployment (CI-friendly, exits non-zero below 80)
+- Config-driven widget visibility and custom hex colors via `WidgetColors`
+- CLI covering setup, sync, status, regenerate, rollback, go-live, agent-ready, scan, analytics, cleanup, versions, and per-page state transitions
 - Both demo apps hosted entirely on Convex via `@convex-dev/static-hosting`
 
 ## Demo apps

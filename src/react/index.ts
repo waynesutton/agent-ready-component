@@ -6,3 +6,5 @@ export { useAgentReadyStatus } from "./useAgentReadyStatus.js";
 export type { UseAgentReadyStatusOptions } from "./useAgentReadyStatus.js";
 export { UpdateBanner } from "./UpdateBanner.js";
 export type { UpdateBannerProps } from "./UpdateBanner.js";
+export { useAgentReadyReadiness } from "./useAgentReadyReadiness.js";
+export type { UseAgentReadyReadinessOptions } from "./useAgentReadyReadiness.js";

@@ -13,6 +13,56 @@ export async function sha256Hex(input: string): Promise<string> {
   return hex;
 }
 
+// Approximate token count matching Cloudflare's approach. No external tokenizer needed.
+export function estimateTokens(content: string): number {
+  return Math.ceil(content.length / 4);
+}
+
+// Escape XML special characters for sitemap output.
+export function escapeXml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/'/g, "&apos;")
+    .replace(/"/g, "&quot;");
+}
+
+// Strip control characters from paths before embedding in robots.txt.
+export function sanitizePath(path: string): string {
+  return path.replace(/[\n\r\x00-\x1f]/g, "");
+}
+
+// Content-Signal header builder. Mirrors Cloudflare's Content Signals framework.
+export type ContentSignals = {
+  aiTrain: boolean;
+  search: boolean;
+  aiInput: boolean;
+};
+
+export function buildContentSignalHeader(
+  signals?: ContentSignals | null,
+): string {
+  const s = signals ?? { aiTrain: true, search: true, aiInput: true };
+  return `ai-train=${s.aiTrain ? "yes" : "no"}, search=${s.search ? "yes" : "no"}, ai-input=${s.aiInput ? "yes" : "no"}`;
+}
+
+// Discovery Link header builder (RFC 8288).
+export function buildDiscoveryLinkHeader(
+  appUrl: string,
+  opts: { sitemapEnabled?: boolean },
+): string {
+  const base = appUrl.replace(/\/$/, "");
+  const parts: Array<string> = [
+    `<${base}/llms.txt>; rel="alternate"; type="text/plain"`,
+    `<${base}/agents.md>; rel="alternate"; type="text/markdown"`,
+  ];
+  if (opts.sitemapEnabled) {
+    parts.push(`<${base}/sitemap.xml>; rel="sitemap"; type="application/xml"`);
+  }
+  return parts.join(", ");
+}
+
 // Known AI and crawler user agents. Used to classify analytics rows.
 // Keep this list tight and explicit. Unknown agents fall through to "other".
 const KNOWN_AGENTS: Array<{ match: RegExp; name: string }> = [
@@ -34,6 +84,22 @@ const KNOWN_AGENTS: Array<{ match: RegExp; name: string }> = [
   { match: /cohere-ai/i, name: "cohere-ai" },
   { match: /DuckDuckBot/i, name: "DuckDuckBot" },
   { match: /YandexBot/i, name: "YandexBot" },
+];
+
+// AI bot names for robots.txt directives. Superset of analytics agents.
+export const KNOWN_AI_BOTS: ReadonlyArray<string> = [
+  "GPTBot",
+  "ChatGPT-User",
+  "OAI-SearchBot",
+  "ClaudeBot",
+  "Claude-Web",
+  "anthropic-ai",
+  "PerplexityBot",
+  "Applebot-Extended",
+  "Google-Extended",
+  "Bytespider",
+  "CCBot",
+  "cohere-ai",
 ];
 
 export type AgentClassification = {

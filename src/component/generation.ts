@@ -1,7 +1,7 @@
 import { internalAction, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
-import { buildVersionInput, sha256Hex } from "./lib.js";
+import { buildVersionInput, sha256Hex, escapeXml, sanitizePath, KNOWN_AI_BOTS } from "./lib.js";
 
 // Workpool entry point. Called by content.regenerateAll.
 // Fetches settings, pages, endpoints, builds each file, diffs hashes, writes cachedFiles rows.
@@ -11,38 +11,47 @@ export const runGeneration = internalAction({
   handler: async (ctx, args) => {
     const bundle = await ctx.runQuery(internal.content.loadBundle, {});
     if (!bundle) {
-      // No settings row yet. Nothing to generate.
       return null;
     }
 
     const { settings, pages, endpoints } = bundle;
 
-    // Build each file deterministically.
     const llmsTxt = renderLlmsTxt(settings, pages);
     const agentsMd = renderAgentsMd(settings, endpoints);
     const fullTxt = settings.fullTxtEnabled ? renderFullTxt(settings, pages) : null;
+    const robotsTxt = settings.robotsTxtEnabled ? renderRobotsTxt(settings, pages) : null;
+    const sitemapXml = settings.sitemapEnabled ? renderSitemap(settings, pages) : null;
+    const agentSkills = settings.agentSkillsEnabled
+      ? renderAgentSkills(settings, pages, endpoints)
+      : null;
 
-    // Compute content hashes. Used as ETag values and for idempotent skip on unchanged content.
-    const [llmsVersion, agentsVersion, fullVersion] = await Promise.all([
-      sha256Hex(buildVersionInput(settings.appName, settings.appUrl, settings.description, [llmsTxt])),
-      sha256Hex(buildVersionInput(settings.appName, settings.appUrl, settings.description, [agentsMd])),
-      fullTxt
-        ? sha256Hex(buildVersionInput(settings.appName, settings.appUrl, settings.description, [fullTxt]))
-        : Promise.resolve(""),
-    ]);
+    type FileEntry = { fileType: string; content: string };
+    const files: Array<FileEntry> = [
+      { fileType: "llms.txt", content: llmsTxt },
+      { fileType: "agents.md", content: agentsMd },
+    ];
+    if (fullTxt) files.push({ fileType: "llms-full.txt", content: fullTxt });
+    if (robotsTxt) files.push({ fileType: "robots.txt", content: robotsTxt });
+    if (sitemapXml) files.push({ fileType: "sitemap.xml", content: sitemapXml });
+    if (agentSkills) files.push({ fileType: "agent-skills.json", content: agentSkills });
+
+    const versions = await Promise.all(
+      files.map((f) =>
+        sha256Hex(buildVersionInput(settings.appName, settings.appUrl, settings.description, [f.content])),
+      ),
+    );
+
+    const results = files.map((f, i) => ({
+      fileType: f.fileType as "llms.txt" | "agents.md" | "llms-full.txt" | "robots.txt" | "sitemap.xml" | "agent-skills.json",
+      content: f.content,
+      version: versions[i],
+    }));
 
     await ctx.runMutation(internal.generation.writeGenerationResult, {
       jobId: args.jobId,
-      results: [
-        { fileType: "llms.txt", content: llmsTxt, version: llmsVersion },
-        { fileType: "agents.md", content: agentsMd, version: agentsVersion },
-        ...(fullTxt
-          ? [{ fileType: "llms-full.txt" as const, content: fullTxt, version: fullVersion }]
-          : []),
-      ],
+      results,
     });
 
-    // Fire the onGenerationComplete callback if configured.
     if (settings.onGenerationComplete) {
       try {
         await ctx.runMutation(internal.generation.invokeOnGenerationComplete, {
@@ -59,7 +68,7 @@ export const runGeneration = internalAction({
 });
 
 type CachedResult = {
-  fileType: "llms.txt" | "agents.md" | "llms-full.txt";
+  fileType: "llms.txt" | "agents.md" | "llms-full.txt" | "robots.txt" | "sitemap.xml" | "agent-skills.json";
   content: string;
   version: string;
 };
@@ -73,6 +82,9 @@ export const writeGenerationResult = internalMutation({
           v.literal("llms.txt"),
           v.literal("agents.md"),
           v.literal("llms-full.txt"),
+          v.literal("robots.txt"),
+          v.literal("sitemap.xml"),
+          v.literal("agent-skills.json"),
         ),
         content: v.string(),
         version: v.string(),
@@ -136,6 +148,11 @@ type SettingsLike = {
   agentInstructions?: string;
   fullTxtEnabled: boolean;
   onGenerationComplete?: string;
+  robotsTxtEnabled?: boolean;
+  robotsTxtAllowAiBots?: boolean;
+  robotsTxtDisallowPaths?: string[];
+  sitemapEnabled?: boolean;
+  agentSkillsEnabled?: boolean;
 };
 
 type PageLike = {
@@ -226,4 +243,86 @@ function renderFullTxt(settings: SettingsLike, pages: ReadonlyArray<PageLike>): 
     lines.push("");
   }
   return lines.join("\n");
+}
+
+function renderRobotsTxt(settings: SettingsLike, pages: ReadonlyArray<PageLike>): string {
+  const base = settings.appUrl.replace(/\/$/, "");
+  const lines: Array<string> = [];
+
+  lines.push("User-agent: *");
+  if (settings.robotsTxtDisallowPaths) {
+    for (const p of settings.robotsTxtDisallowPaths) {
+      lines.push(`Disallow: ${sanitizePath(p)}`);
+    }
+  }
+  lines.push("");
+
+  // AI bot directives
+  const allow = settings.robotsTxtAllowAiBots !== false;
+  for (const bot of KNOWN_AI_BOTS) {
+    lines.push(`User-agent: ${bot}`);
+    lines.push(allow ? "Allow: /" : "Disallow: /");
+    lines.push("");
+  }
+
+  lines.push(`Sitemap: ${base}/llms.txt`);
+  if (settings.sitemapEnabled) {
+    lines.push(`Sitemap: ${base}/sitemap.xml`);
+  }
+  lines.push("");
+  return lines.join("\n");
+}
+
+function renderSitemap(settings: SettingsLike, pages: ReadonlyArray<PageLike>): string {
+  const base = settings.appUrl.replace(/\/$/, "");
+  const lines: Array<string> = [];
+  lines.push('<?xml version="1.0" encoding="UTF-8"?>');
+  lines.push('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">');
+  for (const page of pages) {
+    const loc = escapeXml(`${base}${page.path}`);
+    lines.push("  <url>");
+    lines.push(`    <loc>${loc}</loc>`);
+    lines.push("  </url>");
+  }
+  lines.push("</urlset>");
+  lines.push("");
+  return lines.join("\n");
+}
+
+function renderAgentSkills(
+  settings: SettingsLike,
+  pages: ReadonlyArray<PageLike>,
+  endpoints: ReadonlyArray<EndpointLike>,
+): string {
+  const base = settings.appUrl.replace(/\/$/, "");
+  const skills: Array<Record<string, string>> = [];
+
+  for (const page of pages) {
+    skills.push({
+      name: page.title,
+      description: page.description,
+      type: "page",
+      url: `${base}${page.path}`,
+    });
+  }
+
+  for (const ep of endpoints) {
+    skills.push({
+      name: `${ep.method} ${ep.path}`,
+      description: ep.description,
+      type: "api",
+      method: ep.method,
+      url: `${base}${ep.path}`,
+    });
+  }
+
+  return JSON.stringify(
+    {
+      name: settings.appName,
+      description: settings.description,
+      skills,
+    },
+    null,
+    2,
+  );
 }

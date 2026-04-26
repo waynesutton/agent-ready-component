@@ -10,7 +10,16 @@ export const fileTypeValidator = v.union(
   v.literal("llms.txt"),
   v.literal("agents.md"),
   v.literal("llms-full.txt"),
+  v.literal("robots.txt"),
+  v.literal("sitemap.xml"),
+  v.literal("agent-skills.json"),
 );
+
+export const contentSignalsValidator = v.object({
+  aiTrain: v.boolean(),
+  search: v.boolean(),
+  aiInput: v.boolean(),
+});
 
 export const widgetPositionValidator = v.union(
   v.literal("footer"),
@@ -61,6 +70,15 @@ export const settingsPatchValidator = v.object({
   fullTxtEnabled: v.optional(v.boolean()),
   permissiveMode: v.optional(v.boolean()),
   versioningEnabled: v.optional(v.boolean()),
+  contentSignals: v.optional(contentSignalsValidator),
+  markdownNegotiation: v.optional(v.boolean()),
+  discoveryHeaders: v.optional(v.boolean()),
+  robotsTxtEnabled: v.optional(v.boolean()),
+  robotsTxtAllowAiBots: v.optional(v.boolean()),
+  robotsTxtDisallowPaths: v.optional(v.array(v.string())),
+  sitemapEnabled: v.optional(v.boolean()),
+  agentSkillsEnabled: v.optional(v.boolean()),
+  readinessEndpointEnabled: v.optional(v.boolean()),
   onGenerationComplete: v.optional(v.string()),
   onAnalyticsThreshold: v.optional(v.string()),
 });
@@ -92,6 +110,15 @@ export const settingsDocValidator = v.object({
   fullTxtEnabled: v.boolean(),
   permissiveMode: v.boolean(),
   versioningEnabled: v.boolean(),
+  contentSignals: v.optional(contentSignalsValidator),
+  markdownNegotiation: v.optional(v.boolean()),
+  discoveryHeaders: v.optional(v.boolean()),
+  robotsTxtEnabled: v.optional(v.boolean()),
+  robotsTxtAllowAiBots: v.optional(v.boolean()),
+  robotsTxtDisallowPaths: v.optional(v.array(v.string())),
+  sitemapEnabled: v.optional(v.boolean()),
+  agentSkillsEnabled: v.optional(v.boolean()),
+  readinessEndpointEnabled: v.optional(v.boolean()),
   onGenerationComplete: v.optional(v.string()),
   onAnalyticsThreshold: v.optional(v.string()),
 });

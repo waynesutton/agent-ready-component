@@ -6,6 +6,9 @@ const fileTypeValidator = v.union(
   v.literal("llms.txt"),
   v.literal("agents.md"),
   v.literal("llms-full.txt"),
+  v.literal("robots.txt"),
+  v.literal("sitemap.xml"),
+  v.literal("agent-skills.json"),
 );
 
 const pageStatusValidator = v.union(
@@ -37,6 +40,17 @@ const cacheStatusValidator = v.object({
   generationInProgress: v.boolean(),
   hasDrafts: v.boolean(),
   fullTxtEnabled: v.boolean(),
+  widgetStatusVisible: v.boolean(),
+  widgetShowFiles: v.boolean(),
+  widgetShowAppName: v.boolean(),
+  widgetShowDescription: v.boolean(),
+  widgetShowMeta: v.boolean(),
+  readinessEndpointEnabled: v.boolean(),
+  robotsTxtEnabled: v.boolean(),
+  sitemapEnabled: v.boolean(),
+  agentSkillsEnabled: v.boolean(),
+  discoveryHeaders: v.boolean(),
+  markdownNegotiation: v.boolean(),
 });
 
 // Demo wrappers expose browser-safe app API refs and delegate to the component.

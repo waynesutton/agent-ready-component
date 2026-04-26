@@ -1,13 +1,23 @@
 // Public types exported alongside the class client and registerRoutes.
 
-export type AgentReadyFileType = "llms.txt" | "agents.md" | "llms-full.txt";
+export type AgentReadyFileType =
+  | "llms.txt"
+  | "agents.md"
+  | "llms-full.txt"
+  | "robots.txt"
+  | "sitemap.xml"
+  | "agent-skills.json";
 
 export type RouteName =
   | "llms.txt"
   | "agents.md"
   | "llms-full.txt"
   | "llms-analytics"
-  | "llms-status";
+  | "llms-status"
+  | "robots.txt"
+  | "sitemap.xml"
+  | "agent-skills"
+  | "llms-readiness";
 
 export type WidgetPosition =
   | "footer"
@@ -29,6 +39,12 @@ export type WidgetColors = {
 export type ContentStatus = "draft" | "published" | "archived";
 
 export type AiProvider = "claude" | "openai";
+
+export type ContentSignals = {
+  aiTrain: boolean;
+  search: boolean;
+  aiInput: boolean;
+};
 
 export type AgentReadySettings = {
   appName: string;
@@ -55,6 +71,15 @@ export type AgentReadySettings = {
   widgetShowDescription?: boolean;
   widgetShowMeta?: boolean;
   widgetColors?: WidgetColors;
+  contentSignals?: ContentSignals;
+  markdownNegotiation?: boolean;
+  discoveryHeaders?: boolean;
+  robotsTxtEnabled?: boolean;
+  robotsTxtAllowAiBots?: boolean;
+  robotsTxtDisallowPaths?: string[];
+  sitemapEnabled?: boolean;
+  agentSkillsEnabled?: boolean;
+  readinessEndpointEnabled?: boolean;
 };
 
 export type AgentReadyPage = {
@@ -91,6 +116,12 @@ export type AgentReadyStatus = {
   widgetShowAppName: boolean;
   widgetShowDescription: boolean;
   widgetShowMeta: boolean;
+  readinessEndpointEnabled: boolean;
+  robotsTxtEnabled: boolean;
+  sitemapEnabled: boolean;
+  agentSkillsEnabled: boolean;
+  discoveryHeaders: boolean;
+  markdownNegotiation: boolean;
 };
 
 // A workpool job id returned by invalidateCache / regenerateAll.
@@ -111,15 +142,34 @@ export type OnEventHandler = (
   route: RouteName,
 ) => Promise<void>;
 
+export type ReadinessCheck = {
+  id: string;
+  label: string;
+  category: "discoverability" | "content" | "bots" | "protocol";
+  status: "pass" | "fail" | "warn";
+  detail?: string;
+  points: number;
+  maxPoints: number;
+};
+
+export type ReadinessReport = {
+  score: number;
+  checks: ReadonlyArray<ReadinessCheck>;
+  generatedAt: number;
+};
+
 export type RegisterRoutesOptions = {
   llmsTxtPath?: string;
   agentsMdPath?: string;
   fullTxtPath?: string;
   analyticsPath?: string;
   statusPath?: string;
+  robotsTxtPath?: string;
+  sitemapPath?: string;
+  agentSkillsPath?: string;
+  readinessPath?: string;
   routes?: Partial<Record<RouteName, RouteHandler>>;
   onEvent?: OnEventHandler;
-  // Stripe-style event callbacks. Function refs that are persisted on upsertSettings.
   onGenerationComplete?: unknown;
   onAnalyticsThreshold?: unknown;
 };
