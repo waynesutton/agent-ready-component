@@ -2,8 +2,12 @@ import { httpRouter } from "convex/server";
 import { registerRoutes } from "@waynesutton/agent-ready";
 import { registerStaticRoutes } from "@convex-dev/static-hosting";
 import { components, internal } from "./_generated/api";
+import { auth } from "./auth";
 
 const http = httpRouter();
+
+// Wire auth callback and JWKS routes.
+auth.http.add(http);
 
 // Mount all agent-ready routes. onEvent logs every request for easy inspection.
 registerRoutes(http, components.agentReady, {

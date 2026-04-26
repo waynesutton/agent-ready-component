@@ -29,6 +29,7 @@ Plain text map of every file in the repo. Regenerate by hand as files are added 
 - `prds/demo-component-wrapper-cors-fix.md`: PRD for fixing demo component API wrappers and `/llms-status` CORS failures
 - `prds/settings-panel-export.md`: PRD for exporting the settings panel component, shipping Convex wrapper functions, and updating the CLI setup wizard
 - `prds/widget-v2-config.md`: PRD for widget v2 features: center position, HUMAN tab AI chat links, MACHINE tab Phosphor icons, status visibility toggle, and custom hex colors
+- `prds/security-hardening.md`: PRD for auth integration, demo lockdown, bounded analytics queries, and cron worker `internal.*` fix
 - `mockup-react.html`: Standalone HTML mockup of the React demo's agent-readiness control panel. Shows the score ring, per-check grid, response headers, schema toggles, and the 3-tab widget with SCORE active
 - `mockup-svelte.html`: Standalone HTML mockup of the Svelte demo's analytics dashboard with agent-readiness signals layered in. Shows the 4-card metric grid (including markdown-negotiation count and readiness scans), agent and file breakdowns, signals panel, and 3-tab widget
 
@@ -46,9 +47,10 @@ Plain text map of every file in the repo. Regenerate by hand as files are added 
 - `src/component/schema.ts`: `settings`, `pages`, `apiEndpoints`, `cachedFiles`, `agentRequests`, `pageVersions` tables with indexes. Settings include 9 agent readiness fields and `widgetShowScoreTab`
 - `src/component/content.ts`: Public settings, page, endpoint, cache, and version functions. `getCacheStatus` returns widget visibility and readiness feature flags
 - `src/component/contentInternal.ts`: Internal action support for settings reads, page reads, sync application (handles readiness fields), cache invalidation, and generation scheduling
-- `src/component/analytics.ts`: `recordRequest` public mutation (called across the boundary from `registerRoutes`), `getSummary`, `getTimeSeries`, `cleanupOldRequests`, `cleanupOrphanedCacheEntries`
+- `src/component/analytics.ts`: `recordRequest` public mutation (called across the boundary from `registerRoutes`), `getSummary`, `getTimeSeries`, `cleanupOldRequests`, `cleanupOrphanedCacheEntries`. All `.collect()` calls bounded with `.take()`
+- `src/component/analyticsInternal.ts`: Internal cleanup mutation for server-to-server use by the cron worker. Uses `internalMutation` so it is not exposed to the public API
 - `src/component/generation.ts`: Workpool-backed generation of `llms.txt`, `agents.md`, `llms-full.txt`, `robots.txt`, `sitemap.xml`, `agent-skills.json`
-- `src/component/cronWorker.ts`: Dynamic cron worker that refreshes content and trims analytics via `api.analytics.cleanupOldRequests`
+- `src/component/cronWorker.ts`: Dynamic cron worker that refreshes content and trims analytics via `internal.analyticsInternal.cleanupOldRequests`
 - `src/component/lib.ts`: Shared helpers: SHA-256 hashing, user-agent classification, origin check, config diffing, `escapeXml`, `sanitizePath`, `estimateTokens`, `buildContentSignalHeader`, `buildDiscoveryLinkHeader`, `KNOWN_AI_BOTS`
 - `src/component/validators.ts`: Shared Convex validators for component documents, sync config payloads, content signals, and typed action/query return values
 
@@ -106,17 +108,20 @@ Plain text map of every file in the repo. Regenerate by hand as files are added 
 - `example-react/setup.mjs`: Idempotent seed script that runs before dev, uses `--component agentReady` for Convex CLI
 - `example-react/agent-ready.config.json`: Starter config consumed by `sync`, appUrl set to the production deployment. Includes all widget visibility flags, `widgetShowScoreTab`, `widgetColors` defaults, and agent readiness flags (`contentSignals`, `robotsTxtEnabled`, `sitemapEnabled`, `agentSkillsEnabled`, `readinessEndpointEnabled`, etc.)
 - `example-react/.env.production.local`: Production Convex URLs for Vite build (git-ignored)
-- `example-react/convex/convex.config.ts`: Uses `crons`, `workpool`, `agentReady`, `staticHosting`
-- `example-react/convex/schema.ts`: Host app schema (empty tables allowed)
+- `example-react/convex/convex.config.ts`: Uses `auth`, `crons`, `workpool`, `agentReady`, `staticHosting`
+- `example-react/convex/schema.ts`: Host app schema (empty tables allowed, auth tables isolated in the auth component)
+- `example-react/convex/auth.ts`: Auth config using `@robelest/convex-auth` with password and anonymous providers
+- `example-react/convex/functions.ts`: `authQuery`, `authMutation`, `authAction` custom function wrappers using `auth.ctx()` and `convex-helpers`
 - `example-react/convex/_generated/`: Generated Convex app bindings for the React demo
 - `example-react/convex/tsconfig.json`: Convex function TypeScript config for the React demo
-- `example-react/convex/agentReady/content.ts`: App-facing content wrappers around `components.agentReady.content` for browser clients
+- `example-react/convex/agentReady/content.ts`: App-facing content wrappers. Read-only queries are public, admin mutations use `authMutation`/`authAction`
 - `example-react/convex/agentReady/analytics.ts`: App-facing analytics wrappers around `components.agentReady.analytics` for browser clients
-- `example-react/convex/http.ts`: `registerRoutes` for agent-ready plus `registerStaticRoutes` for the demo through `components.selfHosting`
+- `example-react/convex/http.ts`: `auth.http.add(http)` for auth routes, `registerRoutes` for agent-ready, `registerStaticRoutes` for the demo through `components.selfHosting`
 - `example-react/convex/staticHosting.ts`: Re-exports `exposeUploadApi` against `components.selfHosting` including batch upload functions
 - `example-react/convex/myApp.ts`: Example callbacks for `onGenerationComplete`, `onAnalyticsThreshold`
-- `example-react/src/main.tsx`: React root
-- `example-react/src/App.tsx`: Landing page with PostHog-inspired window chrome, sidebar, tabs, widget, and install guide links
+- `example-react/src/main.tsx`: React root with ConvexProvider
+- `example-react/src/auth.tsx`: Auth client hook (`useAuth`) and `AuthGate` component for protecting admin routes with password sign-in
+- `example-react/src/App.tsx`: Landing page with PostHog-inspired window chrome, sidebar, tabs, widget, and install guide links. Settings and Analytics routes wrapped in `AuthGate`
 - `example-react/src/Settings.tsx`: Settings panel with tabbed pages, cache status, and actions
 - `example-react/src/Analytics.tsx`: Analytics dashboard with metric grid plus agent and file breakdown
 - `example-react/src/index.css`: Global styles with PostHog cream palette, window chrome, tabs, buttons, pills

@@ -7,6 +7,7 @@ import { Tabs } from "./components/Tabs";
 import { Button } from "./components/Button";
 import Settings from "./Settings.tsx";
 import Analytics from "./Analytics.tsx";
+import { AuthGate } from "./auth.tsx";
 
 const appUrl = import.meta.env.VITE_CONVEX_SITE_URL as string;
 const installGuideUrl =
@@ -51,8 +52,8 @@ export default function App() {
         <main className="content">
           <Routes>
             <Route path="/" element={<Overview />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/settings" element={<AuthGate><Settings /></AuthGate>} />
+            <Route path="/analytics" element={<AuthGate><Analytics /></AuthGate>} />
           </Routes>
         </main>
       </Window>

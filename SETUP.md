@@ -6,13 +6,13 @@ This file is for the package author shipping the component to GitHub, npm, and C
 
 Related reading:
 
-- https://llmstxt.org
-- https://docs.convex.dev/llms.txt
-- https://agents.md
-- https://www.convex.dev/components/static-hosting
-- https://docs.convex.dev/components/authoring
-- https://docs.convex.dev/components/using
-- https://docs.convex.dev/components/understanding
+- [https://llmstxt.org](https://llmstxt.org)
+- [https://docs.convex.dev/llms.txt](https://docs.convex.dev/llms.txt)
+- [https://agents.md](https://agents.md)
+- [https://www.convex.dev/components/static-hosting](https://www.convex.dev/components/static-hosting)
+- [https://docs.convex.dev/components/authoring](https://docs.convex.dev/components/authoring)
+- [https://docs.convex.dev/components/using](https://docs.convex.dev/components/using)
+- [https://docs.convex.dev/components/understanding](https://docs.convex.dev/components/understanding)
 
 ## 1. Prerequisites
 

@@ -9,6 +9,7 @@ Source of truth: `prds/convex-llms-txt-prd-v6.md`. Agent readiness work tracked 
 
 ## Next up
 
+- [ ] Set `AGENT_READY_ANALYTICS_SECRET` env var on the Convex deployment before re-enabling the demo
 - [ ] Capture screenshots of the PostHog-inspired demos for the README marketing section
 - [ ] Run `convex-test` full coverage (M29)
 - [ ] npm publish and Convex components directory submission (M30)
@@ -79,6 +80,7 @@ PRD: `prds/agent-readiness-v1.md`. Each milestone is independently shippable.
 
 ## Completed
 
+- [x] 2026-04-26 Security hardening: added `@robelest/convex-auth` to React demo with password + anonymous providers. Admin mutations (`publishPage`, `draftPage`, `archivePage`, `rollbackCache`, `regenerateAll`) now require auth via `authMutation`/`authAction`. Settings and Analytics routes gated behind `AuthGate` login prompt. Set `permissiveMode: false` and `testMode: true` in both example configs to take the demo offline. Fixed `cronWorker.ts` to use `internal.*` instead of `api.*` for server-to-server calls. Bounded all analytics `.collect()` calls with `.take()`. Created `analyticsInternal.ts` for internal cleanup mutation. PRD: `prds/security-hardening.md`
 - [x] 2025-04-25 Added `widgetShowScoreTab` config option for independent SCORE tab visibility control. Updated validators, schema, content.ts, contentInternal.ts, client types, React widget, Svelte widget, both example configs. Rebuilt component.
 - [x] 2025-04-25 Fixed build errors: `agent-skills.json` to `agent-skills` route name mapping in client, non-null assertion on `versions[i]` in generation. Rebuilt missing `dist/` folder that was blocking example app sync.
 - [x] 2025-04-25 Added widget preview screenshots to README with absolute GitHub raw URLs for npm rendering.

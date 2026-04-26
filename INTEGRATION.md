@@ -572,3 +572,103 @@ npx convex env set AGENT_READY_ANALYTICS_SECRET your-secret
 **ETag header missing.** The handler only sets ETag when `cachedFiles.generatedFromVersion` is non-null. Trigger a regeneration if this is missing.
 
 **Cron not running.** Check `cronEnabled: true` and `cronIntervalHours` is greater than zero in settings. Re-run `npx agent-ready sync` to reschedule.
+
+## SECTION: securing admin routes
+
+The component itself runs inside the Convex component boundary. Its tables and functions are isolated from your app. However, the wrapper functions you create in `convex/agentReady/content.ts` are public by default. Anyone who finds your Convex deployment URL can call them.
+
+For production apps that expose admin mutations (publish, draft, archive, rollback, regenerate), protect them with authentication.
+
+### Using @robelest/convex-auth
+
+Install the auth package and convex-helpers:
+
+```bash
+npm i @robelest/convex-auth convex-helpers
+```
+
+Register the auth component in `convex/convex.config.ts`:
+
+```typescript
+import auth from "@robelest/convex-auth/convex.config";
+
+const app = defineApp();
+app.use(auth);
+// ... your other components
+```
+
+Create `convex/auth.ts`:
+
+```typescript
+import { createAuth } from "@robelest/convex-auth/component";
+import { components } from "./_generated/api";
+import { password } from "@robelest/convex-auth/providers/password";
+
+export const auth = createAuth(components.auth, {
+  providers: [password()],
+});
+
+export const { signIn, signOut, store } = auth;
+```
+
+Wire auth routes in `convex/http.ts`:
+
+```typescript
+import { auth } from "./auth";
+
+const http = httpRouter();
+auth.http.add(http);
+// ... rest of your routes
+```
+
+Create authenticated custom functions in `convex/functions.ts`:
+
+```typescript
+import { customMutation, customQuery, customAction } from "convex-helpers/server/customFunctions";
+import { query, mutation, action } from "./_generated/server";
+import { auth } from "./auth";
+
+export const authQuery = customQuery(query, auth.ctx());
+export const authMutation = customMutation(mutation, auth.ctx());
+export const authAction = customAction(action, auth.ctx());
+```
+
+Replace `mutation` and `action` with `authMutation` and `authAction` in your content wrappers:
+
+```typescript
+import { authMutation, authAction } from "../functions";
+
+export const publishPage = authMutation({
+  args: { path: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.runMutation(components.agentReady.content.publishPage, args);
+    return null;
+  },
+});
+```
+
+Read-only queries like `getCacheStatus` and `listPages` can stay as plain `query` functions.
+
+### Using Clerk or other auth providers
+
+If you use Clerk, WorkOS AuthKit, or another external auth provider, check `ctx.auth.getUserIdentity()` at the top of each admin mutation instead of using `authMutation`:
+
+```typescript
+export const publishPage = mutation({
+  args: { path: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+    await ctx.runMutation(components.agentReady.content.publishPage, args);
+    return null;
+  },
+});
+```
+
+### Configuration flags
+
+Set `permissiveMode: false` in `agent-ready.config.json` for production. This activates the production guard that blocks unsafe operations when the deployment is not in dev mode.
+
+Set `testMode: true` until you are ready to go live. Test mode blocks all external file serving, returning 403 to non-localhost requests.

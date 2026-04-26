@@ -6,6 +6,25 @@ All notable changes to `@waynesutton/agent-ready` (formerly `@convex-dev/llms-tx
 
 ### Added
 
+- `@robelest/convex-auth` integration in the React demo app with password and anonymous providers. Admin mutations (`publishPage`, `draftPage`, `archivePage`, `rollbackCache`, `regenerateAll`) are now gated behind `authMutation`/`authAction` from `convex-helpers` custom functions. Settings and Analytics routes require sign-in via `AuthGate` component
+- `convex/auth.ts`, `convex/functions.ts`, and `src/auth.tsx` files in the React demo for auth wiring and login UI
+- `src/component/analyticsInternal.ts` with an internal cleanup mutation for server-to-server use by the cron worker
+- PRD: `prds/security-hardening.md`
+
+### Fixed
+
+- `src/component/cronWorker.ts` now uses `internal.analyticsInternal.cleanupOldRequests` instead of `api.analytics.cleanupOldRequests` for server-to-server calls (security: never use `api.*` for internal calls)
+- Bounded all analytics `.collect()` calls with `.take(10000)` or `.take(1000)` to prevent unbounded table scans in `getSummary`, `getTimeSeries`, `recordRequest`, `cleanupOldRequests`, and `cleanupOrphanedCacheEntries`
+
+### Changed
+
+- Set `permissiveMode: false` in both `example-react/agent-ready.config.json` and `example-svelte/agent-ready.config.json` to enforce production guards
+- Set `testMode: true` in `example-react/agent-ready.config.json` to take the live demo offline until auth is deployed
+- React demo `convex/convex.config.ts` now registers the `@robelest/convex-auth` component alongside existing components
+- React demo `convex/http.ts` now wires `auth.http.add(http)` for OAuth callback and JWKS routes
+- React demo `convex/agentReady/content.ts` admin mutations switched from plain `mutation`/`action` to `authMutation`/`authAction`. Read-only queries (`getCacheStatus`, `listPages`) remain public
+- React demo `src/App.tsx` wraps `/settings` and `/analytics` routes in `<AuthGate>` requiring sign-in
+
 - `widgetShowScoreTab` config option to independently control SCORE tab visibility in the widget. Defaults to `false`. The readiness endpoint can stay enabled for CI scanning while the tab stays hidden. Added to validators, component schema, status query, sync handler, client types, React widget, Svelte widget, and both example configs
 - Widget preview screenshots in README (`public/human-agent-ready-demo.png`, `public/agent-agent-ready-demo.png`) using absolute GitHub raw URLs so they render on both GitHub and npm
 

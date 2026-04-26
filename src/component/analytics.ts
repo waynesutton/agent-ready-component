@@ -32,7 +32,7 @@ export const recordRequest = mutation({
     const recent = await ctx.db
       .query("agentRequests")
       .withIndex("by_requested_at", (q) => q.gte("requestedAt", dayStart))
-      .collect();
+      .take(10000);
     if (recent.length >= settings.analyticsThreshold) {
       // Stored function handle. Actual dispatch handled at the app layer.
       // No-op stub here. See notes in src/component/generation.ts invokeOnGenerationComplete.
@@ -59,7 +59,7 @@ export const getSummary = query({
     const rows = await ctx.db
       .query("agentRequests")
       .withIndex("by_requested_at", (q) => q.gte("requestedAt", since))
-      .collect();
+      .take(10000);
     const byAgent = new Map<string, number>();
     const byFile = new Map<string, number>();
     for (const row of rows) {
@@ -84,7 +84,7 @@ export const getTimeSeries = query({
     const rows = await ctx.db
       .query("agentRequests")
       .withIndex("by_requested_at", (q) => q.gte("requestedAt", since))
-      .collect();
+      .take(10000);
     const buckets = new Map<number, number>();
     for (const row of rows) {
       const bucket = Math.floor(row.requestedAt / bucketMs) * bucketMs;
@@ -108,7 +108,7 @@ export const cleanupOldRequests = mutation({
     const rows = await ctx.db
       .query("agentRequests")
       .withIndex("by_requested_at", (q) => q.lt("requestedAt", cutoff))
-      .collect();
+      .take(1000);
     let deleted = 0;
     for (const row of rows) {
       await ctx.db.delete(row._id);
@@ -122,7 +122,7 @@ export const cleanupOrphanedCacheEntries = mutation({
   args: {},
   returns: v.number(),
   handler: async (ctx) => {
-    const rows = await ctx.db.query("cachedFiles").collect();
+    const rows = await ctx.db.query("cachedFiles").take(1000);
     let deleted = 0;
     for (const row of rows) {
       // Drop cachedFiles rows older than 90 days that are in a failed state.

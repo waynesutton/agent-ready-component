@@ -1,6 +1,7 @@
-import { action, mutation, query } from "../_generated/server";
+import { query } from "../_generated/server";
 import { components } from "../_generated/api";
 import { v } from "convex/values";
+import { authMutation, authAction } from "../functions";
 
 const fileTypeValidator = v.union(
   v.literal("llms.txt"),
@@ -53,7 +54,7 @@ const cacheStatusValidator = v.object({
   markdownNegotiation: v.boolean(),
 });
 
-// Demo wrappers expose browser-safe app API refs and delegate to the component.
+// Public read-only queries (no auth needed)
 export const getCacheStatus = query({
   args: {},
   returns: cacheStatusValidator,
@@ -70,7 +71,8 @@ export const listPages = query({
   },
 });
 
-export const publishPage = mutation({
+// Auth-protected admin mutations
+export const publishPage = authMutation({
   args: { path: v.string() },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -79,7 +81,7 @@ export const publishPage = mutation({
   },
 });
 
-export const draftPage = mutation({
+export const draftPage = authMutation({
   args: { path: v.string() },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -88,7 +90,7 @@ export const draftPage = mutation({
   },
 });
 
-export const archivePage = mutation({
+export const archivePage = authMutation({
   args: { path: v.string() },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -97,7 +99,7 @@ export const archivePage = mutation({
   },
 });
 
-export const rollbackCache = mutation({
+export const rollbackCache = authMutation({
   args: { fileType: fileTypeValidator },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -106,7 +108,7 @@ export const rollbackCache = mutation({
   },
 });
 
-export const regenerateAll = action({
+export const regenerateAll = authAction({
   args: {},
   returns: v.string(),
   handler: async (ctx) => {

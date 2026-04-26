@@ -19,7 +19,7 @@
       "accent": "#ffffff"
     },
     "theme": "dark",
-    "testMode": false,
+    "testMode": true,
     "cronEnabled": true,
     "cronIntervalHours": 24,
     "analyticsEnabled": true,
@@ -27,7 +27,7 @@
     "aiDescriptionsEnabled": true,
     "aiProvider": "claude",
     "fullTxtEnabled": true,
-    "permissiveMode": true,
+    "permissiveMode": false,
     "versioningEnabled": true,
     "contentSignals": { "aiTrain": true, "search": true, "aiInput": true },
     "markdownNegotiation": true,

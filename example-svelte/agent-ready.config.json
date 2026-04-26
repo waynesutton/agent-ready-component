@@ -27,7 +27,7 @@
     "aiDescriptionsEnabled": false,
     "aiProvider": "claude",
     "fullTxtEnabled": true,
-    "permissiveMode": true,
+    "permissiveMode": false,
     "versioningEnabled": true,
     "contentSignals": { "aiTrain": true, "search": true, "aiInput": true },
     "markdownNegotiation": true,
