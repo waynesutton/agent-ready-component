@@ -1,9 +1,177 @@
-// Interactive first-run wizard. Writes agent-ready.config.json and syncs it to the deployment.
-import { writeFile, readFile } from "node:fs/promises";
+// Interactive first-run wizard. Writes agent-ready.config.json, scaffolds Convex
+// wrapper files, syncs config to the deployment, and prints next steps.
+import { writeFile, readFile, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { prompt, confirm, choose } from "../lib/prompts.mjs";
 import { convexRun, formatError } from "../lib/convex.mjs";
+
+// Convex wrapper that exposes component functions to browser clients.
+const CONTENT_WRAPPER = `import { action, mutation, query } from "../_generated/server";
+import { components } from "../_generated/api";
+import { v } from "convex/values";
+
+const fileTypeValidator = v.union(
+  v.literal("llms.txt"),
+  v.literal("agents.md"),
+  v.literal("llms-full.txt"),
+);
+
+const pageStatusValidator = v.union(
+  v.literal("draft"),
+  v.literal("published"),
+  v.literal("archived"),
+);
+
+const pageValidator = v.object({
+  _id: v.string(),
+  _creationTime: v.number(),
+  title: v.string(),
+  path: v.string(),
+  description: v.string(),
+  fullContent: v.optional(v.string()),
+  status: pageStatusValidator,
+  isOptional: v.optional(v.boolean()),
+  order: v.optional(v.number()),
+  descriptionGeneratedByAi: v.optional(v.boolean()),
+  deletedAt: v.optional(v.number()),
+});
+
+const cacheStatusValidator = v.object({
+  testMode: v.boolean(),
+  appName: v.union(v.string(), v.null()),
+  appUrl: v.union(v.string(), v.null()),
+  lastGeneratedAt: v.union(v.number(), v.null()),
+  generatedFromVersion: v.union(v.string(), v.null()),
+  generationInProgress: v.boolean(),
+  hasDrafts: v.boolean(),
+  fullTxtEnabled: v.boolean(),
+});
+
+export const getCacheStatus = query({
+  args: {},
+  returns: cacheStatusValidator,
+  handler: async (ctx) => {
+    return await ctx.runQuery(components.agentReady.content.getCacheStatus, {});
+  },
+});
+
+export const listPages = query({
+  args: { includeAllStatuses: v.optional(v.boolean()) },
+  returns: v.array(pageValidator),
+  handler: async (ctx, args) => {
+    return await ctx.runQuery(components.agentReady.content.listPages, args);
+  },
+});
+
+export const publishPage = mutation({
+  args: { path: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.runMutation(components.agentReady.content.publishPage, args);
+    return null;
+  },
+});
+
+export const draftPage = mutation({
+  args: { path: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.runMutation(components.agentReady.content.draftPage, args);
+    return null;
+  },
+});
+
+export const archivePage = mutation({
+  args: { path: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.runMutation(components.agentReady.content.archivePage, args);
+    return null;
+  },
+});
+
+export const rollbackCache = mutation({
+  args: { fileType: fileTypeValidator },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.runMutation(components.agentReady.content.rollbackCache, args);
+    return null;
+  },
+});
+
+export const regenerateAll = action({
+  args: {},
+  returns: v.string(),
+  handler: async (ctx) => {
+    return await ctx.runAction(components.agentReady.content.regenerateAll, {});
+  },
+});
+`;
+
+const ANALYTICS_WRAPPER = `import { query } from "../_generated/server";
+import { components } from "../_generated/api";
+import { v } from "convex/values";
+
+const summaryValidator = v.union(
+  v.null(),
+  v.object({
+    windowStartedAt: v.number(),
+    totalRequests: v.number(),
+    byAgent: v.record(v.string(), v.number()),
+    byFile: v.record(v.string(), v.number()),
+  }),
+);
+
+const seriesPointValidator = v.object({
+  timestamp: v.number(),
+  count: v.number(),
+});
+
+export const getSummary = query({
+  args: { now: v.number() },
+  returns: summaryValidator,
+  handler: async (ctx, args) => {
+    return await ctx.runQuery(components.agentReady.analytics.getSummary, args);
+  },
+});
+
+export const getTimeSeries = query({
+  args: { now: v.number(), bucketHours: v.optional(v.number()) },
+  returns: v.array(seriesPointValidator),
+  handler: async (ctx, args) => {
+    return await ctx.runQuery(components.agentReady.analytics.getTimeSeries, args);
+  },
+});
+`;
+
+async function scaffoldWrappers() {
+  const convexDir = path.join(process.cwd(), "convex", "agentReady");
+  const contentPath = path.join(convexDir, "content.ts");
+  const analyticsPath = path.join(convexDir, "analytics.ts");
+
+  if (existsSync(contentPath) && existsSync(analyticsPath)) {
+    console.log("[setup] Convex wrappers already exist at convex/agentReady/. Skipping scaffold.");
+    return false;
+  }
+
+  if (!existsSync(convexDir)) {
+    await mkdir(convexDir, { recursive: true });
+  }
+
+  let wrote = false;
+  if (!existsSync(contentPath)) {
+    await writeFile(contentPath, CONTENT_WRAPPER);
+    console.log("  Created convex/agentReady/content.ts");
+    wrote = true;
+  }
+  if (!existsSync(analyticsPath)) {
+    await writeFile(analyticsPath, ANALYTICS_WRAPPER);
+    console.log("  Created convex/agentReady/analytics.ts");
+    wrote = true;
+  }
+  return wrote;
+}
 
 export async function setup(_args) {
   console.log("");
@@ -72,6 +240,10 @@ export async function setup(_args) {
   console.log("");
   console.log(`Wrote ${path.relative(process.cwd(), configPath)}`);
 
+  // Scaffold Convex wrapper files for browser clients.
+  console.log("");
+  const wrapperScaffolded = await scaffoldWrappers();
+
   try {
     await convexRun("agentReady:content:sync", { config: nextConfig });
     console.log("Synced config to Convex deployment");
@@ -83,10 +255,17 @@ export async function setup(_args) {
   console.log("");
   console.log("Next steps:");
   console.log("  1. Add registerRoutes() to convex/http.ts (see INTEGRATION.md)");
-  console.log("  2. Add <AgentReadyWidget /> to your app");
-  console.log("  3. Run: npx agent-ready go-live   (when ready for production)");
+  console.log("  2. Add <AgentReadyWidget /> to your app layout");
+  console.log("  3. (Optional) Add a settings page using <AgentReadySettingsPanel />");
+  console.log("     See INTEGRATION.md for the full example.");
+  console.log("  4. Run: npx agent-ready go-live   (when ready for production)");
   console.log("");
   console.log("Your files will be available at:");
   console.log("  https://<your-deployment>.convex.site/llms.txt");
   console.log("  https://<your-deployment>.convex.site/agents.md");
+  if (wrapperScaffolded) {
+    console.log("");
+    console.log("Wrapper files were created at convex/agentReady/.");
+    console.log("These expose the component API to your browser clients.");
+  }
 }

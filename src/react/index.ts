@@ -1,5 +1,7 @@
 export { AgentReadyWidget } from "./AgentReadyWidget.js";
 export type { AgentReadyWidgetProps } from "./AgentReadyWidget.js";
+export { AgentReadySettingsPanel } from "./AgentReadySettingsPanel.js";
+export type { AgentReadySettingsPanelProps } from "./AgentReadySettingsPanel.js";
 export { useAgentReadyStatus } from "./useAgentReadyStatus.js";
 export type { UseAgentReadyStatusOptions } from "./useAgentReadyStatus.js";
 export { UpdateBanner } from "./UpdateBanner.js";

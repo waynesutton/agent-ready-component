@@ -27,6 +27,7 @@ Plain text map of every file in the repo. Regenerate by hand as files are added 
 - `prds/setup-docs-split.md`: PRD for splitting author setup docs from consumer install docs and linking the install guide from both demos
 - `prds/typecheck-component-circularity.md`: PRD for fixing packaged component codegen and TypeScript circular reference failures
 - `prds/demo-component-wrapper-cors-fix.md`: PRD for fixing demo component API wrappers and `/llms-status` CORS failures
+- `prds/settings-panel-export.md`: PRD for exporting the settings panel component, shipping Convex wrapper functions, and updating the CLI setup wizard
 - `prds/widget-v2-config.md`: PRD for widget v2 features: center position, HUMAN tab AI chat links, MACHINE tab Phosphor icons, status visibility toggle, and custom hex colors
 - `mockup-react.html`: Standalone HTML mockup of the React demo's agent-readiness control panel. Shows the score ring, per-check grid, response headers, schema toggles, and the 3-tab widget with SCORE active
 - `mockup-svelte.html`: Standalone HTML mockup of the Svelte demo's analytics dashboard with agent-readiness signals layered in. Shows the 4-card metric grid (including markdown-negotiation count and readiness scans), agent and file breakdowns, signals panel, and 3-tab widget
@@ -57,6 +58,7 @@ Plain text map of every file in the repo. Regenerate by hand as files are added 
 
 - `src/react/index.ts`: Barrel export
 - `src/react/AgentReadyWidget.tsx`: HUMAN or MACHINE toggle widget with terminal aesthetic. HUMAN tab shows file URLs with copy buttons and "Open in ChatGPT / Claude / Perplexity" links. MACHINE tab shows file links with Phosphor ArrowSquareOut icons. All `show*` props resolve as: explicit prop > config value from `/llms-status` > `true`, making the widget config-driven
+- `src/react/AgentReadySettingsPanel.tsx`: Optional drop-in settings panel for managing pages, cache, and actions. Framework-agnostic design: consumers pass Convex query results and mutation callbacks as props. Ships with inline styles so it works without external CSS
 - `src/react/useAgentReadyStatus.ts`: Live subscription hook for cached file status and staleness detection
 - `src/react/UpdateBanner.tsx`: Optional banner wrapper on top of `useAgentReadyStatus` for version change notifications
 
@@ -70,7 +72,7 @@ Plain text map of every file in the repo. Regenerate by hand as files are added 
 
 - `cli/bin.mjs`: CLI entry, resolves subcommand
 - `cli/index.mjs`: CLI dispatcher and shared helpers
-- `cli/commands/setup.mjs`: Interactive first-run wizard
+- `cli/commands/setup.mjs`: Interactive first-run wizard. Writes `agent-ready.config.json`, scaffolds Convex wrapper files at `convex/agentReady/content.ts` and `convex/agentReady/analytics.ts`, syncs config to the deployment, and prints next steps including the optional settings panel
 - `cli/commands/sync.mjs`: Reads `agent-ready.config.json`, applies to deployment
 - `cli/commands/status.mjs`: Prints cache and job state
 - `cli/commands/regenerate.mjs`: Queues a `regenerateAll` workpool job

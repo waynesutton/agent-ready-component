@@ -6,20 +6,27 @@
 ## SECTION: Installation
 
 ```bash
-npm install @waynesutton/agent-ready @convex-dev/crons @convex-dev/workpool
+npm i @waynesutton/agent-ready @convex-dev/crons @convex-dev/workpool
 ```
 
 Optional, only when using `@convex-dev/static-hosting` to host the frontend on Convex:
 
 ```bash
-npm install @convex-dev/static-hosting
+npm i @convex-dev/static-hosting
 ```
 
-Run the interactive wizard to create `agent-ready.config.json` and sync it to your deployment:
+Run the interactive wizard to create `agent-ready.config.json`, scaffold Convex wrapper files, and sync to your deployment:
 
 ```bash
 npx agent-ready setup
 ```
+
+The wizard creates:
+- `agent-ready.config.json` with your app settings
+- `convex/agentReady/content.ts` with browser-facing query/mutation wrappers
+- `convex/agentReady/analytics.ts` with analytics query wrappers
+
+These wrapper files are needed because Convex components run in isolation. Browser clients call your app-level wrappers, which delegate to the component.
 
 ## SECTION: convex.config.ts setup
 
@@ -199,6 +206,205 @@ function StatusBadge() {
   <span>Last generated: {new Date($status.lastGeneratedAt).toLocaleString()}</span>
 {/if}
 ```
+
+## SECTION: Convex wrapper functions
+
+The component runs in an isolated Convex component. Browser clients cannot call component functions directly. You need thin wrapper functions in your own `convex/` directory that delegate to the component.
+
+The `npx agent-ready setup` wizard scaffolds these automatically at `convex/agentReady/content.ts` and `convex/agentReady/analytics.ts`. If you skipped the wizard, create them manually:
+
+### convex/agentReady/content.ts
+
+```ts
+import { action, mutation, query } from "../_generated/server";
+import { components } from "../_generated/api";
+import { v } from "convex/values";
+
+const fileTypeValidator = v.union(
+  v.literal("llms.txt"),
+  v.literal("agents.md"),
+  v.literal("llms-full.txt"),
+);
+
+const pageStatusValidator = v.union(
+  v.literal("draft"),
+  v.literal("published"),
+  v.literal("archived"),
+);
+
+const pageValidator = v.object({
+  _id: v.string(),
+  _creationTime: v.number(),
+  title: v.string(),
+  path: v.string(),
+  description: v.string(),
+  fullContent: v.optional(v.string()),
+  status: pageStatusValidator,
+  isOptional: v.optional(v.boolean()),
+  order: v.optional(v.number()),
+  descriptionGeneratedByAi: v.optional(v.boolean()),
+  deletedAt: v.optional(v.number()),
+});
+
+const cacheStatusValidator = v.object({
+  testMode: v.boolean(),
+  appName: v.union(v.string(), v.null()),
+  appUrl: v.union(v.string(), v.null()),
+  lastGeneratedAt: v.union(v.number(), v.null()),
+  generatedFromVersion: v.union(v.string(), v.null()),
+  generationInProgress: v.boolean(),
+  hasDrafts: v.boolean(),
+  fullTxtEnabled: v.boolean(),
+});
+
+export const getCacheStatus = query({
+  args: {},
+  returns: cacheStatusValidator,
+  handler: async (ctx) => {
+    return await ctx.runQuery(components.agentReady.content.getCacheStatus, {});
+  },
+});
+
+export const listPages = query({
+  args: { includeAllStatuses: v.optional(v.boolean()) },
+  returns: v.array(pageValidator),
+  handler: async (ctx, args) => {
+    return await ctx.runQuery(components.agentReady.content.listPages, args);
+  },
+});
+
+export const publishPage = mutation({
+  args: { path: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.runMutation(components.agentReady.content.publishPage, args);
+    return null;
+  },
+});
+
+export const draftPage = mutation({
+  args: { path: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.runMutation(components.agentReady.content.draftPage, args);
+    return null;
+  },
+});
+
+export const archivePage = mutation({
+  args: { path: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.runMutation(components.agentReady.content.archivePage, args);
+    return null;
+  },
+});
+
+export const rollbackCache = mutation({
+  args: { fileType: fileTypeValidator },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.runMutation(components.agentReady.content.rollbackCache, args);
+    return null;
+  },
+});
+
+export const regenerateAll = action({
+  args: {},
+  returns: v.string(),
+  handler: async (ctx) => {
+    return await ctx.runAction(components.agentReady.content.regenerateAll, {});
+  },
+});
+```
+
+### convex/agentReady/analytics.ts
+
+```ts
+import { query } from "../_generated/server";
+import { components } from "../_generated/api";
+import { v } from "convex/values";
+
+const summaryValidator = v.union(
+  v.null(),
+  v.object({
+    windowStartedAt: v.number(),
+    totalRequests: v.number(),
+    byAgent: v.record(v.string(), v.number()),
+    byFile: v.record(v.string(), v.number()),
+  }),
+);
+
+const seriesPointValidator = v.object({
+  timestamp: v.number(),
+  count: v.number(),
+});
+
+export const getSummary = query({
+  args: { now: v.number() },
+  returns: summaryValidator,
+  handler: async (ctx, args) => {
+    return await ctx.runQuery(components.agentReady.analytics.getSummary, args);
+  },
+});
+
+export const getTimeSeries = query({
+  args: { now: v.number(), bucketHours: v.optional(v.number()) },
+  returns: v.array(seriesPointValidator),
+  handler: async (ctx, args) => {
+    return await ctx.runQuery(components.agentReady.analytics.getTimeSeries, args);
+  },
+});
+```
+
+## SECTION: Settings panel (React)
+
+The package ships an optional `<AgentReadySettingsPanel />` component for managing pages, cache, and actions. It requires the Convex wrapper functions above.
+
+```tsx
+import { useQuery, useMutation, useAction } from "convex/react";
+import { api } from "../convex/_generated/api";
+import { AgentReadySettingsPanel } from "@waynesutton/agent-ready/react";
+
+export default function SettingsPage() {
+  const status = useQuery(api.agentReady.content.getCacheStatus);
+  const pages = useQuery(api.agentReady.content.listPages, { includeAllStatuses: true });
+  const regenerate = useAction(api.agentReady.content.regenerateAll);
+  const rollback = useMutation(api.agentReady.content.rollbackCache);
+  const publish = useMutation(api.agentReady.content.publishPage);
+  const draft = useMutation(api.agentReady.content.draftPage);
+  const archive = useMutation(api.agentReady.content.archivePage);
+
+  return (
+    <AgentReadySettingsPanel
+      cacheStatus={status}
+      pages={pages}
+      onRegenerate={() => regenerate({})}
+      onRollback={(fileType) => rollback({ fileType })}
+      onPublishPage={(path) => publish({ path })}
+      onDraftPage={(path) => draft({ path })}
+      onArchivePage={(path) => archive({ path })}
+    />
+  );
+}
+```
+
+### Settings panel props
+
+| Prop | Type | Notes |
+|---|---|---|
+| `cacheStatus` | `CacheStatus \| null` | Pass the result of `useQuery(api.agentReady.content.getCacheStatus)` |
+| `pages` | `Array<PageRow> \| null` | Pass the result of `useQuery(api.agentReady.content.listPages, { includeAllStatuses: true })` |
+| `onRegenerate` | `() => Promise<void>` | Calls your `regenerateAll` action |
+| `onRollback` | `(fileType) => Promise<void>` | Calls your `rollbackCache` mutation |
+| `onPublishPage` | `(path) => Promise<void>` | Calls your `publishPage` mutation |
+| `onDraftPage` | `(path) => Promise<void>` | Calls your `draftPage` mutation |
+| `onArchivePage` | `(path) => Promise<void>` | Calls your `archivePage` mutation |
+| `className` | `string` | Optional CSS class for the outer container |
+
+### Non-React frameworks
+
+The settings panel is React only. For Svelte, Vue, or other frameworks, use the Convex wrapper functions directly with your framework's Convex client bindings and build your own settings UI.
 
 ## SECTION: CLI commands
 
