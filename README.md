@@ -104,7 +104,7 @@ The demo URL becomes `https://your-deployment.convex.site`. The widget, the file
 
 - `docs/install.md` is the Markdown install guide for Convex users adding `@waynesutton/agent-ready` to their app
 - `docs/install.html` is the same consumer install guide as a standalone HTML page
-- `SETUP.md` is the author release guide for shipping this package to GitHub, npm, and Convex static hosting
+- `SETUP.md` is the author release guide for shipping this package to GitHub, npm, and Convex static hosting, including the dev deployment setup needed before component codegen
 - `INTEGRATION.md` covers every integration path in a format optimized for AI tools
 - `CONTRIBUTING.md` documents the widget contract for community ports (Vue, Solid, Angular)
 - `prds/agent-readiness-v1.md` is the canonical design spec

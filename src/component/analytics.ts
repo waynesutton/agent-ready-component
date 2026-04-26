@@ -1,12 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { classifyUserAgent, MAX_USER_AGENT_CHARS } from "./lib.js";
-
-const fileTypeValidator = v.union(
-  v.literal("llms.txt"),
-  v.literal("agents.md"),
-  v.literal("llms-full.txt"),
-);
+import { fileTypeValidator } from "./validators.js";
 
 // Public mutation. Called across the component boundary by the app-side HTTP handler
 // that registerRoutes mounts on the host app's httpRouter. Must stay public because app
@@ -48,7 +43,15 @@ export const recordRequest = mutation({
 
 export const getSummary = query({
   args: { now: v.number() },
-  returns: v.union(v.null(), v.any()),
+  returns: v.union(
+    v.null(),
+    v.object({
+      windowStartedAt: v.number(),
+      totalRequests: v.number(),
+      byAgent: v.record(v.string(), v.number()),
+      byFile: v.record(v.string(), v.number()),
+    }),
+  ),
   handler: async (ctx, args) => {
     const settings = await ctx.db.query("settings").unique();
     if (!settings?.analyticsEnabled) return null;
@@ -74,7 +77,7 @@ export const getSummary = query({
 
 export const getTimeSeries = query({
   args: { now: v.number(), bucketHours: v.optional(v.number()) },
-  returns: v.array(v.any()),
+  returns: v.array(v.object({ timestamp: v.number(), count: v.number() })),
   handler: async (ctx, args) => {
     const bucketMs = (args.bucketHours ?? 24) * 60 * 60 * 1000;
     const since = args.now - 30 * 24 * 60 * 60 * 1000;

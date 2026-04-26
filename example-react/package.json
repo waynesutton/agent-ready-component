@@ -12,10 +12,10 @@
     "seed": "node setup.mjs"
   },
   "dependencies": {
-    "@convex-dev/crons": "^0.1.0",
+    "@convex-dev/crons": "^0.2.0",
     "@waynesutton/agent-ready": "file:..",
     "@convex-dev/static-hosting": "^0.1.0",
-    "@convex-dev/workpool": "^0.2.0",
+    "@convex-dev/workpool": "^0.3.0",
     "convex": "^1.36.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

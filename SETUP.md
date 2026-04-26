@@ -40,7 +40,17 @@ npm install
 
 `npm install` installs the root component plus both workspaces: `example-react` and `example-svelte`.
 
-## 3. Generate component types
+## 3. Configure a Convex dev deployment
+
+```bash
+npx convex dev --once
+```
+
+This creates `.env.local` with `CONVEX_DEPLOYMENT`. Component codegen needs that deployment selection even though the component source lives in `src/component`.
+
+If Convex finishes project configuration and then stops on missing generated package files, that is fine for this step. Confirm `.env.local` exists, then continue.
+
+## 4. Generate component types
 
 ```bash
 npx convex codegen --component-dir ./src/component
@@ -48,7 +58,7 @@ npx convex codegen --component-dir ./src/component
 
 This creates the component-local `src/component/_generated/` files used by the Convex functions. Normal app codegen is not enough for a packaged component.
 
-## 4. Build the package
+## 5. Build the package
 
 ```bash
 npm run build
@@ -64,7 +74,7 @@ Confirm these files exist before publishing:
 - `dist/svelte/index.js`
 - `dist/test/index.js`
 
-## 5. Type check
+## 6. Type check
 
 ```bash
 npm run typecheck
@@ -72,7 +82,7 @@ npm run typecheck
 
 Clean output before continuing.
 
-## 6. Confirm package metadata
+## 7. Confirm package metadata
 
 Open `package.json` and verify:
 
@@ -84,7 +94,7 @@ Open `package.json` and verify:
 
 The `cli` entry matters. Without it, npm publishes the package but `npx agent-ready` cannot run.
 
-## 7. Push to GitHub
+## 8. Push to GitHub
 
 First commit if this is a fresh checkout:
 
@@ -107,7 +117,7 @@ git branch -M main
 git push -u origin main
 ```
 
-## 8. Run the npm dry run
+## 9. Run the npm dry run
 
 ```bash
 npm pack --dry-run
@@ -134,7 +144,7 @@ It must not include:
 - `.claude/`
 - `.agents/`
 
-## 9. Publish to npm
+## 10. Publish to npm
 
 If you need to bump the version:
 
@@ -168,7 +178,7 @@ git push
 
 If your checkout has `package-lock.json`, include it in the same commit.
 
-## 10. Tag the release
+## 11. Tag the release
 
 ```bash
 git tag -a v0.1.0 -m "v0.1.0"
@@ -176,7 +186,7 @@ git push origin v0.1.0
 gh release create v0.1.0 --generate-notes
 ```
 
-## 11. Deploy the React demo on Convex
+## 12. Deploy the React demo on Convex
 
 ```bash
 cd example-react
@@ -221,7 +231,7 @@ npm run deploy
 
 Open `https://your-react-deployment.convex.site`. You should see the cream demo UI, the widget in the bottom right, and the file sidebar linking to `/llms.txt`, `/agents.md`, and `/llms-status`.
 
-## 12. Deploy the Svelte demo on Convex
+## 13. Deploy the Svelte demo on Convex
 
 ```bash
 cd ../example-svelte
@@ -265,7 +275,7 @@ npm run deploy
 
 SvelteKit uses `@sveltejs/adapter-static`. The uploaded `build/` folder serves from the same deployment URL as the Convex functions.
 
-## 13. Confirm live file URLs
+## 14. Confirm live file URLs
 
 Run these checks against both demo deployments:
 
@@ -277,7 +287,7 @@ curl -i https://your-deployment.convex.site/llms-status
 
 While `testMode: true` is on, non-localhost requests return `403`. That is the expected default.
 
-## 14. Flip testMode off
+## 15. Flip testMode off
 
 ```bash
 npx agent-ready go-live
@@ -285,9 +295,9 @@ npx agent-ready go-live
 
 The wizard asks for confirmation, prints the file URLs that become public, and flips the `testMode` flag.
 
-Repeat for the other demo app, then re-run the curls in section 13. Expect `200 OK` and generated content.
+Repeat for the other demo app, then re-run the curls in section 14. Expect `200 OK` and generated content.
 
-## 15. Test ETag behavior
+## 16. Test ETag behavior
 
 ```bash
 ETAG=$(curl -sI https://your-deployment.convex.site/llms.txt | awk '/etag/ {print $2}' | tr -d '\r"')
@@ -305,7 +315,7 @@ npx agent-ready regenerate
 
 Re-run the curl. Expect `200 OK` with a new ETag.
 
-## 16. Test the UpdateBanner refresh flow
+## 17. Test the UpdateBanner refresh flow
 
 1. Open the live React demo URL in a browser.
 2. Change any page description in `example-react/agent-ready.config.json`.
@@ -316,7 +326,7 @@ Re-run the curl. Expect `200 OK` with a new ETag.
 
 Repeat the same flow against the Svelte demo URL.
 
-## 17. Final release checklist
+## 18. Final release checklist
 
 - `npm view @waynesutton/agent-ready version` matches `package.json`
 - `npm view @waynesutton/agent-ready bin` lists `agent-ready`

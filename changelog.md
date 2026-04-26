@@ -8,11 +8,25 @@ All notable changes to `@waynesutton/agent-ready` (formerly `@convex-dev/llms-tx
 
 - Added `docs/install.md` and `docs/install.html` as consumer-facing install guides for Convex users adding `@waynesutton/agent-ready` to their own app
 - Added install guide links to the React and Svelte demo apps
+- Added `package-lock.json` after resolving workspace dependency conflicts and audit findings
+- Added generated Convex bindings for the packaged component under `src/component/_generated/`
+- Added root Convex scaffold files from the author setup flow so `npx convex dev --once` can establish `CONVEX_DEPLOYMENT`
+- Added `prds/typecheck-component-circularity.md` to document the typecheck failure, root cause, fix, and verification
 
 ### Changed
 
+- Bumped `@convex-dev/crons` to `^0.2.0` so it supports the current Convex 1.36 dev dependency
+- Bumped `@convex-dev/workpool` to `^0.3.0` and added `convex-helpers` as its peer dependency
+- Updated the Svelte example to use SvelteKit 2.58, `@sveltejs/adapter-static` 3.0, and `@sveltejs/vite-plugin-svelte` 5.1 for Vite 6 compatibility
+- Added an npm `cookie` override to use the patched `cookie` package and bring `npm audit` to 0 vulnerabilities
 - Split `SETUP.md` into an author-only release guide and moved consumer install instructions into `docs/install.md` and `docs/install.html`
 - Added the packaged Convex component codegen step to `SETUP.md` before build and typecheck
+- Added the missing Convex dev deployment configuration step before packaged component codegen in `SETUP.md`
+- Updated `SETUP.md` after real setup testing so authors run root `npx convex dev --once` before root component codegen
+- Removed the unsupported `"use node"` directive from `src/component/generation.ts` because packaged Convex components cannot contain Node runtime files
+- Renamed the component cron worker from `src/component/crons.ts` to `src/component/cronWorker.ts` so Convex does not treat it as the reserved native cron config file
+- Moved internal content action helpers to `src/component/contentInternal.ts` to remove generated API circular type references while preserving public `agentReady:content:*` CLI function names
+- Added shared component validators in `src/component/validators.ts` and replaced loose `v.any()` return validators in the content and analytics surfaces
 - Updated `README.md` to point consumers to the Markdown and HTML install guides
 - Fixed the author clone instructions to use `cd agent-ready-component`
 - Updated npm package contents so `cli/`, `docs/`, and `SETUP.md` are included with the published package. This keeps `npx agent-ready` available after install
@@ -67,7 +81,7 @@ Tracked in `prds/agent-readiness-v1.md`, milestones M31 through M45 in `TASK.md`
 - PRD `prds/setup-and-demo-posthog-redesign.md` covering both deliverables
 - Initial repo scaffold driven by `prds/convex-llms-txt-prd-v6.md`
 - Root package manifest with workspace layout for `src/`, `cli/`, `example-react/`, `example-svelte/`
-- Component backend scaffold in `src/component/`: `convex.config.ts`, `schema.ts`, `content.ts`, `analytics.ts`, `http.ts`, `generation.ts`, `crons.ts`, `lib.ts`
+- Component backend scaffold in `src/component/`: `convex.config.ts`, `schema.ts`, `content.ts`, `analytics.ts`, `http.ts`, `generation.ts`, `cronWorker.ts`, `lib.ts`
 - Client entry point `src/client/index.ts` with `registerRoutes`, class-based client, typed client factory, and shared types
 - React widget entry at `src/react/`: `AgentReadyWidget`, `useAgentReadyStatus`, update staleness hook
 - Svelte widget entry at `src/svelte/`: `AgentReadyWidget.svelte`, `createAgentReadyStatusStore()`
@@ -83,7 +97,7 @@ Tracked in `prds/agent-readiness-v1.md`, milestones M31 through M45 in `TASK.md`
 - `SETUP.md` restructured into two parts. Part 1 walks the author through GitHub publish, npm publish, Convex deploy for both demo apps, and live verification. Part 2 walks a consumer through installing the component into their own app with full CLI reference and troubleshooting table
 - `src/component/analytics.ts` flipped `recordRequest` from `internalMutation` to `mutation`. Registered routes run in the host app and call the mutation across the component boundary, so it must be public per the Convex component visibility rules
 - `src/component/content.ts` flipped `invalidateCache` from `mutation` to `internalMutation`. It is only ever called from inside the component by `regenerateAll` and `sync`, both of which stay public
-- `src/component/crons.ts` now references `api.analytics.cleanupOldRequests` instead of `internal.*` to match the public visibility of that mutation
+- `src/component/cronWorker.ts` references `api.analytics.cleanupOldRequests` instead of `internal.*` to match the public visibility of that mutation
 - `package.json` exports now include `./convex.config`, `./_generated/component.js`, and `./_generated/api.js` so consumers and Convex tooling can reach the generated component module without a deep import path
 - `example-react/src/App.tsx`, `Settings.tsx`, `Analytics.tsx`, `index.css`, `index.html` rewritten to use the window-chrome layout and PostHog palette
 - `example-svelte/src/app.css`, `app.html`, `routes/+layout.svelte`, `routes/+page.svelte`, `routes/settings/+page.svelte`, `routes/analytics/+page.svelte` rewritten to mirror the React demo

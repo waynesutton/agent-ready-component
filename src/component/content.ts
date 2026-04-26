@@ -1,68 +1,38 @@
 import {
-  internalMutation,
   internalQuery,
   mutation,
   query,
   action,
 } from "./_generated/server";
+import type { MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { MAX_CACHED_FILE_BYTES, MAX_PAGE_CONTENT_CHARS } from "./lib.js";
-
-// ---------- Validators ----------
-
-const contentStatusValidator = v.union(
-  v.literal("draft"),
-  v.literal("published"),
-  v.literal("archived"),
-);
-
-const fileTypeValidator = v.union(
-  v.literal("llms.txt"),
-  v.literal("agents.md"),
-  v.literal("llms-full.txt"),
-);
-
-const settingsValidator = v.object({
-  appName: v.string(),
-  appUrl: v.string(),
-  description: v.string(),
-  agentInstructions: v.optional(v.string()),
-  contactEmail: v.optional(v.string()),
-  widgetPosition: v.union(
-    v.literal("footer"),
-    v.literal("floating-bottom-right"),
-    v.literal("floating-bottom-left"),
-  ),
-  theme: v.union(v.literal("light"), v.literal("dark"), v.literal("system")),
-  testMode: v.boolean(),
-  cronEnabled: v.boolean(),
-  cronIntervalHours: v.number(),
-  analyticsEnabled: v.boolean(),
-  analyticsRequestRetentionDays: v.number(),
-  analyticsThreshold: v.optional(v.number()),
-  aiDescriptionsEnabled: v.boolean(),
-  aiProvider: v.optional(v.union(v.literal("claude"), v.literal("openai"))),
-  fullTxtEnabled: v.boolean(),
-  permissiveMode: v.boolean(),
-  versioningEnabled: v.boolean(),
-  onGenerationComplete: v.optional(v.string()),
-  onAnalyticsThreshold: v.optional(v.string()),
-});
+import {
+  cachedFileDocValidator,
+  contentStatusValidator,
+  endpointDocValidator,
+  fileTypeValidator,
+  pageDocValidator,
+  pageVersionDocValidator,
+  settingsDocValidator,
+  settingsPatchValidator,
+  syncConfigValidator,
+} from "./validators.js";
 
 // ---------- Settings ----------
 
 export const getSettings = query({
   args: {},
-  returns: v.union(v.null(), v.any()),
+  returns: v.union(v.null(), settingsDocValidator),
   handler: async (ctx) => {
     return (await ctx.db.query("settings").unique()) ?? null;
   },
 });
 
 export const upsertSettings = mutation({
-  args: { patch: v.any() },
-  returns: v.any(),
+  args: { patch: settingsPatchValidator },
+  returns: settingsDocValidator,
   handler: async (ctx, args) => {
     // Production guard: permissiveMode must never be enabled in prod.
     if (args.patch?.permissiveMode === true && process.env.NODE_ENV === "production") {
@@ -93,10 +63,14 @@ export const upsertSettings = mutation({
         onGenerationComplete: args.patch?.onGenerationComplete,
         onAnalyticsThreshold: args.patch?.onAnalyticsThreshold,
       });
-      return await ctx.db.get(inserted);
+      const doc = await ctx.db.get(inserted);
+      if (!doc) throw new Error("settings insert failed");
+      return doc;
     }
     await ctx.db.patch(existing._id, args.patch ?? {});
-    return await ctx.db.get(existing._id);
+    const doc = await ctx.db.get(existing._id);
+    if (!doc) throw new Error("settings update failed");
+    return doc;
   },
 });
 
@@ -104,7 +78,7 @@ export const upsertSettings = mutation({
 
 export const listPages = query({
   args: { includeAllStatuses: v.optional(v.boolean()) },
-  returns: v.array(v.any()),
+  returns: v.array(pageDocValidator),
   handler: async (ctx, args) => {
     const rows = await ctx.db
       .query("pages")
@@ -235,24 +209,23 @@ export const archivePage = mutation({
 });
 
 async function setPageStatus(
-  ctx: { db: { query: Function; patch: Function } } & Record<string, unknown>,
+  ctx: MutationCtx,
   path: string,
   status: "draft" | "published" | "archived",
 ): Promise<void> {
-  // Typed via internal server context when consumed. Keeping helper generic to avoid duplication.
-  const existing = await (ctx as any).db
+  const existing = await ctx.db
     .query("pages")
-    .withIndex("by_path", (q: any) => q.eq("path", path))
+    .withIndex("by_path", (q) => q.eq("path", path))
     .unique();
   if (!existing) return;
-  await (ctx as any).db.patch(existing._id, { status });
+  await ctx.db.patch(existing._id, { status });
 }
 
 // ---------- API endpoints ----------
 
 export const listApiEndpoints = query({
   args: { includeAllStatuses: v.optional(v.boolean()) },
-  returns: v.array(v.any()),
+  returns: v.array(endpointDocValidator),
   handler: async (ctx, args) => {
     const rows = await ctx.db
       .query("apiEndpoints")
@@ -323,7 +296,7 @@ export const deleteEndpoint = mutation({
 
 export const getCachedFile = query({
   args: { fileType: fileTypeValidator },
-  returns: v.union(v.null(), v.any()),
+  returns: v.union(v.null(), cachedFileDocValidator),
   handler: async (ctx, args) => {
     const row = await ctx.db
       .query("cachedFiles")
@@ -335,7 +308,16 @@ export const getCachedFile = query({
 
 export const getCacheStatus = query({
   args: {},
-  returns: v.any(),
+  returns: v.object({
+    testMode: v.boolean(),
+    appName: v.union(v.string(), v.null()),
+    appUrl: v.union(v.string(), v.null()),
+    lastGeneratedAt: v.union(v.number(), v.null()),
+    generatedFromVersion: v.union(v.string(), v.null()),
+    generationInProgress: v.boolean(),
+    hasDrafts: v.boolean(),
+    fullTxtEnabled: v.boolean(),
+  }),
   handler: async (ctx) => {
     const settings = await ctx.db.query("settings").unique();
     const files = await ctx.db.query("cachedFiles").collect();
@@ -366,16 +348,38 @@ export const getCacheStatus = query({
 
 export const getGenerationStatus = query({
   args: { jobId: v.string() },
-  returns: v.any(),
+  returns: v.object({
+    jobId: v.string(),
+    state: v.union(
+      v.literal("unknown"),
+      v.literal("failed"),
+      v.literal("running"),
+      v.literal("complete"),
+    ),
+    files: v.optional(
+      v.array(
+        v.object({
+          fileType: fileTypeValidator,
+          status: v.union(
+            v.literal("current"),
+            v.literal("generating"),
+            v.literal("failed"),
+          ),
+          generatedAt: v.number(),
+          version: v.string(),
+        }),
+      ),
+    ),
+  }),
   handler: async (ctx, args) => {
     const rows = await ctx.db.query("cachedFiles").collect();
     const relevant = rows.filter((r) => r.lastJobId === args.jobId);
-    if (relevant.length === 0) return { jobId: args.jobId, state: "unknown" };
+    if (relevant.length === 0) return { jobId: args.jobId, state: "unknown" as const };
     const anyFailed = relevant.some((r) => r.status === "failed");
     const anyRunning = relevant.some((r) => r.status === "generating");
     return {
       jobId: args.jobId,
-      state: anyFailed ? "failed" : anyRunning ? "running" : "complete",
+      state: anyFailed ? "failed" as const : anyRunning ? "running" as const : "complete" as const,
       files: relevant.map((r) => ({
         fileType: r.fileType,
         status: r.status,
@@ -389,7 +393,14 @@ export const getGenerationStatus = query({
 // Internal query. Loads the bundle used by the generation action.
 export const loadBundle = internalQuery({
   args: {},
-  returns: v.union(v.null(), v.any()),
+  returns: v.union(
+    v.null(),
+    v.object({
+      settings: settingsDocValidator,
+      pages: v.array(pageDocValidator),
+      endpoints: v.array(endpointDocValidator),
+    }),
+  ),
   handler: async (ctx) => {
     const settings = await ctx.db.query("settings").unique();
     if (!settings) return null;
@@ -406,34 +417,6 @@ export const loadBundle = internalQuery({
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     const publishedEndpoints = endpoints.filter((e) => e.status === "published");
     return { settings, pages: publishedPages, endpoints: publishedEndpoints };
-  },
-});
-
-// Mark all cachedFiles rows as "generating" before the workpool job runs.
-export const markGenerating = internalMutation({
-  args: { jobId: v.string() },
-  returns: v.null(),
-  handler: async (ctx, args) => {
-    const rows = await ctx.db.query("cachedFiles").collect();
-    for (const row of rows) {
-      await ctx.db.patch(row._id, { status: "generating", lastJobId: args.jobId });
-    }
-    return null;
-  },
-});
-
-// Internal. Only callable from other functions inside this component (regenerateAll, sync).
-// App-side callers go through the public action wrappers: regenerateAll or sync.
-export const invalidateCache = internalMutation({
-  args: {},
-  returns: v.string(),
-  handler: async (ctx) => {
-    const jobId = crypto.randomUUID();
-    await ctx.runMutation(internal.content.markGenerating, { jobId });
-    // Schedule generation via workpool. When using @convex-dev/workpool the pool enqueues
-    // internal.generation.runGeneration with maxParallelism: 1 and retries on failure.
-    await ctx.scheduler.runAfter(0, internal.generation.runGeneration, { jobId });
-    return jobId;
   },
 });
 
@@ -465,20 +448,28 @@ export const regenerateAll = action({
   args: {},
   returns: v.string(),
   handler: async (ctx): Promise<string> => {
-    return await ctx.runMutation(internal.content.invalidateCache, {});
+    return await ctx.runMutation(internal.contentInternal.invalidateCache, {});
   },
 });
 
+type GenerateDescriptionsResult = {
+  queued: number;
+  provider: "claude" | "openai";
+};
+
 export const generateDescriptions = action({
   args: { force: v.optional(v.boolean()) },
-  returns: v.any(),
-  handler: async (ctx, args) => {
+  returns: v.object({
+    queued: v.number(),
+    provider: v.union(v.literal("claude"), v.literal("openai")),
+  }),
+  handler: async (ctx, args): Promise<GenerateDescriptionsResult> => {
     // AI description generator. Caps to 100 items, 1 call per second.
-    const settings = await ctx.runQuery(internal.content.getSettingsInternal, {});
+    const settings = await ctx.runQuery(internal.contentInternal.getSettings, {});
     if (!settings || !settings.aiDescriptionsEnabled) {
       throw new Error("aiDescriptionsEnabled is false");
     }
-    const pages: Array<any> = await ctx.runQuery(internal.content.listPagesInternal, {});
+    const pages = await ctx.runQuery(internal.contentInternal.listPages, {});
     const targets = pages
       .filter((p) => args.force === true || !p.description || p.description.trim() === "")
       .slice(0, 100);
@@ -486,94 +477,28 @@ export const generateDescriptions = action({
   },
 });
 
-export const sync = action({
-  args: { config: v.any() },
-  returns: v.any(),
-  handler: async (ctx, args) => {
-    // CI/CD entry. Applies a parsed agent-ready.config.json payload to the deployment.
-    await ctx.runMutation(internal.content.applySyncConfig, { config: args.config });
-    const jobId = await ctx.runMutation(internal.content.invalidateCache, {});
-    return { ok: true, jobId };
-  },
-});
+type SyncResult = {
+  ok: true;
+  jobId: string;
+};
 
-export const applySyncConfig = internalMutation({
-  args: { config: v.any() },
-  returns: v.null(),
-  handler: async (ctx, args) => {
-    const { settings, pages, endpoints } = args.config ?? {};
-    if (settings) {
-      const existing = await ctx.db.query("settings").unique();
-      if (!existing) {
-        await ctx.db.insert("settings", {
-          appName: settings.appName,
-          appUrl: settings.appUrl,
-          description: settings.description,
-          widgetPosition: settings.widgetPosition ?? "floating-bottom-right",
-          theme: settings.theme ?? "system",
-          testMode: settings.testMode ?? true,
-          cronEnabled: settings.cronEnabled ?? true,
-          cronIntervalHours: settings.cronIntervalHours ?? 24,
-          analyticsEnabled: settings.analyticsEnabled ?? false,
-          analyticsRequestRetentionDays: settings.analyticsRequestRetentionDays ?? 90,
-          aiDescriptionsEnabled: settings.aiDescriptionsEnabled ?? false,
-          fullTxtEnabled: settings.fullTxtEnabled ?? false,
-          permissiveMode: settings.permissiveMode ?? false,
-          versioningEnabled: settings.versioningEnabled ?? false,
-        });
-      } else {
-        await ctx.db.patch(existing._id, settings);
-      }
-    }
-    if (Array.isArray(pages)) {
-      for (const page of pages) {
-        const existing = await ctx.db
-          .query("pages")
-          .withIndex("by_path", (q) => q.eq("path", page.path))
-          .unique();
-        if (!existing) {
-          await ctx.db.insert("pages", {
-            title: page.title,
-            path: page.path,
-            description: page.description ?? "",
-            fullContent: page.fullContent,
-            status: page.status ?? "published",
-            isOptional: page.isOptional,
-            order: page.order,
-          });
-        } else {
-          await ctx.db.patch(existing._id, page);
-        }
-      }
-    }
-    if (Array.isArray(endpoints)) {
-      for (const endpoint of endpoints) {
-        const existing = await ctx.db
-          .query("apiEndpoints")
-          .withIndex("by_method_path", (q) =>
-            q.eq("method", endpoint.method).eq("path", endpoint.path),
-          )
-          .unique();
-        if (!existing) {
-          await ctx.db.insert("apiEndpoints", {
-            method: endpoint.method,
-            path: endpoint.path,
-            description: endpoint.description ?? "",
-            group: endpoint.group,
-            status: endpoint.status ?? "published",
-          });
-        } else {
-          await ctx.db.patch(existing._id, endpoint);
-        }
-      }
-    }
-    return null;
+export const sync = action({
+  args: { config: syncConfigValidator },
+  returns: v.object({ ok: v.literal(true), jobId: v.string() }),
+  handler: async (ctx, args): Promise<SyncResult> => {
+    // CI/CD entry. Applies a parsed agent-ready.config.json payload to the deployment.
+    await ctx.runMutation(internal.contentInternal.applySyncConfig, { config: args.config });
+    const jobId: string = await ctx.runMutation(
+      internal.contentInternal.invalidateCache,
+      {},
+    );
+    return { ok: true, jobId };
   },
 });
 
 export const getPageVersions = query({
   args: { path: v.string() },
-  returns: v.array(v.any()),
+  returns: v.array(pageVersionDocValidator),
   handler: async (ctx, args) => {
     return await ctx.db
       .query("pageVersions")
@@ -583,16 +508,3 @@ export const getPageVersions = query({
   },
 });
 
-// ---------- Internal helpers for actions ----------
-
-export const getSettingsInternal = internalQuery({
-  args: {},
-  returns: v.union(v.null(), v.any()),
-  handler: async (ctx) => (await ctx.db.query("settings").unique()) ?? null,
-});
-
-export const listPagesInternal = internalQuery({
-  args: {},
-  returns: v.array(v.any()),
-  handler: async (ctx) => await ctx.db.query("pages").collect(),
-});

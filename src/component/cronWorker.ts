@@ -9,7 +9,7 @@ export const runCronCycle = internalAction({
   args: {},
   returns: v.null(),
   handler: async (ctx) => {
-    const settings = await ctx.runQuery(internal.content.getSettingsInternal, {});
+    const settings = await ctx.runQuery(internal.contentInternal.getSettings, {});
     if (!settings || !settings.cronEnabled) return null;
     await ctx.runAction(internal.generation.runGeneration, {
       jobId: `cron-${Date.now()}`,

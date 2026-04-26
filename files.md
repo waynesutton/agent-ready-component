@@ -5,13 +5,14 @@ Plain text map of every file in the repo. Regenerate by hand as files are added 
 ## Root
 
 - `README.md`: Project overview, install quick start, demo commands, and links to consumer install docs
-- `SETUP.md`: Author release guide for shipping the package to GitHub, npm, and Convex static hosting, including component codegen and npm package checks
+- `SETUP.md`: Author release guide for shipping the package to GitHub, npm, and Convex static hosting, including dev deployment configuration before component codegen and npm package checks
 - `docs/install.md`: Consumer install guide for adding `@waynesutton/agent-ready` to a Convex app
 - `docs/install.html`: Standalone HTML version of the consumer install guide
 - `INTEGRATION.md`: LLM-optimized integration guide covering React, Svelte, static hosting, and manual paths
 - `CONTRIBUTING.md`: Widget contract, local dev flow, publishing rules
 - `LICENSE`: Apache 2.0
 - `package.json`: Root package manifest, publishes `@waynesutton/agent-ready` with subpath exports plus CLI and docs package contents
+- `package-lock.json`: npm lockfile for the root workspace and example apps, including dependency updates used to resolve npm audit and peer dependency conflicts
 - `tsconfig.json`: Base TypeScript config for component source
 - `tsconfig.build.json`: Build config for the publishable package
 - `task.md`: Milestone tracker, aligned with `prds/convex-llms-txt-prd-v6.md`
@@ -23,6 +24,7 @@ Plain text map of every file in the repo. Regenerate by hand as files are added 
 - `prds/setup-and-demo-posthog-redesign.md`: PRD covering the SETUP.md guide and the PostHog-inspired demo redesign
 - `prds/agent-readiness-v1.md`: PRD for the 10 agent-readiness features, widget tab visibility controls, CLI commands, and doc updates that turn any consumer app into an isitagentready.com pass
 - `prds/setup-docs-split.md`: PRD for splitting author setup docs from consumer install docs and linking the install guide from both demos
+- `prds/typecheck-component-circularity.md`: PRD for fixing packaged component codegen and TypeScript circular reference failures
 - `mockup-react.html`: Standalone HTML mockup of the React demo's agent-readiness control panel. Shows the score ring, per-check grid, response headers, schema toggles, and the 3-tab widget with SCORE active
 - `mockup-svelte.html`: Standalone HTML mockup of the Svelte demo's analytics dashboard with agent-readiness signals layered in. Shows the 4-card metric grid (including markdown-negotiation count and readiness scans), agent and file breakdowns, signals panel, and 3-tab widget
 
@@ -31,12 +33,21 @@ Plain text map of every file in the repo. Regenerate by hand as files are added 
 - `src/client/index.ts`: Public package entry, exports `registerRoutes`, `AgentReady` class client, `createTypedAgentReadyClient`, types
 - `src/client/types.ts`: Shared type definitions for settings, pages, endpoints, cached files, route names, event payloads
 - `src/component/convex.config.ts`: Component declaration via `defineComponent("agentReady")`
+- `src/component/_generated/`: Generated Convex component bindings created by `npx convex codegen --component-dir ./src/component`
 - `src/component/schema.ts`: `settings`, `pages`, `apiEndpoints`, `cachedFiles`, `agentRequests`, `pageVersions` tables with indexes
-- `src/component/content.ts`: Queries and mutations for settings, pages, endpoints, cached files, plus `regenerateAll`, `generateDescriptions`, `sync` actions. `invalidateCache` is internal, called by the public action wrappers only
+- `src/component/content.ts`: Public settings, page, endpoint, cache, and version functions, plus stable `regenerateAll`, `generateDescriptions`, and `sync` action wrappers
+- `src/component/contentInternal.ts`: Internal action support for settings reads, page reads, sync application, cache invalidation, and generation scheduling
 - `src/component/analytics.ts`: `recordRequest` public mutation (called across the boundary from `registerRoutes`), `getSummary`, `getTimeSeries`, `cleanupOldRequests`, `cleanupOrphanedCacheEntries`
 - `src/component/generation.ts`: Workpool-backed generation of `llms.txt`, `agents.md`, `llms-full.txt`
-- `src/component/crons.ts`: Dynamic cron worker that refreshes content and trims analytics via `api.analytics.cleanupOldRequests`
+- `src/component/cronWorker.ts`: Dynamic cron worker that refreshes content and trims analytics via `api.analytics.cleanupOldRequests`
 - `src/component/lib.ts`: Shared helpers: SHA-256 hashing, user-agent classification, origin check, config diffing
+- `src/component/validators.ts`: Shared Convex validators for component documents, sync config payloads, and typed action/query return values
+
+## Root Convex scaffolding — `convex/`
+
+- `convex/README.md`: Convex generated starter README
+- `convex/tsconfig.json`: Convex generated TypeScript config for the root deployment scaffold
+- `convex/_generated/`: Generated root Convex app bindings and AI guidelines from `npx convex dev --once`
 
 ## React widget — `src/react/`
 
