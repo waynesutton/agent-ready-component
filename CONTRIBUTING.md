@@ -1,5 +1,7 @@
 # Contributing
 
+`@waynesutton/agent-ready` is a Convex component that ships with React and Svelte widgets. This guide covers local development, the widget contract for community ports, and publishing.
+
 ## Local development
 
 ```bash
@@ -20,7 +22,7 @@ The demo links against the local `src/` via the workspace setup.
 
 ## Widget contract
 
-Community widgets (Vue, Solid, Angular, anything else) should match the public API the core React and Svelte widgets expose. Contributors publish widgets as separate packages without coordination from the core team.
+The Convex component ships with React and Svelte widgets out of the box. Community widgets for other frameworks (Vue, Solid, Angular, anything else) should match the public API the core widgets expose. Contributors publish widgets as separate packages without coordination from the core team.
 
 ### Props interface
 

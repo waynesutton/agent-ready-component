@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useSyncExternalStore } from "react";
+import { useState, useCallback, useSyncExternalStore } from "react";
 import { useConvex } from "convex/react";
 import { client as createBrowserAuth } from "@robelest/convex-auth/browser";
 import { api } from "../convex/_generated/api";
@@ -38,9 +38,6 @@ export function useAuth() {
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { state, signIn, signOut, isAuthenticated } = useAuth();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [flow, setFlow] = useState<"signIn" | "signUp">("signIn");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -64,12 +61,11 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSignInWithGitHub = async () => {
     setError(null);
     setBusy(true);
     try {
-      await signIn("password", { email, password, flow });
+      await signIn("github");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Sign in failed");
     } finally {
@@ -83,27 +79,11 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       <p style={{ color: "var(--muted)", marginBottom: 24, fontSize: 14 }}>
         Sign in to manage settings and analytics.
       </p>
-      <form onSubmit={onSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid var(--border, #333)" }}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          minLength={8}
-          style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid var(--border, #333)" }}
-        />
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {error && <p style={{ color: "#ef4444", fontSize: 13 }}>{error}</p>}
         <button
-          type="submit"
+          type="button"
+          onClick={onSignInWithGitHub}
           disabled={busy}
           style={{
             padding: "10px 16px",
@@ -114,16 +94,9 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
             cursor: busy ? "wait" : "pointer",
           }}
         >
-          {busy ? "..." : flow === "signIn" ? "Sign in" : "Create account"}
+          {busy ? "Opening GitHub..." : "Sign in with GitHub"}
         </button>
-      </form>
-      <button
-        type="button"
-        onClick={() => setFlow(flow === "signIn" ? "signUp" : "signIn")}
-        style={{ marginTop: 12, fontSize: 13, color: "var(--muted)", cursor: "pointer", background: "none", border: "none" }}
-      >
-        {flow === "signIn" ? "Need an account? Sign up" : "Already have an account? Sign in"}
-      </button>
+      </div>
     </div>
   );
 }

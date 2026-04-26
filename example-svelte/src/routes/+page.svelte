@@ -29,11 +29,11 @@
 </script>
 
 <div class="hero">
-  <h1>The standard discovery layer for AI agents</h1>
+  <h1>AI agent discovery for Convex apps</h1>
   <p class="lede">
-    Generate, cache, and serve <code>llms.txt</code>, <code>agents.md</code>, and
-    <code>llms-full.txt</code> straight from your Convex deployment. ETag aware.
-    Cron scheduled. Widget included.
+    A Convex component that generates, caches, and serves <code>llms.txt</code>,
+    <code>agents.md</code>, and <code>llms-full.txt</code> from your Convex backend.
+    Drop the widget into your React or Svelte frontend. ETag aware. Cron scheduled.
   </p>
 
   <div class="cta-row">
@@ -62,11 +62,11 @@
 
 {#if tab === "usage"}
   <div class="feature-card">
-    <h3>Drop-in Convex component</h3>
+    <h3>Convex component with React and Svelte widgets</h3>
     <p>
-      Install, run <code>npx agent-ready</code>, and the component takes over from there.
-      Pages, endpoints, settings, and generation logic live inside the component so your app
-      stays clean.
+      Register the component with <code>app.use(agentReady)</code>, run <code>npx agent-ready</code>,
+      and drop the widget into your frontend. Pages, endpoints, settings, and generation logic live
+      inside the component boundary with isolated tables, so your app schema stays clean.
     </p>
   </div>
   <div class="callout"><strong>npm install</strong> @waynesutton/agent-ready @convex-dev/crons @convex-dev/workpool</div>
@@ -101,10 +101,10 @@
 
 {#if tab === "widget"}
   <div class="feature-card">
-    <h3>HUMAN vs MACHINE, in one corner</h3>
+    <h3>React and Svelte widgets built in</h3>
     <p>
-      The floating widget uses the exact same live status endpoint that agents hit. Toggle to
-      <code>MACHINE</code> to watch the files update in real time.
+      The floating widget reads from the same Convex status endpoint that agents hit. Toggle to
+      <code>MACHINE</code> to see the files agents see, in real time.
     </p>
   </div>
   <ul class="kv-list" style="margin-top: 12px;">

@@ -1,6 +1,6 @@
 # INTEGRATION.md
 
-> For LLMs: This file contains complete integration instructions for `@waynesutton/agent-ready`.
+> For LLMs: `@waynesutton/agent-ready` is a Convex component that generates, caches, and serves `llms.txt`, `agents.md`, and `llms-full.txt` from a Convex backend. It ships with drop-in React and Svelte widgets. This file contains complete integration instructions.
 > Follow sections in order. Each section is self-contained. Code blocks are intended to be copy-pasted verbatim.
 
 ## SECTION: Installation
@@ -106,6 +106,8 @@ export const typedAgentReady = createTypedAgentReadyClient(components.agentReady
 
 ## SECTION: React widget
 
+The component ships a React widget you can drop into any Convex React app. It reads live status from the same deployment.
+
 ```tsx
 // src/App.tsx
 import { AgentReadyWidget } from "@waynesutton/agent-ready/react";
@@ -175,6 +177,8 @@ function StatusBadge() {
 
 ## SECTION: Svelte widget
 
+Same widget for SvelteKit apps. Import from the `svelte` subpath export.
+
 ```svelte
 <script lang="ts">
   import { AgentReadyWidget } from "@waynesutton/agent-ready/svelte";
@@ -209,7 +213,7 @@ function StatusBadge() {
 
 ## SECTION: Convex wrapper functions
 
-The component runs in an isolated Convex component. Browser clients cannot call component functions directly. You need thin wrapper functions in your own `convex/` directory that delegate to the component.
+The component runs inside the [Convex component boundary](https://docs.convex.dev/components) with its own isolated tables. Browser clients cannot call component functions directly. You need thin wrapper functions in your own `convex/` directory that delegate to the component.
 
 The `npx agent-ready setup` wizard scaffolds these automatically at `convex/agentReady/content.ts` and `convex/agentReady/analytics.ts`. If you skipped the wizard, create them manually:
 
@@ -427,7 +431,9 @@ npx agent-ready cleanup --older-than 7d               # prune old analytics rows
 npx agent-ready versions --path /dashboard            # show version history
 ```
 
-## SECTION: static-hosting integration (demo apps)
+## SECTION: static-hosting integration (Convex demo apps)
+
+Both demo apps host their React/Svelte frontends on the same Convex deployment using `@convex-dev/static-hosting`.
 
 ```ts
 // convex/http.ts
@@ -597,19 +603,33 @@ app.use(auth);
 // ... your other components
 ```
 
-Create `convex/auth.ts`:
+Create `convex/auth.ts` with the GitHub provider (or swap in any provider from [auth.estifanos.com/getting-started/providers](https://auth.estifanos.com/getting-started/providers/)):
 
 ```typescript
-import { createAuth } from "@robelest/convex-auth/component";
+import { createAuth } from "@robelest/convex-auth/server";
 import { components } from "./_generated/api";
-import { password } from "@robelest/convex-auth/providers/password";
+import { github } from "@robelest/convex-auth/providers/github";
 
 export const auth = createAuth(components.auth, {
-  providers: [password()],
+  providers: [
+    github({
+      clientId: process.env.AUTH_GITHUB_ID!,
+      clientSecret: process.env.AUTH_GITHUB_SECRET!,
+    }),
+  ],
 });
 
 export const { signIn, signOut, store } = auth;
 ```
+
+Set the GitHub OAuth secrets on your Convex deployment:
+
+```bash
+npx convex env set AUTH_GITHUB_ID "your-github-client-id"
+npx convex env set AUTH_GITHUB_SECRET "your-github-client-secret"
+```
+
+In your GitHub OAuth app settings, set the Authorization callback URL to your Convex HTTP Actions URL plus `/api/auth/callback/github`. For example: `https://your-deployment.convex.site/api/auth/callback/github`. The callback goes to Convex, not localhost.
 
 Wire auth routes in `convex/http.ts`:
 

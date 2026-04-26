@@ -1,17 +1,17 @@
 # Files manifest
 
-Plain text map of every file in the repo. Regenerate by hand as files are added or removed.
+Plain text map of every file in the `@waynesutton/agent-ready` repo. This is a Convex component with React and Svelte widgets. Regenerate by hand as files are added or removed.
 
 ## Root
 
-- `README.md`: Project overview, install quick start, demo commands, and links to consumer install docs
+- `README.md`: Project overview for the Convex component with React/Svelte widgets, install quick start, demo commands, and links to consumer install docs
 - `SETUP.md`: Author release guide for shipping the package to GitHub, npm, and Convex static hosting, including dev deployment configuration before component codegen and npm package checks
-- `docs/install.md`: Consumer install guide for adding `@waynesutton/agent-ready` to a Convex app
-- `docs/install.html`: Standalone HTML version of the consumer install guide
-- `INTEGRATION.md`: LLM-optimized integration guide covering React, Svelte, static hosting, and manual paths
+- `docs/install.md`: Install guide for adding this Convex component and widget to a React or Svelte app
+- `docs/install.html`: Standalone HTML version of the install guide
+- `INTEGRATION.md`: LLM-optimized integration guide for the Convex component, covering React and Svelte widgets, static hosting, and manual paths
 - `CONTRIBUTING.md`: Widget contract, local dev flow, publishing rules
 - `LICENSE`: Apache 2.0
-- `package.json`: Root package manifest, publishes `@waynesutton/agent-ready` with subpath exports plus CLI and docs package contents
+- `package.json`: Root package manifest for the Convex component, publishes `@waynesutton/agent-ready` with subpath exports for React, Svelte, and the CLI
 - `package-lock.json`: npm lockfile for the root workspace and example apps, including dependency updates used to resolve npm audit and peer dependency conflicts
 - `tsconfig.json`: Base TypeScript config for component source
 - `tsconfig.build.json`: Build config for the publishable package
@@ -22,7 +22,7 @@ Plain text map of every file in the repo. Regenerate by hand as files are added 
 - `.gitignore`: Git ignore patterns
 - `.npmignore`: Extra ignores for npm publish
 - `prds/convex-llms-txt-prd-v6.md`: Source of truth for the component design
-- `prds/setup-and-demo-posthog-redesign.md`: PRD covering the SETUP.md guide and the PostHog-inspired demo redesign
+- `prds/setup-and-demo-redesign.md`: PRD covering the SETUP.md guide and the demo app redesign
 - `prds/agent-readiness-v1.md`: PRD for the 10 agent-readiness features, widget tab visibility controls, CLI commands, and doc updates that turn any consumer app into an isitagentready.com pass
 - `prds/setup-docs-split.md`: PRD for splitting author setup docs from consumer install docs and linking the install guide from both demos
 - `prds/typecheck-component-circularity.md`: PRD for fixing packaged component codegen and TypeScript circular reference failures
@@ -38,6 +38,7 @@ Plain text map of every file in the repo. Regenerate by hand as files are added 
 
 - `public/human-agent-ready-demo.png`: Screenshot of the widget HUMAN tab showing app name and AI chat links
 - `public/agent-agent-ready-demo.png`: Screenshot of the widget MACHINE tab showing file links and status
+- `public/score-agent-ready-demo.png`: Screenshot of the widget SCORE tab showing 100/100 readiness with 11 passing checks
 
 ## Component source — `src/`
 
@@ -101,6 +102,8 @@ Plain text map of every file in the repo. Regenerate by hand as files are added 
 
 ## React demo — `example-react/`
 
+A Convex app (React + Vite) that shows the component and React widget in action.
+
 - `example-react/package.json`: Scripts for dev, build, deploy, and `deploy:full` one-command production deploy via `static-hosting`
 - `example-react/vite.config.ts`: Vite config
 - `example-react/tsconfig.json`: TS config for the demo
@@ -110,7 +113,9 @@ Plain text map of every file in the repo. Regenerate by hand as files are added 
 - `example-react/.env.production.local`: Production Convex URLs for Vite build (git-ignored)
 - `example-react/convex/convex.config.ts`: Uses `auth`, `crons`, `workpool`, `agentReady`, `staticHosting`
 - `example-react/convex/schema.ts`: Host app schema (empty tables allowed, auth tables isolated in the auth component)
-- `example-react/convex/auth.ts`: Auth config using `@robelest/convex-auth` with password and anonymous providers
+- `example-react/convex/auth.ts`: Auth config using `@robelest/convex-auth` with the GitHub OAuth provider
+- `example-react/convex/auth.config.ts`: Convex JWT trust config for `@robelest/convex-auth`
+- `example-react/convex/auth/core.ts`: Lightweight auth context for queries and mutations
 - `example-react/convex/functions.ts`: `authQuery`, `authMutation`, `authAction` custom function wrappers using `auth.ctx()` and `convex-helpers`
 - `example-react/convex/_generated/`: Generated Convex app bindings for the React demo
 - `example-react/convex/tsconfig.json`: Convex function TypeScript config for the React demo
@@ -120,17 +125,19 @@ Plain text map of every file in the repo. Regenerate by hand as files are added 
 - `example-react/convex/staticHosting.ts`: Re-exports `exposeUploadApi` against `components.selfHosting` including batch upload functions
 - `example-react/convex/myApp.ts`: Example callbacks for `onGenerationComplete`, `onAnalyticsThreshold`
 - `example-react/src/main.tsx`: React root with ConvexProvider
-- `example-react/src/auth.tsx`: Auth client hook (`useAuth`) and `AuthGate` component for protecting admin routes with password sign-in
-- `example-react/src/App.tsx`: Landing page with PostHog-inspired window chrome, sidebar, tabs, widget, and install guide links. Settings and Analytics routes wrapped in `AuthGate`
+- `example-react/src/auth.tsx`: Auth client hook (`useAuth`) and `AuthGate` component for protecting admin routes with GitHub OAuth sign-in
+- `example-react/src/App.tsx`: Landing page with window chrome, sidebar, tabs, widget, and install guide links. Settings and Analytics routes wrapped in `AuthGate`
 - `example-react/src/Settings.tsx`: Settings panel with tabbed pages, cache status, and actions
 - `example-react/src/Analytics.tsx`: Analytics dashboard with metric grid plus agent and file breakdown
-- `example-react/src/index.css`: Global styles with PostHog cream palette, window chrome, tabs, buttons, pills
+- `example-react/src/index.css`: Global styles with cream palette, window chrome, tabs, buttons, pills
 - `example-react/src/components/Window.tsx`: Shared window-chrome wrapper
 - `example-react/src/components/Sidebar.tsx`: File-style navigation sidebar
 - `example-react/src/components/Tabs.tsx`: Tab strip with active orange underline
 - `example-react/src/components/Button.tsx`: Primary and ghost button variants
 
 ## Svelte demo — `example-svelte/`
+
+A Convex app (SvelteKit) that shows the component and Svelte widget in action.
 
 - `example-svelte/package.json`: Scripts for dev, build, deploy via `static-hosting`
 - `example-svelte/svelte.config.js`: Uses `@sveltejs/adapter-static`
@@ -144,6 +151,10 @@ Plain text map of every file in the repo. Regenerate by hand as files are added 
 - `example-svelte/convex/agentReady/analytics.ts`: App-facing analytics wrappers around `components.agentReady.analytics` for browser clients
 - `example-svelte/convex/http.ts`: `registerRoutes` plus static routes through `components.selfHosting`
 - `example-svelte/convex/staticHosting.ts`: Upload API re-exports against `components.selfHosting` including batch upload functions
+- `example-svelte/convex/auth.ts`: Auth config using `@robelest/convex-auth` with the GitHub OAuth provider
+- `example-svelte/convex/auth.config.ts`: Convex JWT trust config for `@robelest/convex-auth`
+- `example-svelte/convex/auth/core.ts`: Lightweight auth context for queries and mutations
+- `example-svelte/src/lib/AuthGate.svelte`: Auth gate component for protecting admin routes with GitHub OAuth sign-in
 - `example-svelte/src/app.html`: SvelteKit HTML shell
 - `example-svelte/src/app.css`: Global styles
 - `example-svelte/src/routes/+layout.svelte`: Root layout with widget and install guide topbar link

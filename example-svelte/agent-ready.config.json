@@ -2,7 +2,7 @@
   "settings": {
     "appName": "agent-ready SvelteKit demo",
     "appUrl": "https://your-deployment.convex.site",
-    "description": "Demo app for @waynesutton/agent-ready on SvelteKit, hosted on Convex via static-hosting.",
+    "description": "SvelteKit demo app showing the @waynesutton/agent-ready Convex component and Svelte widget, hosted on Convex via static-hosting.",
     "widgetPosition": "floating-bottom-right",
     "widgetStatusVisible": true,
     "widgetShowFiles": true,

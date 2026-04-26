@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Install @waynesutton/agent-ready</title>
+    <title>Install @waynesutton/agent-ready · Convex component</title>
     <style>
       :root {
         color-scheme: light;
@@ -67,7 +67,7 @@
       }
 
       h1 {
-        font-size: clamp(2rem, 5vw, 3.5rem);
+        font-size: clamp(1.75rem, 4vw, 2.5rem);
       }
 
       h2 {
@@ -173,11 +173,12 @@
     <main>
       <article>
         <header>
-          <span class="pill">Convex install guide</span>
+          <span class="pill">Convex component install guide</span>
           <h1>Install @waynesutton/agent-ready</h1>
           <p class="lede">
-            Add generated <code>llms.txt</code>, <code>agents.md</code>, and
-            <code>llms-full.txt</code> files to an existing Convex app.
+            A Convex component with React and Svelte widgets. Add generated
+            <code>llms.txt</code>, <code>agents.md</code>, and
+            <code>llms-full.txt</code> files to your Convex app.
           </p>
         </header>
 
@@ -199,7 +200,7 @@
         </section>
 
         <section>
-          <h2>2. Register the component</h2>
+          <h2>2. Register the Convex component</h2>
           <pre><code>import { defineApp } from "convex/server";
 import agentReady from "@waynesutton/agent-ready/convex.config.js";
 import crons from "@convex-dev/crons/convex.config.js";
@@ -235,7 +236,8 @@ export default http;</code></pre>
         </section>
 
         <section>
-          <h2>4. Add the widget</h2>
+          <h2>4. Add the widget to your frontend</h2>
+          <p>The component ships React and Svelte widgets. Import the one that matches your frontend.</p>
           <p>React:</p>
           <pre><code>import { AgentReadyWidget, UpdateBanner } from "@waynesutton/agent-ready/react";
 

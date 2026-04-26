@@ -1,11 +1,11 @@
-# Setup guide + PostHog-inspired demo redesign
+# Setup guide + demo app redesign
 
 ## Problem
 
 Two gaps before this repo is shareable:
 
 1. No step-by-step guide that walks a new developer from zero to "component installed, published to npm, pushed to GitHub, both demo apps live on Convex static hosting, refresh-reload verified." The scaffold has `README.md`, `INTEGRATION.md`, and `CONTRIBUTING.md`, but none of them is a linear setup checklist.
-2. Both demo apps ship with a generic dark-mode layout. They should feel like PostHog's homepage: cream background, window-chrome framing, editorial typography, orange CTAs, tab navigation with active underline, sidebar of file-style links. That's the aesthetic wayne asked for and it pairs well with the terminal-styled LlmsTxt widget sitting in the corner.
+2. Both demo apps ship with a generic dark-mode layout. They should use a warm cream aesthetic: cream background, window-chrome framing, editorial typography, orange CTAs, tab navigation with active underline, sidebar of file-style links. That pairs well with the terminal-styled LlmsTxt widget sitting in the corner.
 
 ## Proposed solution
 
@@ -30,7 +30,7 @@ Sections:
 
 Reference: https://llmstxt.org, https://docs.convex.dev/llms.txt, https://agents.md, https://www.convex.dev/components/static-hosting, https://docs.convex.dev/components/authoring, https://docs.convex.dev/components/using, https://docs.convex.dev/components/understanding
 
-### 2. PostHog-inspired redesign of both demo apps
+### 2. Redesign of both demo apps
 
 #### Color system
 
@@ -43,7 +43,7 @@ Reference: https://llmstxt.org, https://docs.convex.dev/llms.txt, https://agents
 | `--border-soft` | `#d8d3c4` | Subtle panel borders |
 | `--text` | `#151515` | Primary text |
 | `--muted` | `#5f5f5f` | Secondary copy |
-| `--accent` | `#f54e00` | PostHog orange, used for CTAs and active tab underline |
+| `--accent` | `#f54e00` | Orange accent, used for CTAs and active tab underline |
 | `--accent-hover` | `#db4500` | Hover state |
 | `--accent-soft` | `#fff3e9` | Light orange background for highlighted panels |
 
@@ -78,7 +78,7 @@ The React demo reuses these as shared components. The Svelte demo mirrors the la
 
 ### Create
 
-- `prds/setup-and-demo-posthog-redesign.md` (this file)
+- `prds/setup-and-demo-redesign.md` (this file)
 - `SETUP.md` (repo root step-by-step guide)
 - `example-react/src/components/Window.tsx`
 - `example-react/src/components/Sidebar.tsx`
@@ -88,7 +88,7 @@ The React demo reuses these as shared components. The Svelte demo mirrors the la
 ### Edit
 
 - `example-react/src/App.tsx` — wrap routes in window chrome, add tabs and CTAs
-- `example-react/src/Settings.tsx` — render inside window, PostHog look
+- `example-react/src/Settings.tsx` — render inside window, cream look
 - `example-react/src/Analytics.tsx` — same
 - `example-react/src/index.css` — new token palette + layout utilities
 - `example-react/index.html` — page background color baked in
@@ -96,7 +96,7 @@ The React demo reuses these as shared components. The Svelte demo mirrors the la
 - `example-svelte/src/routes/+page.svelte` — match React overview
 - `example-svelte/src/routes/settings/+page.svelte` — match React settings
 - `example-svelte/src/routes/analytics/+page.svelte` — match React analytics
-- `example-svelte/src/app.css` — PostHog token palette
+- `example-svelte/src/app.css` — cream token palette
 - `example-svelte/src/app.html` — bg color
 - `README.md` — add "See SETUP.md" line
 - `task.md` — new tasks + move completed
@@ -108,6 +108,6 @@ The React demo reuses these as shared components. The Svelte demo mirrors the la
 - Widget stays dark — don't accidentally theme it to match (it's designed to be a visual pop against the page)
 - Tabs are client-rendered; route transitions must preserve the active-tab underline
 - SvelteKit doesn't have shared "client components" — the window chrome lives in `+layout.svelte` and each route fills the body slot
-- `PostHog orange` should not be used on text links inside body copy, only on CTAs and active-tab underlines
+- Orange accent should not be used on text links inside body copy, only on CTAs and active-tab underlines
 - Don't use emoji or em dashes per the write rule
 - Don't touch anything under `src/component/`, `src/client/`, or `src/react/` except CSS if needed — the component itself stays as-is

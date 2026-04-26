@@ -1,8 +1,8 @@
 # SETUP.md
 
-Author release guide for `@waynesutton/agent-ready`.
+Author release guide for `@waynesutton/agent-ready`, a Convex component with React and Svelte widgets.
 
-This file is for the package author shipping the component to GitHub, npm, and Convex static hosting. If you are installing the package in your own Convex app, use `docs/install.md` or `docs/install.html`.
+This file is for the package author shipping the Convex component to GitHub, npm, and Convex static hosting. If you are adding the component to your own Convex React or Svelte app, use `docs/install.md` or `docs/install.html`.
 
 Related reading:
 
@@ -188,15 +188,56 @@ gh release create v0.1.0 --generate-notes
 
 ## 12. Demo apps (optional)
 
-The `example-react` and `example-svelte` directories are reference implementations that show how to integrate the component with a full frontend. They are not required to use `@waynesutton/agent-ready` in your own app. If you forked this repo to build your own product, you can safely ignore or delete both directories.
+The `example-react` and `example-svelte` directories are working Convex apps that show how to register the component, wire the widget, and serve live discovery files. `example-react` uses React + Vite with the React widget. `example-svelte` uses SvelteKit with the Svelte widget. They are not required to use `@waynesutton/agent-ready` in your own app. If you forked this repo to build your own product, you can safely ignore or delete both directories.
 
 The remaining steps in this guide only matter if you want to run and deploy the demo apps.
 
 ### Auth and admin access
 
-Both demo apps use `@robelest/convex-auth` with email and password sign-in. The settings and analytics pages are restricted to admin users. Admin emails are stored in a Convex environment variable so they never appear in the codebase.
+Both demo apps use `@robelest/convex-auth` with GitHub OAuth. The settings and analytics pages require sign-in. Admin emails are stored in a Convex environment variable so they never appear in the codebase.
 
-Set the `ADMIN_EMAILS` variable on each demo deployment before running the apps. Use a comma-separated list of addresses:
+#### 1. Create a GitHub OAuth app
+
+Go to [github.com/settings/applications/new](https://github.com/settings/applications/new).
+
+Fill in the form:
+
+- **Application name**: anything you want (users see this on the GitHub consent screen)
+- **Homepage URL**: `http://localhost:5173` for local dev
+- **Authorization callback URL**: your Convex HTTP Actions URL plus `/api/auth/callback/github`
+
+Find your HTTP Actions URL in the [Convex dashboard](https://dashboard.convex.dev/) under Settings. It matches your Deployment URL but ends in `.convex.site` instead of `.convex.cloud`. For example:
+
+```
+https://charming-puffin-516.convex.site/api/auth/callback/github
+```
+
+The callback URL points to Convex, not localhost. GitHub redirects to Convex after consent, and Convex handles the token exchange and redirects the user back to your app.
+
+Click **Register application**, then **Generate a new client secret**.
+
+#### 2. Set environment variables
+
+```bash
+cd example-react
+npx convex env set AUTH_GITHUB_ID "your-github-client-id"
+npx convex env set AUTH_GITHUB_SECRET "your-github-client-secret"
+```
+
+```bash
+cd ../example-svelte
+npx convex env set AUTH_GITHUB_ID "your-github-client-id"
+npx convex env set AUTH_GITHUB_SECRET "your-github-client-secret"
+```
+
+For production deployments, add `--prod`:
+
+```bash
+npx convex env set AUTH_GITHUB_ID "your-github-client-id" --prod
+npx convex env set AUTH_GITHUB_SECRET "your-github-client-secret" --prod
+```
+
+#### 3. Set admin emails
 
 ```bash
 cd example-react
@@ -208,13 +249,28 @@ cd ../example-svelte
 npx convex env set ADMIN_EMAILS "your-email@example.com,another-admin@example.com"
 ```
 
-For production deployments, add `--prod`:
+The check is case-insensitive. Users whose email is not in the list see the sign-in button but are rejected by the server when they try to access admin routes. Never commit email addresses to the repository.
+
+#### 4. Run the auth setup wizard (if not already done)
+
+The wizard generates signing keys and wires `auth.config.ts`, `auth/core.ts`, and `http.ts`:
 
 ```bash
-npx convex env set ADMIN_EMAILS "your-email@example.com" --prod
+cd example-react
+npx @robelest/convex-auth setup
 ```
 
-The check is case-insensitive. Users whose email is not in the list see a sign-in form but are rejected by the server when they try to access admin routes. Never commit email addresses to the repository.
+Repeat for the Svelte demo if needed. The wizard is idempotent and will skip files that already exist.
+
+#### Production callback URL
+
+When deploying to production, create a second GitHub OAuth app (or update the existing one) with the production callback URL:
+
+```
+https://your-production-deployment.convex.site/api/auth/callback/github
+```
+
+Set the production secrets with `--prod` as shown above.
 
 ### Deploy the React demo
 

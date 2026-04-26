@@ -4,12 +4,25 @@ All notable changes to `@waynesutton/agent-ready` (formerly `@convex-dev/llms-tx
 
 ## [Unreleased]
 
+### Changed
+
+- Clarified docs, demos, and configs to make it clear this is a Convex component with React and Svelte widgets. Updated opening lines, hero text, section headings, and descriptions across README.md, SETUP.md, INTEGRATION.md, CONTRIBUTING.md, docs/install.md, docs/install.html, files.md, and package.json. Both demo app landing pages, configs, and HTML titles updated to say "Convex component" and name the widget framework. No functional changes
+- Removed all PostHog references from the codebase. Renamed `prds/setup-and-demo-posthog-redesign.md` to `prds/setup-and-demo-redesign.md`. Updated all file path references in changelog, task.md, and files.md. Replaced "PostHog-inspired" with neutral terms in PRD content, changelog entries, and task entries
+- Reduced install.html h1 font size from `clamp(2rem, 5vw, 3.5rem)` to `clamp(1.75rem, 4vw, 2.5rem)` so the package name fits on one line
+
+- Switched both demo apps from password and anonymous auth to GitHub OAuth via `@robelest/convex-auth`. `convex/auth.ts` now configures the `github` provider with `AUTH_GITHUB_ID` and `AUTH_GITHUB_SECRET` environment variables. The React `AuthGate` and Svelte `AuthGate.svelte` now render a single "Sign in with GitHub" button instead of the email and password form
+- Updated `SETUP.md` with step by step GitHub OAuth app creation, callback URL configuration, and environment variable setup for both demo apps
+- Updated `INTEGRATION.md` securing admin routes section to show the GitHub provider instead of the password provider, with callback URL and env var instructions
+- Updated `README.md` demo apps section to document the GitHub OAuth prerequisite
+- `createAuth` import in both demo `convex/auth.ts` files changed from `@robelest/convex-auth/component` to `@robelest/convex-auth/server` to resolve a TypeScript export diagnostic in `0.0.4-preview.30`
+
 ### Added
 
 - Widget display mode options: `widgetCleanMode`, `widgetShowHumanTab`, `widgetShowMachineTab`, `widgetShowChatLinks`, `widgetShowChatGPT`, `widgetShowClaude`, `widgetShowPerplexity`. Configurable via `agent-ready.config.json` settings or as direct widget props (React and Svelte). Clean mode strips the app name and description while keeping all functionality. Individual chat link toggles let consumers hide any combination of ChatGPT, Claude, and Perplexity links. Tab toggles let consumers show only HUMAN, only MACHINE, or both. Widget hides entirely when all tabs are disabled
 - PRD: `prds/widget-display-modes.md`
-- `@robelest/convex-auth` integration in the React demo app with password and anonymous providers. Admin mutations (`publishPage`, `draftPage`, `archivePage`, `rollbackCache`, `regenerateAll`) are now gated behind `authMutation`/`authAction` from `convex-helpers` custom functions. Settings and Analytics routes require sign-in via `AuthGate` component
-- `convex/auth.ts`, `convex/functions.ts`, and `src/auth.tsx` files in the React demo for auth wiring and login UI
+- `@robelest/convex-auth` integration in both demo apps with GitHub OAuth. Admin mutations (`publishPage`, `draftPage`, `archivePage`, `rollbackCache`, `regenerateAll`) are gated behind `authMutation`/`authAction` from `convex-helpers` custom functions. Settings and Analytics routes require sign-in via `AuthGate` component
+- `convex/auth.ts`, `convex/functions.ts`, and `src/auth.tsx` files in the React demo for auth wiring and GitHub sign-in UI
+- `convex/auth.ts` and `src/lib/AuthGate.svelte` in the Svelte demo for auth wiring and GitHub sign-in UI
 - `internalCleanupOldRequests` internalMutation in `src/component/analytics.ts` for server-to-server use by the cron worker
 - PRD: `prds/security-hardening.md`
 
@@ -129,10 +142,10 @@ All notable changes to `@waynesutton/agent-ready` (formerly `@convex-dev/llms-tx
 ### Added
 
 - `SETUP.md` linear setup and publish guide at repo root covering prerequisites, local install, wire-up for host apps, setup wizard, local verification, both demo apps, GitHub publish via `gh`, npm publish with dry run, Convex deploy for both demos, `@convex-dev/static-hosting` upload, ETag behavior test, UpdateBanner refresh flow test, go-live flip, rollback, analytics, cleanup, versions
-- PostHog-inspired redesign of both demo apps: cream background (`#eeefe9`), hard black borders, window chrome with title bar and macOS-style dot controls, file-style sidebar with primary nav + live files section, tab strip with orange active underline (`#f54e00`), orange primary CTAs with drop shadow, metric cards on analytics, pill-style status badges, and page footer
+- Redesign of both demo apps: cream background (`#eeefe9`), hard black borders, window chrome with title bar and macOS-style dot controls, file-style sidebar with primary nav + live files section, tab strip with orange active underline (`#f54e00`), orange primary CTAs with drop shadow, metric cards on analytics, pill-style status badges, and page footer
 - Shared React demo components under `example-react/src/components/`: `Window.tsx`, `Sidebar.tsx`, `Tabs.tsx`, `Button.tsx`
 - Metric cards on the analytics page showing total requests plus top agent and top file for the last 30 days
-- PRD `prds/setup-and-demo-posthog-redesign.md` covering both deliverables
+- PRD `prds/setup-and-demo-redesign.md` covering the setup guide and demo redesign
 - Initial repo scaffold driven by `prds/convex-llms-txt-prd-v6.md`
 - Root package manifest with workspace layout for `src/`, `cli/`, `example-react/`, `example-svelte/`
 - Component backend scaffold in `src/component/`: `convex.config.ts`, `schema.ts`, `content.ts`, `analytics.ts`, `http.ts`, `generation.ts`, `cronWorker.ts`, `lib.ts`
@@ -153,7 +166,7 @@ All notable changes to `@waynesutton/agent-ready` (formerly `@convex-dev/llms-tx
 - `src/component/content.ts` flipped `invalidateCache` from `mutation` to `internalMutation`. It is only ever called from inside the component by `regenerateAll` and `sync`, both of which stay public
 - `src/component/cronWorker.ts` references `api.analytics.cleanupOldRequests` instead of `internal.*` to match the public visibility of that mutation
 - `package.json` exports now include `./convex.config`, `./_generated/component.js`, and `./_generated/api.js` so consumers and Convex tooling can reach the generated component module without a deep import path
-- `example-react/src/App.tsx`, `Settings.tsx`, `Analytics.tsx`, `index.css`, `index.html` rewritten to use the window-chrome layout and PostHog palette
+- `example-react/src/App.tsx`, `Settings.tsx`, `Analytics.tsx`, `index.css`, `index.html` rewritten to use the window-chrome layout and cream palette
 - `example-svelte/src/app.css`, `app.html`, `routes/+layout.svelte`, `routes/+page.svelte`, `routes/settings/+page.svelte`, `routes/analytics/+page.svelte` rewritten to mirror the React demo
 
 ### Removed

@@ -11,6 +11,7 @@
 import type * as agentReady_analytics from "../agentReady/analytics.js";
 import type * as agentReady_content from "../agentReady/content.js";
 import type * as auth from "../auth.js";
+import type * as auth_core from "../auth/core.js";
 import type * as functions from "../functions.js";
 import type * as http from "../http.js";
 import type * as myApp from "../myApp.js";
@@ -26,6 +27,7 @@ declare const fullApi: ApiFromModules<{
   "agentReady/analytics": typeof agentReady_analytics;
   "agentReady/content": typeof agentReady_content;
   auth: typeof auth;
+  "auth/core": typeof auth_core;
   functions: typeof functions;
   http: typeof http;
   myApp: typeof myApp;

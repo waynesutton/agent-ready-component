@@ -3,7 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/@waynesutton/agent-ready.svg)](https://www.npmjs.com/package/@waynesutton/agent-ready)
 [![npm downloads](https://img.shields.io/npm/dm/@waynesutton/agent-ready.svg)](https://www.npmjs.com/package/@waynesutton/agent-ready)
 
-Auto-generate, cache, and serve `llms.txt`, `agents.md`, and `llms-full.txt` for any Convex app. One component, one deploy command, no external hosting.
+A [Convex component](https://docs.convex.dev/components) that auto-generates, caches, and serves `llms.txt`, `agents.md`, and `llms-full.txt` from your Convex backend. Register it with `app.use(agentReady)`, drop the widget into your React or Svelte frontend, and your app is discoverable by AI agents. No external hosting required.
 
 Ships with React and Svelte widgets, dynamic cron scheduling via `@convex-dev/crons`, opt-in agent analytics, AI-assisted description generation, a CLI with an interactive setup wizard, and both demo apps fully hosted on Convex via `@convex-dev/static-hosting`.
 
@@ -19,7 +19,7 @@ Ships with React and Svelte widgets, dynamic cron scheduling via `@convex-dev/cr
 
 LLMs and coding agents read your app through standard discovery files. `llms.txt` tells an agent what your product is and which pages matter. `agents.md` documents your API. `llms-full.txt` ships your long-form docs. Today most teams hand-write these, forget to update them, or never ship them at all.
 
-`@waynesutton/agent-ready` keeps these files in sync with your Convex-managed content, caches the output, serves it over HTTP with ETag support, and gives you a React or Svelte widget so humans can see what machines see.
+`@waynesutton/agent-ready` is a Convex component that keeps these files in sync with your Convex backend, caches the output, serves it over HTTP with ETag support, and ships React and Svelte widgets so humans can see what machines see. It runs inside the Convex component boundary with its own isolated tables, so your app schema stays clean.
 
 ## Install
 
@@ -33,6 +33,8 @@ The setup wizard asks for your app name, URL, description, analytics preference,
 Need the full consumer flow? Start with `docs/install.md`. Prefer a browser page? Open `docs/install.html`.
 
 ## Quick wire-up
+
+Register the component in your Convex app, mount the HTTP routes, and add the widget to your frontend.
 
 ```ts
 // convex/convex.config.ts
@@ -141,13 +143,14 @@ Not using React? The Convex wrapper functions work with any framework. Build you
 
 ## Features
 
+- Convex component with isolated tables: your app schema stays untouched
 - `testMode: true` by default so nothing serves publicly before you run `npx agent-ready go-live`
 - ETag-aware HTTP handlers return `304 Not Modified` when content is unchanged
 - Durable workpool-backed generation with retries
 - Runtime cron interval updates via `@convex-dev/crons`
 - Optional agent analytics with threshold callbacks
 - AI description generation via Claude or OpenAI, opt-in, 100 item cap, rate-limited
-- React and Svelte widgets with HUMAN, MACHINE, and SCORE tabs. Live staleness detection, `useAgentReadyStatus()` hook, config-driven visibility
+- Drop-in React and Svelte widgets with HUMAN, MACHINE, and SCORE tabs. Live staleness detection, `useAgentReadyStatus()` hook, config-driven visibility
 - SCORE tab shows readiness score with color-coded checks from `/llms-readiness`
 - `Content-Signal`, `x-markdown-tokens`, `Link` discovery headers on every content response
 - Auto-generated `robots.txt` with AI bot directives, `sitemap.xml`, and `/.well-known/agent-skills`
@@ -242,28 +245,41 @@ Add `--prod` to any command to target your production deployment.
 
 ## Demo apps
 
-Both demos run on one Convex deployment. Pick React or Svelte.
+Both demos are full Convex apps that show how the component and widget work together. They run on Convex with GitHub OAuth for admin access. Pick React or Svelte.
+
+Before running either demo, create a GitHub OAuth app at [github.com/settings/applications/new](https://github.com/settings/applications/new). Set the **Authorization callback URL** to your Convex HTTP Actions URL plus `/api/auth/callback/github` (for example, `https://your-deployment.convex.site/api/auth/callback/github`). The callback points to Convex, not localhost. Set the **Homepage URL** to `http://localhost:5173` for local dev.
+
+Then set the GitHub secrets on your Convex deployment:
+
+```bash
+npx convex env set AUTH_GITHUB_ID "your-github-client-id"
+npx convex env set AUTH_GITHUB_SECRET "your-github-client-secret"
+```
+
+Run the React demo:
 
 ```bash
 cd example-react
 npm install
-npm run deploy
+npm run dev
 ```
+
+Run the Svelte demo:
 
 ```bash
 cd example-svelte
 npm install
-npm run deploy
+npm run dev
 ```
 
-The demo URL becomes `https://your-deployment.convex.site`. The widget, the files, and the host app live on the same domain.
+The demo URL becomes `https://your-deployment.convex.site`. The widget, the files, and the host app live on the same domain. See `SETUP.md` for full production deploy instructions.
 
 ## Documentation
 
-- `docs/install.md` is the Markdown install guide for Convex users adding `@waynesutton/agent-ready` to their app
-- `docs/install.html` is the same consumer install guide as a standalone HTML page
-- `SETUP.md` is the author release guide for shipping this package to GitHub, npm, and Convex static hosting, including the dev deployment setup needed before component codegen
-- `INTEGRATION.md` covers every integration path in a format optimized for AI tools
+- `docs/install.md` is the install guide for adding this Convex component to your React or Svelte app
+- `docs/install.html` is the same install guide as a standalone HTML page
+- `SETUP.md` is the author release guide for shipping this package to GitHub, npm, and Convex static hosting
+- `INTEGRATION.md` covers every integration path in a format optimized for AI coding agents
 - `CONTRIBUTING.md` documents the widget contract for community ports (Vue, Solid, Angular)
 - `prds/agent-readiness-v1.md` is the canonical design spec
 

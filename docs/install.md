@@ -1,14 +1,14 @@
 # Install @waynesutton/agent-ready in your Convex app
 
-This guide is for Convex users adding `@waynesutton/agent-ready` to an existing app.
+`@waynesutton/agent-ready` is a [Convex component](https://docs.convex.dev/components) that generates, caches, and serves `llms.txt`, `agents.md`, and `llms-full.txt` from your Convex backend. It ships with drop-in React and Svelte widgets that show humans and AI agents the same discovery files.
 
-If you are publishing the package itself, use `SETUP.md` instead.
+This guide is for developers adding the component to an existing Convex React or Svelte app. If you are publishing the package itself, use `SETUP.md` instead.
 
 ## Before you start
 
 You need:
 
-- A Convex app with `convex/convex.config.ts`
+- An existing Convex app with `convex/convex.config.ts` (React + Vite or SvelteKit)
 - Node 20 or newer
 - Convex CLI 1.36 or newer
 - A public app URL for the generated files
@@ -25,7 +25,7 @@ If you want Convex to host your frontend too:
 npm install @convex-dev/static-hosting
 ```
 
-## 2. Register the component
+## 2. Register the Convex component
 
 ```ts
 // convex/convex.config.ts
@@ -89,7 +89,9 @@ registerRoutes(http, components.agentReady, {
 });
 ```
 
-## 4. Add the widget
+## 4. Add the widget to your frontend
+
+The component ships React and Svelte widgets you can drop into your app. The widget reads status from your Convex deployment and renders HUMAN, MACHINE, and SCORE tabs.
 
 React:
 
@@ -268,9 +270,9 @@ Add `--prod` to any command to target your production deployment.
 
 ## Example apps
 
-The repo includes two working demos:
+The repo includes two working Convex demo apps:
 
-- `example-react`
-- `example-svelte`
+- `example-react` (React + Vite with the React widget)
+- `example-svelte` (SvelteKit with the Svelte widget)
 
-Each demo shows component wiring, widgets, static hosting, setup seeding, and live file links.
+Each demo shows how to register the Convex component, mount the widget, wire static hosting, seed content, and serve live discovery files.
