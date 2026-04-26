@@ -277,10 +277,16 @@ Set the production secrets with `--prod` as shown above.
 ```bash
 cd example-react
 npx convex login
-npx convex dev --start 'vite'
+npx convex dev
 ```
 
-Stop the dev process after local verification.
+In a second terminal:
+
+```bash
+npm run dev
+```
+
+Stop both processes after local verification.
 
 For a stricter component check, run:
 
@@ -294,18 +300,18 @@ Deploy the Convex backend once to create or confirm the production deployment:
 npx convex deploy
 ```
 
-Save the production URLs so the static bundle can find Convex at build time:
+Create a file called `.env.production.local` in the `example-react` folder with your production Convex URLs. You can create it in your editor or paste this in the terminal:
 
-```bash
-cat > .env.production.local <<'EOF'
+```
 VITE_CONVEX_URL=https://quixotic-viper-800.convex.cloud
 VITE_CONVEX_SITE_URL=https://quixotic-viper-800.convex.site
-EOF
 ```
 
-Use the URLs printed by `npx convex deploy` if your production deployment name is different. The `.convex.cloud` URL is `VITE_CONVEX_URL`. The matching `.convex.site` URL is `VITE_CONVEX_SITE_URL`.
+Replace `quixotic-viper-800` with the deployment name printed by `npx convex deploy` if yours is different. The `.convex.cloud` URL goes on the first line, the `.convex.site` URL goes on the second.
 
-After the file exists, deploy the backend, sync production content, regenerate, and upload the static bundle with one command:
+These URLs tell your production build where to find your Convex backend. Without this file, the built app will not know which server to connect to.
+
+Once the file exists, deploy everything with one command:
 
 ```bash
 npm run deploy:full
@@ -328,10 +334,16 @@ Open `https://quixotic-viper-800.convex.site`. You should see the cream demo UI,
 
 ```bash
 cd ../example-svelte
-npx convex dev --start 'vite dev'
+npx convex dev
 ```
 
-Stop the dev process after local verification.
+In a second terminal:
+
+```bash
+npm run dev
+```
+
+Stop both processes after local verification.
 
 For a stricter component check, run:
 
@@ -345,12 +357,14 @@ Deploy the Convex backend:
 npx convex deploy
 ```
 
-Export the deployment URLs:
+Create a file called `.env.production.local` in the `example-svelte` folder with your Svelte deployment URLs:
 
-```bash
-export VITE_CONVEX_URL="https://your-svelte-deployment.convex.cloud"
-export VITE_CONVEX_SITE_URL="https://your-svelte-deployment.convex.site"
 ```
+VITE_CONVEX_URL=https://your-svelte-deployment.convex.cloud
+VITE_CONVEX_SITE_URL=https://your-svelte-deployment.convex.site
+```
+
+Replace `your-svelte-deployment` with the deployment name printed by `npx convex deploy`.
 
 Seed demo content and generate the first files:
 

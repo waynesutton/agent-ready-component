@@ -170,17 +170,20 @@ It writes `agent-ready.config.json` and syncs it to your Convex deployment.
 
 ## 6. Verify locally
 
-Run Convex and your frontend together:
-
-```bash
-npx convex dev --start 'vite'
-```
-
-Or run them separately:
+Start the Convex dev server and your frontend in two terminals:
 
 ```bash
 npx convex dev
-vite
+```
+
+```bash
+npm run dev
+```
+
+Or run both from one command:
+
+```bash
+npx convex dev --start 'npm run dev'
 ```
 
 Verify the component:
@@ -208,19 +211,19 @@ export VITE_CONVEX_SITE_URL="https://your-deployment.convex.site"
 npx @convex-dev/static-hosting deploy
 ```
 
-Then generate fresh files:
+Then sync your config and generate fresh files against production:
 
 ```bash
-npx agent-ready sync
-npx agent-ready regenerate
+npx agent-ready sync --prod
+npx agent-ready regenerate --prod
 ```
 
 ## 8. Go live
 
-`testMode` blocks public access until you are ready.
+`testMode` blocks public access until you are ready. When you are ready to make your files publicly accessible, run go-live against production:
 
 ```bash
-npx agent-ready go-live
+npx agent-ready go-live --prod
 ```
 
 Verify the public files:
@@ -232,6 +235,12 @@ curl -i https://your-deployment.convex.site/llms-status
 ```
 
 Expect `200 OK`.
+
+Check production status at any time:
+
+```bash
+npx agent-ready status --prod
+```
 
 ## CLI reference
 
@@ -254,7 +263,7 @@ Expect `200 OK`.
 | `cleanup` | Trims expired analytics rows and orphan cache entries |
 | `versions --path <p>` | Lists version history for one page |
 
-Add `--prod` to any command to target your production deployment.
+Add `--prod` to any command to target your production deployment instead of your dev deployment. For example: `npx agent-ready go-live --prod`, `npx agent-ready status --prod`, `npx agent-ready scan --url https://your-deployment.convex.site --prod`.
 
 ## Troubleshooting
 

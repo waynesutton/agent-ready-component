@@ -80,6 +80,7 @@ PRD: `prds/agent-readiness-v1.md`. Each milestone is independently shippable.
 
 ## Completed
 
+- [x] 2026-04-26 Simplified SETUP.md production deploy instructions. Replaced heredoc and shell export patterns with plain "create a file" instructions for both React and Svelte demos. Added context on why the env file matters. Friendlier for new developers and vibe coders
 - [x] 2026-04-26 Docs clarity pass: updated README, SETUP, INTEGRATION, CONTRIBUTING, install.md, install.html, files.md, package.json, and both demo apps to consistently call out that this is a Convex component with React and Svelte widgets. Updated hero text, section headings, config descriptions, and HTML titles. No functional changes
 - [x] 2026-04-26 Removed all PostHog references from the codebase. Renamed PRD file from `setup-and-demo-posthog-redesign.md` to `setup-and-demo-redesign.md`. Updated all path references and replaced "PostHog-inspired" with neutral terms across changelog, task.md, files.md, and the PRD content
 - [x] 2026-04-26 Fixed install.html heading overflow by reducing h1 font size so "Install @waynesutton/agent-ready" fits on one line

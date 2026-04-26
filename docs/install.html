@@ -262,22 +262,29 @@ export default http;</code></pre>
 
         <section>
           <h2>6. Verify locally</h2>
-          <pre><code>npx convex dev --start 'vite'
-curl -i http://127.0.0.1:3210/llms.txt
+          <p>Start the Convex dev server and your frontend in two terminals:</p>
+          <pre><code>npx convex dev</code></pre>
+          <pre><code>npm run dev</code></pre>
+          <p>Verify the component:</p>
+          <pre><code>curl -i http://127.0.0.1:3210/llms.txt
 npx agent-ready status</code></pre>
           <p>The widget should show <code>HUMAN</code> and <code>MACHINE</code> tabs.</p>
         </section>
 
         <section>
           <h2>7. Deploy and go live</h2>
+          <p>Deploy your Convex backend, then sync and generate against production:</p>
           <pre><code>npx convex deploy
-npx agent-ready sync
-npx agent-ready regenerate
-npx agent-ready go-live</code></pre>
+npx agent-ready sync --prod
+npx agent-ready regenerate --prod</code></pre>
+          <p>When you are ready to make files publicly accessible:</p>
+          <pre><code>npx agent-ready go-live --prod</code></pre>
           <p>Verify public files:</p>
           <pre><code>curl -i https://your-deployment.convex.site/llms.txt
 curl -i https://your-deployment.convex.site/agents.md
 curl -i https://your-deployment.convex.site/llms-status</code></pre>
+          <p>Check production status at any time:</p>
+          <pre><code>npx agent-ready status --prod</code></pre>
         </section>
 
         <section>
@@ -290,19 +297,25 @@ curl -i https://your-deployment.convex.site/llms-status</code></pre>
               </tr>
             </thead>
             <tbody>
-              <tr><td><code>setup</code></td><td>Runs the first-run wizard</td></tr>
-              <tr><td><code>sync</code></td><td>Applies <code>agent-ready.config.json</code></td></tr>
-              <tr><td><code>status</code></td><td>Prints cache status</td></tr>
-              <tr><td><code>regenerate</code></td><td>Builds fresh generated files</td></tr>
-              <tr><td><code>rollback</code></td><td>Restores previous cached content</td></tr>
-              <tr><td><code>go-live</code></td><td>Turns off test mode</td></tr>
+              <tr><td><code>setup</code></td><td>Runs the first-run wizard, writes <code>agent-ready.config.json</code>, calls sync</td></tr>
+              <tr><td><code>sync</code></td><td>Reads <code>agent-ready.config.json</code> and applies it to the deployment</td></tr>
+              <tr><td><code>status</code></td><td>Prints cache status, current versions, and test mode state</td></tr>
+              <tr><td><code>regenerate</code></td><td>Builds fresh <code>llms.txt</code>, <code>agents.md</code>, and <code>llms-full.txt</code></td></tr>
+              <tr><td><code>rollback --file &lt;name&gt;</code></td><td>Swaps the active cache entry for the previous version</td></tr>
+              <tr><td><code>go-live</code></td><td>Flips <code>testMode</code> off with a confirmation prompt</td></tr>
               <tr><td><code>agent-ready</code></td><td>Enables all readiness flags, syncs, and regenerates</td></tr>
-              <tr><td><code>scan</code></td><td>Audits deployment endpoints, exits non-zero below 80</td></tr>
-              <tr><td><code>analytics</code></td><td>Prints request summary</td></tr>
-              <tr><td><code>cleanup</code></td><td>Trims expired analytics and cache rows</td></tr>
+              <tr><td><code>scan --url &lt;url&gt;</code></td><td>Audits deployment endpoints, exits non-zero below 80</td></tr>
+              <tr><td><code>generate-descriptions</code></td><td>Fills empty page descriptions when AI descriptions are enabled</td></tr>
+              <tr><td><code>publish-page --path &lt;p&gt;</code></td><td>Sets page status to published</td></tr>
+              <tr><td><code>draft-page --path &lt;p&gt;</code></td><td>Sets page status to draft</td></tr>
+              <tr><td><code>archive-page --path &lt;p&gt;</code></td><td>Sets page status to archived</td></tr>
+              <tr><td><code>restore-page --path &lt;p&gt;</code></td><td>Clears <code>deletedAt</code> on a soft-deleted page</td></tr>
+              <tr><td><code>analytics</code></td><td>Prints agent request summary for the last 30 days</td></tr>
+              <tr><td><code>cleanup</code></td><td>Trims expired analytics rows and orphan cache entries</td></tr>
+              <tr><td><code>versions --path &lt;p&gt;</code></td><td>Lists version history for one page</td></tr>
             </tbody>
           </table>
-          <p>Add <code>--prod</code> to any command to target your production deployment.</p>
+          <p>Add <code>--prod</code> to any command to target your production deployment. For example: <code>npx agent-ready go-live --prod</code>, <code>npx agent-ready status --prod</code>, <code>npx agent-ready scan --url https://your-deployment.convex.site --prod</code>.</p>
         </section>
 
         <section>

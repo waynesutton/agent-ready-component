@@ -213,11 +213,23 @@ npx agent-ready sync
 npx agent-ready regenerate
 ```
 
-For production deployments, add the `--prod` flag:
+## Production deployment
+
+Add `--prod` to any command to target your production deployment instead of dev. The full production lifecycle looks like this:
 
 ```bash
+npx convex deploy
 npx agent-ready sync --prod
 npx agent-ready regenerate --prod
+npx agent-ready go-live --prod
+```
+
+Verify production status and files:
+
+```bash
+npx agent-ready status --prod
+npx agent-ready scan --url https://your-deployment.convex.site --prod
+curl -i https://your-deployment.convex.site/llms.txt
 ```
 
 ## CLI reference
@@ -241,7 +253,7 @@ npx agent-ready regenerate --prod
 | `cleanup` | Trims expired analytics rows and orphan cache entries |
 | `versions --path <p>` | Lists version history for one page |
 
-Add `--prod` to any command to target your production deployment.
+Add `--prod` to any command to target your production deployment. For example: `npx agent-ready go-live --prod`, `npx agent-ready status --prod`, `npx agent-ready scan --url https://your-deployment.convex.site --prod`.
 
 ## Demo apps
 

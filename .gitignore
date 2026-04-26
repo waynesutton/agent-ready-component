@@ -45,6 +45,7 @@ packages/*/node_modules/
 # PRD files and folders
 prds/metadataforsubs.md
 prds/addchattoapp.md
+prds/convex-auth-admin-roles-feedback.md
 
 # Local design mockups, not part of the published package
 mockup-react.html

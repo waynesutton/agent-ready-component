@@ -5,7 +5,7 @@ Plain text map of every file in the `@waynesutton/agent-ready` repo. This is a C
 ## Root
 
 - `README.md`: Project overview for the Convex component with React/Svelte widgets, install quick start, demo commands, and links to consumer install docs
-- `SETUP.md`: Author release guide for shipping the package to GitHub, npm, and Convex static hosting, including dev deployment configuration before component codegen and npm package checks
+- `SETUP.md`: Author release guide for shipping the package to GitHub, npm, and Convex static hosting. Includes dev deployment configuration, component codegen, npm package checks, and newbie friendly production deploy instructions
 - `docs/install.md`: Install guide for adding this Convex component and widget to a React or Svelte app
 - `docs/install.html`: Standalone HTML version of the install guide
 - `INTEGRATION.md`: LLM-optimized integration guide for the Convex component, covering React and Svelte widgets, static hosting, and manual paths

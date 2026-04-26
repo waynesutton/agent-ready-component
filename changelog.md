@@ -6,6 +6,7 @@ All notable changes to `@waynesutton/agent-ready` (formerly `@convex-dev/llms-tx
 
 ### Changed
 
+- Simplified SETUP.md production deploy instructions for both React and Svelte demos. Replaced `cat > <<'EOF'` heredoc with plain "create a file" instructions. Replaced `export` shell variables in the Svelte section with a persistent `.env.production.local` file. Added one sentence explaining why the file matters. Written for new developers who may not know shell tricks
 - Clarified docs, demos, and configs to make it clear this is a Convex component with React and Svelte widgets. Updated opening lines, hero text, section headings, and descriptions across README.md, SETUP.md, INTEGRATION.md, CONTRIBUTING.md, docs/install.md, docs/install.html, files.md, and package.json. Both demo app landing pages, configs, and HTML titles updated to say "Convex component" and name the widget framework. No functional changes
 - Removed all PostHog references from the codebase. Renamed `prds/setup-and-demo-posthog-redesign.md` to `prds/setup-and-demo-redesign.md`. Updated all file path references in changelog, task.md, and files.md. Replaced "PostHog-inspired" with neutral terms in PRD content, changelog entries, and task entries
 - Reduced install.html h1 font size from `clamp(2rem, 5vw, 3.5rem)` to `clamp(1.75rem, 4vw, 2.5rem)` so the package name fits on one line
