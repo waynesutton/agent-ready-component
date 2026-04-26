@@ -77,8 +77,10 @@ Your files are live at:
 - Runtime cron interval updates via `@convex-dev/crons`
 - Optional agent analytics with threshold callbacks
 - AI description generation via Claude or OpenAI, opt-in, 100 item cap, rate-limited
-- React widget with HUMAN and MACHINE tabs, live staleness detection, `useAgentReadyStatus()` hook
-- Svelte widget with `createAgentReadyStatusStore()`
+- React widget with HUMAN and MACHINE tabs, live staleness detection, `useAgentReadyStatus()` hook. HUMAN tab includes "Open in ChatGPT / Claude / Perplexity" links. MACHINE tab shows Phosphor ArrowSquareOut icons for opening raw files
+- Svelte widget with `createAgentReadyStatusStore()` and the same tab layout
+- Config-driven widget visibility: `widgetShowFiles`, `widgetShowAppName`, `widgetShowDescription`, `widgetShowMeta`, and `widgetStatusVisible` in `agent-ready.config.json` control the widget without code changes. Props still work as overrides
+- Configurable widget position including `floating-center` and custom hex colors via `WidgetColors`
 - CLI covering setup, sync, status, regenerate, rollback, go-live, analytics, cleanup, versions, and per-page state transitions
 - Both demo apps hosted entirely on Convex via `@convex-dev/static-hosting`
 

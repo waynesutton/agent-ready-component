@@ -30,6 +30,10 @@ export default defineSchema({
       v.literal("floating-center"),
     ),
     widgetStatusVisible: v.optional(v.boolean()),
+    widgetShowFiles: v.optional(v.boolean()),
+    widgetShowAppName: v.optional(v.boolean()),
+    widgetShowDescription: v.optional(v.boolean()),
+    widgetShowMeta: v.optional(v.boolean()),
     widgetColors: v.optional(
       v.object({
         bg: v.optional(v.string()),

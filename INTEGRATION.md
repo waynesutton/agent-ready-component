@@ -117,6 +117,44 @@ export default function App() {
 }
 ```
 
+### Widget props
+
+| Prop | Type | Default | Notes |
+|---|---|---|---|
+| `appUrl` | `string` | required | Base URL of the Convex deployment |
+| `position` | `"footer" \| "floating-bottom-right" \| "floating-bottom-left" \| "floating-center"` | `"floating-bottom-right"` | Layout mode. `floating-center` pins the widget to the bottom center of the viewport |
+| `theme` | `"light" \| "dark" \| "system"` | `"system"` | Color theme |
+| `showTestModeBadge` | `boolean` | `true` | Display the `testMode` badge |
+| `showStatus` | `boolean` | config value | Show the status row in the MACHINE tab. When omitted, reads `widgetStatusVisible` from `agent-ready.config.json` via the status endpoint |
+| `showFiles` | `boolean` | config value | Show the file copy rows (llms.txt, agents.md, llms-full.txt) in the HUMAN tab |
+| `showAppName` | `boolean` | config value | Show the app name heading in the HUMAN tab |
+| `showDescription` | `boolean` | config value | Show the description line in the HUMAN tab |
+| `showMeta` | `boolean` | config value | Show the generation timestamp and progress indicators in the MACHINE tab |
+| `colors` | `Partial<WidgetColors>` | `{}` | Custom hex colors to match your site |
+
+All `show*` props follow a three-tier resolution: explicit prop > config value from `/llms-status` > `true`. Change them in `agent-ready.config.json` and run `npx agent-ready sync` to apply without touching code.
+
+### Custom colors example
+
+```tsx
+<AgentReadyWidget
+  appUrl={import.meta.env.VITE_CONVEX_SITE_URL}
+  position="floating-center"
+  theme="dark"
+  showStatus={false}
+  colors={{
+    bg: "#0d1117",
+    border: "#30363d",
+    textActive: "#c9d1d9",
+    accent: "#58a6ff",
+  }}
+/>
+```
+
+### Tab behavior
+
+The HUMAN tab shows file URLs with copy buttons, then "Open in ChatGPT", "Open in Claude", and "Open in Perplexity" links that send your `llms.txt` URL to each AI chat service. The MACHINE tab shows raw file links with open-in-new-tab icons (Phosphor ArrowSquareOut) and optional status metadata.
+
 ```tsx
 // Live status subscription
 import { useAgentReadyStatus } from "@waynesutton/agent-ready/react";
@@ -137,6 +175,18 @@ function StatusBadge() {
 </script>
 
 <AgentReadyWidget {appUrl} position="floating-bottom-right" theme="dark" />
+```
+
+### Svelte custom colors example
+
+```svelte
+<AgentReadyWidget
+  {appUrl}
+  position="floating-center"
+  theme="dark"
+  showStatus={false}
+  colors={{ bg: "#0d1117", border: "#30363d", textActive: "#c9d1d9", accent: "#58a6ff" }}
+/>
 ```
 
 ```svelte

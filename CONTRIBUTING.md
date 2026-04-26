@@ -27,36 +27,56 @@ Community widgets (Vue, Solid, Angular, anything else) should match the public A
 | Prop | Type | Default | Notes |
 |---|---|---|---|
 | `appUrl` | `string` | required | Base URL of the Convex deployment, no trailing slash |
-| `position` | `"footer" \| "floating-bottom-right" \| "floating-bottom-left"` | `"floating-bottom-right"` | Layout mode |
+| `position` | `"footer" \| "floating-bottom-right" \| "floating-bottom-left" \| "floating-center"` | `"floating-bottom-right"` | Layout mode |
 | `theme` | `"light" \| "dark" \| "system"` | `"system"` | Color theme |
 | `showTestModeBadge` | `boolean` | `true` | Display the `testMode` badge when active |
+| `showStatus` | `boolean` | config value | Show the status row in MACHINE tab. When omitted, reads `widgetStatusVisible` from config via `/llms-status` |
+| `showFiles` | `boolean` | config value | Show the file copy rows in HUMAN tab |
+| `showAppName` | `boolean` | config value | Show the app name heading in HUMAN tab |
+| `showDescription` | `boolean` | config value | Show the description line in HUMAN tab |
+| `showMeta` | `boolean` | config value | Show generation timestamp and progress in MACHINE tab |
+| `colors` | `Partial<WidgetColors>` | `{}` | Custom hex colors to match your site palette |
+
+All `show*` props resolve as: explicit prop > config value from `/llms-status` > `true`.
 
 ### `useAgentReadyStatus()` shape
 
 ```ts
 type AgentReadyStatus = {
   testMode: boolean;
-  appName: string;
-  appUrl: string;
+  appName: string | null;
+  appUrl: string | null;
   lastGeneratedAt: number | null;
   generatedFromVersion: string | null;
   generationInProgress: boolean;
   hasDrafts: boolean;
   fullTxtEnabled: boolean;
-  files: {
-    llmsTxtUrl: string; // public /llms.txt URL
-    agentsMdUrl: string;
-    fullTxtUrl: string | null;
-    statusUrl: string;
-  };
+  widgetStatusVisible: boolean;
+  widgetShowFiles: boolean;
+  widgetShowAppName: boolean;
+  widgetShowDescription: boolean;
+  widgetShowMeta: boolean;
 };
 ```
 
 A widget must subscribe to this status in a framework-idiomatic way (hook, store, signal, composable) and re-render on change.
 
+### WidgetColors type
+
+```ts
+type WidgetColors = {
+  bg?: string;       // widget background (default #1a1a1a)
+  border?: string;   // panel border (default #333333)
+  textActive?: string;   // active text (default #e5e5e5)
+  textInactive?: string; // inactive text (default #666666)
+  tabActiveBg?: string;  // active tab background (default #2a2a2a)
+  accent?: string;       // link and file name color (default #ffffff)
+};
+```
+
 ### CSS custom properties
 
-Every widget must expose the same custom properties so consumers can theme without forking:
+Every widget must expose the same custom properties so consumers can theme without forking. When a `colors` prop is provided, the widget sets these properties inline so they override any external stylesheet:
 
 ```css
 --agent-ready-bg

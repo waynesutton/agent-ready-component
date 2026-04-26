@@ -339,7 +339,7 @@ Repeat the same flow against the Svelte demo URL.
 - `npm view @waynesutton/agent-ready bin` lists `agent-ready`
 - `gh release view v0.1.0` shows release notes
 - Both demo URLs render the cream UI
-- Widget shows `HUMAN` and `MACHINE` tabs
+- Widget shows `HUMAN` and `MACHINE` tabs. HUMAN tab includes "Open in ChatGPT / Claude / Perplexity" links. MACHINE tab shows file links with open-in-new-tab icons
 - `testMode` is off on both demo deployments
 - `/llms.txt`, `/agents.md`, and `/llms-status` return `200 OK`
 - ETag returns `304 Not Modified` on unchanged content

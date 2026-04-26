@@ -7,7 +7,11 @@
   export let position: WidgetPosition = "floating-bottom-right";
   export let theme: WidgetTheme = "system";
   export let showTestModeBadge: boolean = true;
-  export let showStatus: boolean = true;
+  export let showStatus: boolean | undefined = undefined;
+  export let showFiles: boolean | undefined = undefined;
+  export let showAppName: boolean | undefined = undefined;
+  export let showDescription: boolean | undefined = undefined;
+  export let showMeta: boolean | undefined = undefined;
   export let colors: Partial<WidgetColors> = {};
   export let llmsTxtPath: string = "/llms.txt";
   export let agentsMdPath: string = "/agents.md";
@@ -34,6 +38,13 @@
   });
 
   onDestroy(() => unsubscribe());
+
+  // Props override config. When prop is undefined, fall back to status endpoint (config-driven).
+  $: resolvedShowStatus = showStatus ?? currentStatus?.widgetStatusVisible ?? true;
+  $: resolvedShowFiles = showFiles ?? currentStatus?.widgetShowFiles ?? true;
+  $: resolvedShowAppName = showAppName ?? currentStatus?.widgetShowAppName ?? true;
+  $: resolvedShowDescription = showDescription ?? currentStatus?.widgetShowDescription ?? true;
+  $: resolvedShowMeta = showMeta ?? currentStatus?.widgetShowMeta ?? true;
 
   $: base = appUrl.replace(/\/$/, "");
   $: urls = {
@@ -85,14 +96,22 @@
 
   {#if tab === "HUMAN"}
     <div class="panel">
-      <p class="title">{currentStatus?.appName ?? "LLMs discovery"}</p>
-      <p class="sub">These files help AI agents understand this app.</p>
-      <div class="row"><a href={urls.llmsTxt} target="_blank" rel="noreferrer">llms.txt</a><button on:click={() => copy(urls.llmsTxt)}>copy</button></div>
-      <div class="row"><a href={urls.agentsMd} target="_blank" rel="noreferrer">agents.md</a><button on:click={() => copy(urls.agentsMd)}>copy</button></div>
-      {#if currentStatus?.fullTxtEnabled}
-        <div class="row"><a href={urls.fullTxt} target="_blank" rel="noreferrer">llms-full.txt</a><button on:click={() => copy(urls.fullTxt)}>copy</button></div>
+      {#if resolvedShowAppName}
+        <p class="title">{currentStatus?.appName ?? "LLMs discovery"}</p>
       {/if}
-      <div class="divider"></div>
+      {#if resolvedShowDescription}
+        <p class="sub">These files help AI agents understand this app.</p>
+      {/if}
+      {#if resolvedShowFiles}
+        <div class="row"><a href={urls.llmsTxt} target="_blank" rel="noreferrer">llms.txt</a><button on:click={() => copy(urls.llmsTxt)}>copy</button></div>
+        <div class="row"><a href={urls.agentsMd} target="_blank" rel="noreferrer">agents.md</a><button on:click={() => copy(urls.agentsMd)}>copy</button></div>
+        {#if currentStatus?.fullTxtEnabled}
+          <div class="row"><a href={urls.fullTxt} target="_blank" rel="noreferrer">llms-full.txt</a><button on:click={() => copy(urls.fullTxt)}>copy</button></div>
+        {/if}
+      {/if}
+      {#if resolvedShowAppName || resolvedShowDescription || resolvedShowFiles}
+        <div class="divider"></div>
+      {/if}
       <a class="ext-link" href={chatLinks.chatgpt} target="_blank" rel="noreferrer">
         <span>Open in ChatGPT</span>
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="#888888"><path d="M224,104a8,8,0,0,1-16,0V59.31l-66.34,66.35a8,8,0,0,1-11.32-11.32L196.69,48H152a8,8,0,0,1,0-16h64a8,8,0,0,1,8,8Zm-40,24a8,8,0,0,0-8,8v72H48V80h72a8,8,0,0,0,0-16H48A16,16,0,0,0,32,80V208a16,16,0,0,0,16,16H176a16,16,0,0,0,16-16V136A8,8,0,0,0,184,128Z"/></svg>
@@ -119,18 +138,20 @@
       {#if currentStatus?.fullTxtEnabled}
         <div class="row"><a href={urls.fullTxt} target="_blank" rel="noreferrer">llms-full.txt</a><a class="icon-link" href={urls.fullTxt} target="_blank" rel="noreferrer" title="Open llms-full.txt"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="#888888"><path d="M224,104a8,8,0,0,1-16,0V59.31l-66.34,66.35a8,8,0,0,1-11.32-11.32L196.69,48H152a8,8,0,0,1,0-16h64a8,8,0,0,1,8,8Zm-40,24a8,8,0,0,0-8,8v72H48V80h72a8,8,0,0,0,0-16H48A16,16,0,0,0,32,80V208a16,16,0,0,0,16,16H176a16,16,0,0,0,16-16V136A8,8,0,0,0,184,128Z"/></svg></a></div>
       {/if}
-      {#if showStatus}
+      {#if resolvedShowStatus}
         <div class="row"><a href={urls.status} target="_blank" rel="noreferrer">status</a><a class="icon-link" href={urls.status} target="_blank" rel="noreferrer" title="Open status"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="#888888"><path d="M224,104a8,8,0,0,1-16,0V59.31l-66.34,66.35a8,8,0,0,1-11.32-11.32L196.69,48H152a8,8,0,0,1,0-16h64a8,8,0,0,1,8,8Zm-40,24a8,8,0,0,0-8,8v72H48V80h72a8,8,0,0,0,0-16H48A16,16,0,0,0,32,80V208a16,16,0,0,0,16,16H176a16,16,0,0,0,16-16V136A8,8,0,0,0,184,128Z"/></svg></a></div>
       {/if}
-      <p class="meta">
-        {#if currentStatus?.lastGeneratedAt}
-          generated {new Date(currentStatus.lastGeneratedAt).toLocaleString()}
-        {:else}
-          not generated yet
-        {/if}
-      </p>
-      {#if currentStatus?.generationInProgress}<p class="meta">Generating...</p>{/if}
-      {#if currentStatus?.hasDrafts}<p class="meta">Drafts pending</p>{/if}
+      {#if resolvedShowMeta}
+        <p class="meta">
+          {#if currentStatus?.lastGeneratedAt}
+            generated {new Date(currentStatus.lastGeneratedAt).toLocaleString()}
+          {:else}
+            not generated yet
+          {/if}
+        </p>
+        {#if currentStatus?.generationInProgress}<p class="meta">Generating...</p>{/if}
+        {#if currentStatus?.hasDrafts}<p class="meta">Drafts pending</p>{/if}
+      {/if}
     </div>
   {/if}
 </div>

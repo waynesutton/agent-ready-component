@@ -72,7 +72,7 @@
     "agent-ready": "./cli/bin.mjs"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && cp src/svelte/AgentReadyWidget.svelte dist/svelte/AgentReadyWidget.svelte",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "dev:example-react": "npm run dev --workspace example-react",
     "dev:example-svelte": "npm run dev --workspace example-svelte",

@@ -27,17 +27,18 @@ Plain text map of every file in the repo. Regenerate by hand as files are added 
 - `prds/setup-docs-split.md`: PRD for splitting author setup docs from consumer install docs and linking the install guide from both demos
 - `prds/typecheck-component-circularity.md`: PRD for fixing packaged component codegen and TypeScript circular reference failures
 - `prds/demo-component-wrapper-cors-fix.md`: PRD for fixing demo component API wrappers and `/llms-status` CORS failures
+- `prds/widget-v2-config.md`: PRD for widget v2 features: center position, HUMAN tab AI chat links, MACHINE tab Phosphor icons, status visibility toggle, and custom hex colors
 - `mockup-react.html`: Standalone HTML mockup of the React demo's agent-readiness control panel. Shows the score ring, per-check grid, response headers, schema toggles, and the 3-tab widget with SCORE active
 - `mockup-svelte.html`: Standalone HTML mockup of the Svelte demo's analytics dashboard with agent-readiness signals layered in. Shows the 4-card metric grid (including markdown-negotiation count and readiness scans), agent and file breakdowns, signals panel, and 3-tab widget
 
 ## Component source — `src/`
 
 - `src/client/index.ts`: Public package entry, exports `registerRoutes`, `AgentReady` class client, `createTypedAgentReadyClient`, types, and status route CORS handling
-- `src/client/types.ts`: Shared type definitions for settings, pages, endpoints, cached files, route names, event payloads
+- `src/client/types.ts`: Shared type definitions for settings, pages, endpoints, cached files, route names, event payloads, `WidgetColors`, widget position including `floating-center`, and `AgentReadyStatus` with config-driven visibility fields (`widgetShowFiles`, `widgetShowAppName`, `widgetShowDescription`, `widgetShowMeta`, `widgetStatusVisible`)
 - `src/component/convex.config.ts`: Component declaration via `defineComponent("agentReady")`
 - `src/component/_generated/`: Generated Convex component bindings created by `npx convex codegen --component-dir ./src/component`
 - `src/component/schema.ts`: `settings`, `pages`, `apiEndpoints`, `cachedFiles`, `agentRequests`, `pageVersions` tables with indexes
-- `src/component/content.ts`: Public settings, page, endpoint, cache, and version functions, plus stable `regenerateAll`, `generateDescriptions`, and `sync` action wrappers
+- `src/component/content.ts`: Public settings, page, endpoint, cache, and version functions, plus stable `regenerateAll`, `generateDescriptions`, and `sync` action wrappers. `getCacheStatus` returns widget visibility flags from the settings table
 - `src/component/contentInternal.ts`: Internal action support for settings reads, page reads, sync application, cache invalidation, and generation scheduling
 - `src/component/analytics.ts`: `recordRequest` public mutation (called across the boundary from `registerRoutes`), `getSummary`, `getTimeSeries`, `cleanupOldRequests`, `cleanupOrphanedCacheEntries`
 - `src/component/generation.ts`: Workpool-backed generation of `llms.txt`, `agents.md`, `llms-full.txt`
@@ -55,14 +56,14 @@ Plain text map of every file in the repo. Regenerate by hand as files are added 
 ## React widget — `src/react/`
 
 - `src/react/index.ts`: Barrel export
-- `src/react/AgentReadyWidget.tsx`: HUMAN or MACHINE toggle widget, terminal aesthetic
+- `src/react/AgentReadyWidget.tsx`: HUMAN or MACHINE toggle widget with terminal aesthetic. HUMAN tab shows file URLs with copy buttons and "Open in ChatGPT / Claude / Perplexity" links. MACHINE tab shows file links with Phosphor ArrowSquareOut icons. All `show*` props resolve as: explicit prop > config value from `/llms-status` > `true`, making the widget config-driven
 - `src/react/useAgentReadyStatus.ts`: Live subscription hook for cached file status and staleness detection
 - `src/react/UpdateBanner.tsx`: Optional banner wrapper on top of `useAgentReadyStatus` for version change notifications
 
 ## Svelte widget — `src/svelte/`
 
 - `src/svelte/index.ts`: Barrel export
-- `src/svelte/AgentReadyWidget.svelte`: Svelte widget counterpart to the React widget
+- `src/svelte/AgentReadyWidget.svelte`: Svelte widget counterpart to the React widget with config-driven visibility, center positioning, and custom color support. All `show*` props resolve identically to the React widget
 - `src/svelte/store.ts`: `createAgentReadyStatusStore()` Svelte store for live status subscription
 
 ## CLI — `cli/`
@@ -96,7 +97,7 @@ Plain text map of every file in the repo. Regenerate by hand as files are added 
 - `example-react/tsconfig.json`: TS config for the demo
 - `example-react/index.html`: Vite entry HTML
 - `example-react/setup.mjs`: Idempotent seed script that runs before dev, uses `--component agentReady` for Convex CLI
-- `example-react/agent-ready.config.json`: Starter config consumed by `sync`, appUrl set to the production deployment
+- `example-react/agent-ready.config.json`: Starter config consumed by `sync`, appUrl set to the production deployment. Includes all widget visibility flags (`widgetShowFiles`, `widgetShowAppName`, `widgetShowDescription`, `widgetShowMeta`, `widgetStatusVisible`) and `widgetColors` with default hex values
 - `example-react/.env.production.local`: Production Convex URLs for Vite build (git-ignored)
 - `example-react/convex/convex.config.ts`: Uses `crons`, `workpool`, `agentReady`, `staticHosting`
 - `example-react/convex/schema.ts`: Host app schema (empty tables allowed)
@@ -124,7 +125,7 @@ Plain text map of every file in the repo. Regenerate by hand as files are added 
 - `example-svelte/vite.config.ts`: Vite config
 - `example-svelte/tsconfig.json`: TS config
 - `example-svelte/setup.mjs`: Idempotent seed script, uses `--component agentReady` for Convex CLI
-- `example-svelte/agent-ready.config.json`: Starter config
+- `example-svelte/agent-ready.config.json`: Starter config with all widget visibility flags and `widgetColors` defaults
 - `example-svelte/convex/convex.config.ts`: Component wiring
 - `example-svelte/convex/schema.ts`: Host app schema
 - `example-svelte/convex/agentReady/content.ts`: App-facing content wrappers around `components.agentReady.content` for browser clients

@@ -116,6 +116,33 @@ Svelte:
 <AgentReadyWidget {appUrl} position="floating-bottom-right" theme="dark" />
 ```
 
+### Widget options
+
+| Prop | Type | Default |
+|---|---|---|
+| `position` | `"footer" \| "floating-bottom-right" \| "floating-bottom-left" \| "floating-center"` | `"floating-bottom-right"` |
+| `theme` | `"light" \| "dark" \| "system"` | `"system"` |
+| `showTestModeBadge` | `boolean` | `true` |
+| `showStatus` | `boolean` | config value |
+| `showFiles` | `boolean` | config value |
+| `showAppName` | `boolean` | config value |
+| `showDescription` | `boolean` | config value |
+| `showMeta` | `boolean` | config value |
+| `colors` | `Partial<WidgetColors>` | `{}` |
+
+All `show*` props are optional. When omitted, the widget reads the matching `widgetShow*` value from your `agent-ready.config.json` (via the `/llms-status` endpoint). Change the config, run `npx agent-ready sync`, and the widget updates without code changes.
+
+Set `colors` to match your site palette:
+
+```tsx
+<AgentReadyWidget
+  appUrl={appUrl}
+  colors={{ bg: "#0d1117", border: "#30363d", accent: "#58a6ff" }}
+/>
+```
+
+The HUMAN tab shows file URLs with copy buttons and "Open in ChatGPT / Claude / Perplexity" links. The MACHINE tab shows file links with open-in-new-tab icons and optional status metadata.
+
 ## 5. Run the setup wizard
 
 ```bash

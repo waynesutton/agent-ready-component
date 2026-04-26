@@ -50,6 +50,10 @@ export type AgentReadySettings = {
   permissiveMode: boolean;
   versioningEnabled: boolean;
   widgetStatusVisible?: boolean;
+  widgetShowFiles?: boolean;
+  widgetShowAppName?: boolean;
+  widgetShowDescription?: boolean;
+  widgetShowMeta?: boolean;
   widgetColors?: WidgetColors;
 };
 
@@ -82,6 +86,11 @@ export type AgentReadyStatus = {
   generationInProgress: boolean;
   hasDrafts: boolean;
   fullTxtEnabled: boolean;
+  widgetStatusVisible: boolean;
+  widgetShowFiles: boolean;
+  widgetShowAppName: boolean;
+  widgetShowDescription: boolean;
+  widgetShowMeta: boolean;
 };
 
 // A workpool job id returned by invalidateCache / regenerateAll.

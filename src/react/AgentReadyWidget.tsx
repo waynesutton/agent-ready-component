@@ -8,6 +8,10 @@ export type AgentReadyWidgetProps = {
   theme?: WidgetTheme;
   showTestModeBadge?: boolean;
   showStatus?: boolean;
+  showFiles?: boolean;
+  showAppName?: boolean;
+  showDescription?: boolean;
+  showMeta?: boolean;
   colors?: Partial<WidgetColors>;
   llmsTxtPath?: string;
   agentsMdPath?: string;
@@ -36,7 +40,6 @@ function ArrowSquareOutIcon({ color = "currentColor" }: { color?: string }) {
 export function AgentReadyWidget(props: AgentReadyWidgetProps) {
   const position = props.position ?? "floating-bottom-right";
   const theme = props.theme ?? "system";
-  const showStatus = props.showStatus !== false;
   const colors = props.colors ?? {};
   const llmsTxtPath = props.llmsTxtPath ?? "/llms.txt";
   const agentsMdPath = props.agentsMdPath ?? "/agents.md";
@@ -44,6 +47,13 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
   const statusPath = props.statusPath ?? "/llms-status";
 
   const status = useAgentReadyStatus({ appUrl: props.appUrl, statusPath });
+
+  // Props override config. When prop is undefined, fall back to status endpoint (config-driven).
+  const showStatus = props.showStatus ?? status?.widgetStatusVisible ?? true;
+  const showFiles = props.showFiles ?? status?.widgetShowFiles ?? true;
+  const showAppName = props.showAppName ?? status?.widgetShowAppName ?? true;
+  const showDescription = props.showDescription ?? status?.widgetShowDescription ?? true;
+  const showMeta = props.showMeta ?? status?.widgetShowMeta ?? true;
   const [tab, setTab] = useState<Tab>("HUMAN");
   const [initialVersion, setInitialVersion] = useState<string | null>(null);
 
@@ -114,16 +124,24 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
 
       {tab === "HUMAN" ? (
         <div style={panelStyle}>
-          <p style={paragraphStyle}>
-            {status?.appName ?? "LLMs discovery"}
-          </p>
-          <p style={subParagraphStyle}>
-            These files help AI agents understand this app.
-          </p>
-          <CopyRow label="llms.txt" url={urls.llmsTxt} />
-          <CopyRow label="agents.md" url={urls.agentsMd} />
-          {status?.fullTxtEnabled ? <CopyRow label="llms-full.txt" url={urls.fullTxt} /> : null}
-          <div style={dividerStyle} />
+          {showAppName ? (
+            <p style={paragraphStyle}>
+              {status?.appName ?? "LLMs discovery"}
+            </p>
+          ) : null}
+          {showDescription ? (
+            <p style={subParagraphStyle}>
+              These files help AI agents understand this app.
+            </p>
+          ) : null}
+          {showFiles ? (
+            <>
+              <CopyRow label="llms.txt" url={urls.llmsTxt} />
+              <CopyRow label="agents.md" url={urls.agentsMd} />
+              {status?.fullTxtEnabled ? <CopyRow label="llms-full.txt" url={urls.fullTxt} /> : null}
+            </>
+          ) : null}
+          {(showAppName || showDescription || showFiles) ? <div style={dividerStyle} /> : null}
           <ExternalLink label="Open in ChatGPT" url={chatLinks.chatgpt} />
           <ExternalLink label="Open in Claude" url={chatLinks.claude} />
           <ExternalLink label="Open in Perplexity" url={chatLinks.perplexity} />
@@ -142,13 +160,17 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
           <FileRow label="agents.md" url={urls.agentsMd} />
           {status?.fullTxtEnabled ? <FileRow label="llms-full.txt" url={urls.fullTxt} /> : null}
           {showStatus ? <FileRow label="status" url={urls.status} /> : null}
-          <p style={metaStyle}>
-            {status?.lastGeneratedAt
-              ? `generated ${new Date(status.lastGeneratedAt).toLocaleString()}`
-              : "not generated yet"}
-          </p>
-          {status?.generationInProgress ? <p style={metaStyle}>Generating...</p> : null}
-          {status?.hasDrafts ? <p style={metaStyle}>Drafts pending</p> : null}
+          {showMeta ? (
+            <>
+              <p style={metaStyle}>
+                {status?.lastGeneratedAt
+                  ? `generated ${new Date(status.lastGeneratedAt).toLocaleString()}`
+                  : "not generated yet"}
+              </p>
+              {status?.generationInProgress ? <p style={metaStyle}>Generating...</p> : null}
+              {status?.hasDrafts ? <p style={metaStyle}>Drafts pending</p> : null}
+            </>
+          ) : null}
         </div>
       )}
     </div>

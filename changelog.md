@@ -6,6 +6,17 @@ All notable changes to `@waynesutton/agent-ready` (formerly `@convex-dev/llms-tx
 
 ### Added
 
+- Widget v2: `floating-center` position pins the widget to the bottom center of the viewport
+- Widget v2: HUMAN tab now shows file URLs with copy buttons followed by "Open in ChatGPT", "Open in Claude", and "Open in Perplexity" links that pass the `llms.txt` URL to each AI chat service
+- Widget v2: MACHINE tab shows file links with Phosphor ArrowSquareOut inline SVG icons for opening raw files in a new tab
+- Widget v2: `showStatus` prop (defaults `true`) lets consumers hide the status row in the MACHINE tab
+- Widget v2: `colors` prop accepts a `Partial<WidgetColors>` with optional hex values for `bg`, `border`, `textActive`, `textInactive`, `tabActiveBg`, and `accent`. Values are set as CSS custom properties inline so they override external stylesheets
+- Widget visibility is now config-driven: `widgetShowFiles`, `widgetShowAppName`, `widgetShowDescription`, `widgetShowMeta`, and `widgetStatusVisible` in `agent-ready.config.json` control the widget at runtime via the `/llms-status` endpoint. No code changes needed; just edit the config and run `npx agent-ready sync`. Explicit props still override config values
+- Added `widgetStatusVisible`, `widgetShowFiles`, `widgetShowAppName`, `widgetShowDescription`, `widgetShowMeta`, and `widgetColors` to `AgentReadySettings`, `AgentReadyStatus`, component schema, validators, and the setup wizard defaults
+- Added `WidgetColors` type export from `src/client/types.ts`
+- Both example configs (`example-react`, `example-svelte`) now include all widget visibility flags and `widgetColors` with default hex values
+- Build script now copies `.svelte` source to `dist/svelte/` so the Svelte widget ships correctly in the published package
+- PRD: `prds/widget-v2-config.md`
 - Added `example-react/.env.production.local` for persisting production Convex URLs across deploys
 - Added `deploy:full` script to `example-react/package.json` that runs backend deploy, sync, regenerate, and static upload in one command
 - Added batch upload functions (`generateUploadUrls`, `recordAssets`) to both demo `staticHosting.ts` files so static-hosting v0.1.3 CLI deploys succeed

@@ -5,6 +5,10 @@
     "description": "Demo app for @waynesutton/agent-ready on SvelteKit, hosted on Convex via static-hosting.",
     "widgetPosition": "floating-bottom-right",
     "widgetStatusVisible": true,
+    "widgetShowFiles": true,
+    "widgetShowAppName": true,
+    "widgetShowDescription": true,
+    "widgetShowMeta": true,
     "widgetColors": {
       "bg": "#1a1a1a",
       "border": "#333333",

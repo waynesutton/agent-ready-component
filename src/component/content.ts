@@ -317,6 +317,11 @@ export const getCacheStatus = query({
     generationInProgress: v.boolean(),
     hasDrafts: v.boolean(),
     fullTxtEnabled: v.boolean(),
+    widgetStatusVisible: v.boolean(),
+    widgetShowFiles: v.boolean(),
+    widgetShowAppName: v.boolean(),
+    widgetShowDescription: v.boolean(),
+    widgetShowMeta: v.boolean(),
   }),
   handler: async (ctx) => {
     const settings = await ctx.db.query("settings").unique();
@@ -342,6 +347,11 @@ export const getCacheStatus = query({
       generationInProgress: files.some((f) => f.status === "generating"),
       hasDrafts,
       fullTxtEnabled: settings?.fullTxtEnabled ?? false,
+      widgetStatusVisible: settings?.widgetStatusVisible ?? true,
+      widgetShowFiles: settings?.widgetShowFiles ?? true,
+      widgetShowAppName: settings?.widgetShowAppName ?? true,
+      widgetShowDescription: settings?.widgetShowDescription ?? true,
+      widgetShowMeta: settings?.widgetShowMeta ?? true,
     };
   },
 });
