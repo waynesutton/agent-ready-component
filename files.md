@@ -47,10 +47,9 @@ Plain text map of every file in the repo. Regenerate by hand as files are added 
 - `src/component/schema.ts`: `settings`, `pages`, `apiEndpoints`, `cachedFiles`, `agentRequests`, `pageVersions` tables with indexes. Settings include 9 agent readiness fields and `widgetShowScoreTab`
 - `src/component/content.ts`: Public settings, page, endpoint, cache, and version functions. `getCacheStatus` returns widget visibility and readiness feature flags
 - `src/component/contentInternal.ts`: Internal action support for settings reads, page reads, sync application (handles readiness fields), cache invalidation, and generation scheduling
-- `src/component/analytics.ts`: `recordRequest` public mutation (called across the boundary from `registerRoutes`), `getSummary`, `getTimeSeries`, `cleanupOldRequests`, `cleanupOrphanedCacheEntries`. All `.collect()` calls bounded with `.take()`
-- `src/component/analyticsInternal.ts`: Internal cleanup mutation for server-to-server use by the cron worker. Uses `internalMutation` so it is not exposed to the public API
+- `src/component/analytics.ts`: `recordRequest` public mutation (called across the boundary from `registerRoutes`), `getSummary`, `getTimeSeries`, `cleanupOldRequests`, `cleanupOrphanedCacheEntries`, plus `internalCleanupOldRequests` internalMutation for server-to-server use by the cron worker. All `.collect()` calls bounded with `.take()`
 - `src/component/generation.ts`: Workpool-backed generation of `llms.txt`, `agents.md`, `llms-full.txt`, `robots.txt`, `sitemap.xml`, `agent-skills.json`
-- `src/component/cronWorker.ts`: Dynamic cron worker that refreshes content and trims analytics via `internal.analyticsInternal.cleanupOldRequests`
+- `src/component/cronWorker.ts`: Dynamic cron worker that refreshes content and trims analytics via `internal.analytics.internalCleanupOldRequests`
 - `src/component/lib.ts`: Shared helpers: SHA-256 hashing, user-agent classification, origin check, config diffing, `escapeXml`, `sanitizePath`, `estimateTokens`, `buildContentSignalHeader`, `buildDiscoveryLinkHeader`, `KNOWN_AI_BOTS`
 - `src/component/validators.ts`: Shared Convex validators for component documents, sync config payloads, content signals, and typed action/query return values
 

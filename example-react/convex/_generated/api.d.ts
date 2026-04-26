@@ -10,6 +10,8 @@
 
 import type * as agentReady_analytics from "../agentReady/analytics.js";
 import type * as agentReady_content from "../agentReady/content.js";
+import type * as auth from "../auth.js";
+import type * as functions from "../functions.js";
 import type * as http from "../http.js";
 import type * as myApp from "../myApp.js";
 import type * as staticHosting from "../staticHosting.js";
@@ -23,6 +25,8 @@ import type {
 declare const fullApi: ApiFromModules<{
   "agentReady/analytics": typeof agentReady_analytics;
   "agentReady/content": typeof agentReady_content;
+  auth: typeof auth;
+  functions: typeof functions;
   http: typeof http;
   myApp: typeof myApp;
   staticHosting: typeof staticHosting;
@@ -55,6 +59,7 @@ export declare const internal: FilterApi<
 >;
 
 export declare const components: {
+  auth: import("@robelest/convex-auth/_generated/component.js").ComponentApi<"auth">;
   crons: import("@convex-dev/crons/_generated/component.js").ComponentApi<"crons">;
   workpool: import("@convex-dev/workpool/_generated/component.js").ComponentApi<"workpool">;
   agentReady: import("@waynesutton/agent-ready/_generated/component.js").ComponentApi<"agentReady">;

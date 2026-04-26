@@ -14,7 +14,7 @@ export const runCronCycle = internalAction({
     await ctx.runAction(internal.generation.runGeneration, {
       jobId: `cron-${Date.now()}`,
     });
-    await ctx.runMutation(internal.analyticsInternal.cleanupOldRequests, {});
+    await ctx.runMutation(internal.analytics.internalCleanupOldRequests, {});
     return null;
   },
 });
