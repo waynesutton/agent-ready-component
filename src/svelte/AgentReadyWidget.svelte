@@ -13,6 +13,13 @@
   export let showDescription: boolean | undefined = undefined;
   export let showMeta: boolean | undefined = undefined;
   export let showScoreTab: boolean | undefined = undefined;
+  export let cleanMode: boolean | undefined = undefined;
+  export let showHumanTab: boolean | undefined = undefined;
+  export let showMachineTab: boolean | undefined = undefined;
+  export let showChatLinks: boolean | undefined = undefined;
+  export let showChatGPT: boolean | undefined = undefined;
+  export let showClaude: boolean | undefined = undefined;
+  export let showPerplexity: boolean | undefined = undefined;
   export let colors: Partial<WidgetColors> = {};
   export let llmsTxtPath: string = "/llms.txt";
   export let agentsMdPath: string = "/agents.md";
@@ -85,6 +92,18 @@
   $: resolvedShowAppName = showAppName ?? currentStatus?.widgetShowAppName ?? true;
   $: resolvedShowDescription = showDescription ?? currentStatus?.widgetShowDescription ?? true;
   $: resolvedShowMeta = showMeta ?? currentStatus?.widgetShowMeta ?? true;
+  $: resolvedCleanMode = cleanMode ?? currentStatus?.widgetCleanMode ?? false;
+  $: resolvedHumanTab = showHumanTab ?? currentStatus?.widgetShowHumanTab ?? true;
+  $: resolvedMachineTab = showMachineTab ?? currentStatus?.widgetShowMachineTab ?? true;
+  $: resolvedChatLinks = showChatLinks ?? currentStatus?.widgetShowChatLinks ?? true;
+  $: resolvedChatGPT = showChatGPT ?? currentStatus?.widgetShowChatGPT ?? true;
+  $: resolvedClaude = showClaude ?? currentStatus?.widgetShowClaude ?? true;
+  $: resolvedPerplexity = showPerplexity ?? currentStatus?.widgetShowPerplexity ?? true;
+
+  $: effectiveShowAppName = resolvedCleanMode ? false : resolvedShowAppName;
+  $: effectiveShowDescription = resolvedCleanMode ? false : resolvedShowDescription;
+
+  $: anyTabVisible = resolvedHumanTab || resolvedMachineTab || scoreTabVisible;
 
   $: base = appUrl.replace(/\/$/, "");
   $: urls = {
@@ -128,10 +147,15 @@
   }
 </script>
 
+{#if anyTabVisible}
 <div class="widget" data-theme={theme} style={widgetStyle}>
   <div class="tabs">
-    <button class:active={tab === "HUMAN"} on:click={() => (tab = "HUMAN")}>HUMAN</button>
-    <button class:active={tab === "MACHINE"} on:click={() => (tab = "MACHINE")}>MACHINE</button>
+    {#if resolvedHumanTab}
+      <button class:active={tab === "HUMAN"} on:click={() => (tab = "HUMAN")}>HUMAN</button>
+    {/if}
+    {#if resolvedMachineTab}
+      <button class:active={tab === "MACHINE"} on:click={() => (tab = "MACHINE")}>MACHINE</button>
+    {/if}
     {#if scoreTabVisible}
       <button class:active={tab === "SCORE"} on:click={() => (tab = "SCORE")}>SCORE</button>
     {/if}
@@ -170,10 +194,10 @@
     </div>
   {:else if tab === "HUMAN"}
     <div class="panel">
-      {#if resolvedShowAppName}
+      {#if effectiveShowAppName}
         <p class="title">{currentStatus?.appName ?? "LLMs discovery"}</p>
       {/if}
-      {#if resolvedShowDescription}
+      {#if effectiveShowDescription}
         <p class="sub">These files help AI agents understand this app.</p>
       {/if}
       {#if resolvedShowFiles}
@@ -183,21 +207,29 @@
           <div class="row"><a href={urls.fullTxt} target="_blank" rel="noreferrer">llms-full.txt</a><button on:click={() => copy(urls.fullTxt)}>copy</button></div>
         {/if}
       {/if}
-      {#if resolvedShowAppName || resolvedShowDescription || resolvedShowFiles}
-        <div class="divider"></div>
+      {#if resolvedChatLinks}
+        {#if effectiveShowAppName || effectiveShowDescription || resolvedShowFiles}
+          <div class="divider"></div>
+        {/if}
+        {#if resolvedChatGPT}
+          <a class="ext-link" href={chatLinks.chatgpt} target="_blank" rel="noreferrer">
+            <span>Open in ChatGPT</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="#888888"><path d="M224,104a8,8,0,0,1-16,0V59.31l-66.34,66.35a8,8,0,0,1-11.32-11.32L196.69,48H152a8,8,0,0,1,0-16h64a8,8,0,0,1,8,8Zm-40,24a8,8,0,0,0-8,8v72H48V80h72a8,8,0,0,0,0-16H48A16,16,0,0,0,32,80V208a16,16,0,0,0,16,16H176a16,16,0,0,0,16-16V136A8,8,0,0,0,184,128Z"/></svg>
+          </a>
+        {/if}
+        {#if resolvedClaude}
+          <a class="ext-link" href={chatLinks.claude} target="_blank" rel="noreferrer">
+            <span>Open in Claude</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="#888888"><path d="M224,104a8,8,0,0,1-16,0V59.31l-66.34,66.35a8,8,0,0,1-11.32-11.32L196.69,48H152a8,8,0,0,1,0-16h64a8,8,0,0,1,8,8Zm-40,24a8,8,0,0,0-8,8v72H48V80h72a8,8,0,0,0,0-16H48A16,16,0,0,0,32,80V208a16,16,0,0,0,16,16H176a16,16,0,0,0,16-16V136A8,8,0,0,0,184,128Z"/></svg>
+          </a>
+        {/if}
+        {#if resolvedPerplexity}
+          <a class="ext-link" href={chatLinks.perplexity} target="_blank" rel="noreferrer">
+            <span>Open in Perplexity</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="#888888"><path d="M224,104a8,8,0,0,1-16,0V59.31l-66.34,66.35a8,8,0,0,1-11.32-11.32L196.69,48H152a8,8,0,0,1,0-16h64a8,8,0,0,1,8,8Zm-40,24a8,8,0,0,0-8,8v72H48V80h72a8,8,0,0,0,0-16H48A16,16,0,0,0,32,80V208a16,16,0,0,0,16,16H176a16,16,0,0,0,16-16V136A8,8,0,0,0,184,128Z"/></svg>
+          </a>
+        {/if}
       {/if}
-      <a class="ext-link" href={chatLinks.chatgpt} target="_blank" rel="noreferrer">
-        <span>Open in ChatGPT</span>
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="#888888"><path d="M224,104a8,8,0,0,1-16,0V59.31l-66.34,66.35a8,8,0,0,1-11.32-11.32L196.69,48H152a8,8,0,0,1,0-16h64a8,8,0,0,1,8,8Zm-40,24a8,8,0,0,0-8,8v72H48V80h72a8,8,0,0,0,0-16H48A16,16,0,0,0,32,80V208a16,16,0,0,0,16,16H176a16,16,0,0,0,16-16V136A8,8,0,0,0,184,128Z"/></svg>
-      </a>
-      <a class="ext-link" href={chatLinks.claude} target="_blank" rel="noreferrer">
-        <span>Open in Claude</span>
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="#888888"><path d="M224,104a8,8,0,0,1-16,0V59.31l-66.34,66.35a8,8,0,0,1-11.32-11.32L196.69,48H152a8,8,0,0,1,0-16h64a8,8,0,0,1,8,8Zm-40,24a8,8,0,0,0-8,8v72H48V80h72a8,8,0,0,0,0-16H48A16,16,0,0,0,32,80V208a16,16,0,0,0,16,16H176a16,16,0,0,0,16-16V136A8,8,0,0,0,184,128Z"/></svg>
-      </a>
-      <a class="ext-link" href={chatLinks.perplexity} target="_blank" rel="noreferrer">
-        <span>Open in Perplexity</span>
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="#888888"><path d="M224,104a8,8,0,0,1-16,0V59.31l-66.34,66.35a8,8,0,0,1-11.32-11.32L196.69,48H152a8,8,0,0,1,0-16h64a8,8,0,0,1,8,8Zm-40,24a8,8,0,0,0-8,8v72H48V80h72a8,8,0,0,0,0-16H48A16,16,0,0,0,32,80V208a16,16,0,0,0,16,16H176a16,16,0,0,0,16-16V136A8,8,0,0,0,184,128Z"/></svg>
-      </a>
     </div>
   {:else}
     <div class="panel">
@@ -229,6 +261,7 @@
     </div>
   {/if}
 </div>
+{/if}
 
 <style>
   .widget {

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { useConvexClient, useQuery } from "convex-svelte";
   import { api } from "../../../convex/_generated/api";
+  import AuthGate from "$lib/AuthGate.svelte";
 
   const client = useConvexClient();
   const status = useQuery(api.agentReady.content.getCacheStatus, {});
@@ -32,6 +33,8 @@
   async function archive(path: string) { await client.mutation(api.agentReady.content.archivePage, { path }); }
 </script>
 
+<AuthGate>
+  {#snippet children()}
 <div class="hero">
   <h1>Settings</h1>
   <p class="lede">
@@ -104,3 +107,5 @@
     replaces it again.
   </div>
 {/if}
+  {/snippet}
+</AuthGate>

@@ -1,6 +1,6 @@
 {
   "name": "@waynesutton/agent-ready",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Convex component that auto-generates, caches, and serves llms.txt, agents.md, and llms-full.txt with ETag-aware HTTP handlers, dynamic cron scheduling, opt-in analytics, AI descriptions, and React + Svelte widgets.",
   "keywords": [
     "convex",

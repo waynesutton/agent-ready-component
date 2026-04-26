@@ -81,6 +81,13 @@ export type AgentReadySettings = {
   agentSkillsEnabled?: boolean;
   readinessEndpointEnabled?: boolean;
   widgetShowScoreTab?: boolean;
+  widgetCleanMode?: boolean;
+  widgetShowHumanTab?: boolean;
+  widgetShowMachineTab?: boolean;
+  widgetShowChatLinks?: boolean;
+  widgetShowChatGPT?: boolean;
+  widgetShowClaude?: boolean;
+  widgetShowPerplexity?: boolean;
 };
 
 export type AgentReadyPage = {
@@ -118,6 +125,13 @@ export type AgentReadyStatus = {
   widgetShowDescription: boolean;
   widgetShowMeta: boolean;
   widgetShowScoreTab: boolean;
+  widgetCleanMode: boolean;
+  widgetShowHumanTab: boolean;
+  widgetShowMachineTab: boolean;
+  widgetShowChatLinks: boolean;
+  widgetShowChatGPT: boolean;
+  widgetShowClaude: boolean;
+  widgetShowPerplexity: boolean;
   readinessEndpointEnabled: boolean;
   robotsTxtEnabled: boolean;
   sitemapEnabled: boolean;

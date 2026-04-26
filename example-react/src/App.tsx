@@ -19,6 +19,7 @@ const filenameByPath: Record<string, string> = {
   "/": "home.mdx",
   "/settings": "settings.mdx",
   "/analytics": "analytics.mdx",
+  "/resources": "resources.mdx",
 };
 
 export default function App() {
@@ -40,9 +41,7 @@ export default function App() {
         </div>
         <nav className="topbar-links">
           <a href={installGuideUrl} target="_blank" rel="noreferrer">Install guide</a>
-          <a href="https://llmstxt.org" target="_blank" rel="noreferrer">llms.txt spec</a>
-          <a href="https://agents.md" target="_blank" rel="noreferrer">agents.md</a>
-          <a href="https://www.convex.dev/components/static-hosting" target="_blank" rel="noreferrer">static hosting</a>
+          <a href="https://www.npmjs.com/package/@waynesutton/agent-ready" target="_blank" rel="noreferrer">npm</a>
           <a href="https://github.com/waynesutton/agent-ready-component" target="_blank" rel="noreferrer">GitHub</a>
         </nav>
       </header>
@@ -54,6 +53,7 @@ export default function App() {
             <Route path="/" element={<Overview />} />
             <Route path="/settings" element={<AuthGate><Settings /></AuthGate>} />
             <Route path="/analytics" element={<AuthGate><Analytics /></AuthGate>} />
+            <Route path="/resources" element={<Resources />} />
           </Routes>
         </main>
       </Window>
@@ -125,7 +125,7 @@ function UsagePanel() {
       <div className="callout">
         <strong>npx</strong> agent-ready
       </div>
-      <div className="meta-row">
+      <div className="meta-row" style={{ display: "flex", gap: 24 }}>
         <a href={installGuideUrl} target="_blank" rel="noreferrer">Read the Markdown install guide</a>
         <a href={installHtmlUrl} target="_blank" rel="noreferrer">Open the HTML install guide</a>
       </div>
@@ -197,6 +197,46 @@ function WidgetPanel() {
         <li><span>Position</span><strong>floating-bottom-right</strong></li>
         <li><span>Hook</span><strong>useAgentReadyStatus()</strong></li>
       </ul>
+    </div>
+  );
+}
+
+const resourceLinks: Array<{ href: string; label: string; description: string }> = [
+  { href: "https://docs.convex.dev/home", label: "Convex docs", description: "Official Convex documentation and guides" },
+  { href: "https://docs.convex.dev/components/authoring", label: "Authoring components", description: "Build reusable Convex components with isolated tables" },
+  { href: "https://docs.convex.dev/components/using", label: "Using components", description: "Install and wire up Convex components in your app" },
+  { href: "https://docs.convex.dev/components/understanding", label: "Understanding components", description: "How components, boundaries, and isolation work" },
+  { href: "https://www.convex.dev/components/static-hosting", label: "Static hosting", description: "Serve your frontend from the same Convex deployment" },
+  { href: "https://auth.estifanos.com/getting-started/installation/", label: "Convex Auth (Robelest)", description: "Password, OAuth, passkeys, groups, API keys, and SSO" },
+  { href: "https://github.com/robelest/convex-auth", label: "Convex Auth GitHub", description: "Source code and examples for @robelest/convex-auth" },
+  { href: "https://llmstxt.org", label: "llms.txt spec", description: "The llms.txt standard for AI agent discovery" },
+  { href: "https://agents.md", label: "agents.md spec", description: "The agents.md standard for API contracts" },
+  { href: "https://docs.convex.dev/llms.txt", label: "Convex llms.txt", description: "Convex's own llms.txt file" },
+];
+
+function Resources() {
+  return (
+    <div>
+      <div className="hero">
+        <h1>Resources</h1>
+        <p className="lede">
+          Documentation, specs, and tools used by this component.
+        </p>
+      </div>
+      <div className="file-grid">
+        {resourceLinks.map((link) => (
+          <a
+            key={link.href}
+            className="file-tile"
+            href={link.href}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <span className="file-name">{link.label}</span>
+            <span className="file-desc">{link.description}</span>
+          </a>
+        ))}
+      </div>
     </div>
   );
 }

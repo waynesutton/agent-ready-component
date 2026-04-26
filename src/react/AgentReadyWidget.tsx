@@ -20,6 +20,13 @@ export type AgentReadyWidgetProps = {
   statusPath?: string;
   readinessPath?: string;
   showScoreTab?: boolean;
+  cleanMode?: boolean;
+  showHumanTab?: boolean;
+  showMachineTab?: boolean;
+  showChatLinks?: boolean;
+  showChatGPT?: boolean;
+  showClaude?: boolean;
+  showPerplexity?: boolean;
 };
 
 type Tab = "HUMAN" | "MACHINE" | "SCORE";
@@ -60,7 +67,22 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
   const showDescription = props.showDescription ?? status?.widgetShowDescription ?? true;
   const showMeta = props.showMeta ?? status?.widgetShowMeta ?? true;
   const scoreTabVisible = props.showScoreTab ?? status?.widgetShowScoreTab ?? false;
-  const [tab, setTab] = useState<Tab>("HUMAN");
+  const cleanMode = props.cleanMode ?? status?.widgetCleanMode ?? false;
+  const humanTabVisible = props.showHumanTab ?? status?.widgetShowHumanTab ?? true;
+  const machineTabVisible = props.showMachineTab ?? status?.widgetShowMachineTab ?? true;
+  const chatLinksVisible = props.showChatLinks ?? status?.widgetShowChatLinks ?? true;
+  const chatGPTVisible = props.showChatGPT ?? status?.widgetShowChatGPT ?? true;
+  const claudeVisible = props.showClaude ?? status?.widgetShowClaude ?? true;
+  const perplexityVisible = props.showPerplexity ?? status?.widgetShowPerplexity ?? true;
+
+  // Pick the first visible tab as default.
+  const visibleTabs = [
+    humanTabVisible && "HUMAN",
+    machineTabVisible && "MACHINE",
+    scoreTabVisible && "SCORE",
+  ].filter(Boolean) as Tab[];
+
+  const [tab, setTab] = useState<Tab>(visibleTabs[0] ?? "HUMAN");
   const [initialVersion, setInitialVersion] = useState<string | null>(null);
 
   useEffect(() => {
@@ -106,6 +128,13 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
   if (colors.tabActiveBg) colorVars["--agent-ready-tab-active-bg"] = colors.tabActiveBg;
   if (colors.accent) colorVars["--agent-ready-accent"] = colors.accent;
 
+  // Hide widget entirely when no tabs are visible.
+  if (visibleTabs.length === 0) return null;
+
+  // Resolve effective app name / description visibility under clean mode.
+  const effectiveShowAppName = cleanMode ? false : showAppName;
+  const effectiveShowDescription = cleanMode ? false : showDescription;
+
   return (
     <div
       data-theme={theme}
@@ -124,8 +153,12 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
       }}
     >
       <div style={toggleRowStyle}>
-        <TabButton label="HUMAN" active={tab === "HUMAN"} onClick={() => setTab("HUMAN")} />
-        <TabButton label="MACHINE" active={tab === "MACHINE"} onClick={() => setTab("MACHINE")} />
+        {humanTabVisible ? (
+          <TabButton label="HUMAN" active={tab === "HUMAN"} onClick={() => setTab("HUMAN")} />
+        ) : null}
+        {machineTabVisible ? (
+          <TabButton label="MACHINE" active={tab === "MACHINE"} onClick={() => setTab("MACHINE")} />
+        ) : null}
         {scoreTabVisible ? (
           <TabButton label="SCORE" active={tab === "SCORE"} onClick={() => setTab("SCORE")} />
         ) : null}
@@ -135,12 +168,12 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
         <ScorePanel readiness={readiness} />
       ) : tab === "HUMAN" ? (
         <div style={panelStyle}>
-          {showAppName ? (
+          {effectiveShowAppName ? (
             <p style={paragraphStyle}>
               {status?.appName ?? "LLMs discovery"}
             </p>
           ) : null}
-          {showDescription ? (
+          {effectiveShowDescription ? (
             <p style={subParagraphStyle}>
               These files help AI agents understand this app.
             </p>
@@ -152,10 +185,16 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
               {status?.fullTxtEnabled ? <CopyRow label="llms-full.txt" url={urls.fullTxt} /> : null}
             </>
           ) : null}
-          {(showAppName || showDescription || showFiles) ? <div style={dividerStyle} /> : null}
-          <ExternalLink label="Open in ChatGPT" url={chatLinks.chatgpt} />
-          <ExternalLink label="Open in Claude" url={chatLinks.claude} />
-          <ExternalLink label="Open in Perplexity" url={chatLinks.perplexity} />
+          {chatLinksVisible ? (
+            <>
+              {(effectiveShowAppName || effectiveShowDescription || showFiles) ? <div style={dividerStyle} /> : null}
+              {chatGPTVisible ? <ExternalLink label="Open in ChatGPT" url={chatLinks.chatgpt} /> : null}
+              {claudeVisible ? <ExternalLink label="Open in Claude" url={chatLinks.claude} /> : null}
+              {perplexityVisible ? <ExternalLink label="Open in Perplexity" url={chatLinks.perplexity} /> : null}
+            </>
+          ) : (
+            (effectiveShowAppName || effectiveShowDescription || showFiles) ? null : null
+          )}
         </div>
       ) : (
         <div style={panelStyle}>

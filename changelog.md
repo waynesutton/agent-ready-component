@@ -6,6 +6,8 @@ All notable changes to `@waynesutton/agent-ready` (formerly `@convex-dev/llms-tx
 
 ### Added
 
+- Widget display mode options: `widgetCleanMode`, `widgetShowHumanTab`, `widgetShowMachineTab`, `widgetShowChatLinks`, `widgetShowChatGPT`, `widgetShowClaude`, `widgetShowPerplexity`. Configurable via `agent-ready.config.json` settings or as direct widget props (React and Svelte). Clean mode strips the app name and description while keeping all functionality. Individual chat link toggles let consumers hide any combination of ChatGPT, Claude, and Perplexity links. Tab toggles let consumers show only HUMAN, only MACHINE, or both. Widget hides entirely when all tabs are disabled
+- PRD: `prds/widget-display-modes.md`
 - `@robelest/convex-auth` integration in the React demo app with password and anonymous providers. Admin mutations (`publishPage`, `draftPage`, `archivePage`, `rollbackCache`, `regenerateAll`) are now gated behind `authMutation`/`authAction` from `convex-helpers` custom functions. Settings and Analytics routes require sign-in via `AuthGate` component
 - `convex/auth.ts`, `convex/functions.ts`, and `src/auth.tsx` files in the React demo for auth wiring and login UI
 - `internalCleanupOldRequests` internalMutation in `src/component/analytics.ts` for server-to-server use by the cron worker

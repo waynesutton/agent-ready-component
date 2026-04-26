@@ -38,6 +38,13 @@ export default defineSchema({
     widgetShowDescription: v.optional(v.boolean()),
     widgetShowMeta: v.optional(v.boolean()),
     widgetShowScoreTab: v.optional(v.boolean()),
+    widgetCleanMode: v.optional(v.boolean()),
+    widgetShowHumanTab: v.optional(v.boolean()),
+    widgetShowMachineTab: v.optional(v.boolean()),
+    widgetShowChatLinks: v.optional(v.boolean()),
+    widgetShowChatGPT: v.optional(v.boolean()),
+    widgetShowClaude: v.optional(v.boolean()),
+    widgetShowPerplexity: v.optional(v.boolean()),
     widgetColors: v.optional(
       v.object({
         bg: v.optional(v.string()),

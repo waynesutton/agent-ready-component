@@ -186,7 +186,37 @@ git push origin v0.1.0
 gh release create v0.1.0 --generate-notes
 ```
 
-## 12. Deploy the React demo on Convex
+## 12. Demo apps (optional)
+
+The `example-react` and `example-svelte` directories are reference implementations that show how to integrate the component with a full frontend. They are not required to use `@waynesutton/agent-ready` in your own app. If you forked this repo to build your own product, you can safely ignore or delete both directories.
+
+The remaining steps in this guide only matter if you want to run and deploy the demo apps.
+
+### Auth and admin access
+
+Both demo apps use `@robelest/convex-auth` with email and password sign-in. The settings and analytics pages are restricted to admin users. Admin emails are stored in a Convex environment variable so they never appear in the codebase.
+
+Set the `ADMIN_EMAILS` variable on each demo deployment before running the apps. Use a comma-separated list of addresses:
+
+```bash
+cd example-react
+npx convex env set ADMIN_EMAILS "your-email@example.com,another-admin@example.com"
+```
+
+```bash
+cd ../example-svelte
+npx convex env set ADMIN_EMAILS "your-email@example.com,another-admin@example.com"
+```
+
+For production deployments, add `--prod`:
+
+```bash
+npx convex env set ADMIN_EMAILS "your-email@example.com" --prod
+```
+
+The check is case-insensitive. Users whose email is not in the list see a sign-in form but are rejected by the server when they try to access admin routes. Never commit email addresses to the repository.
+
+### Deploy the React demo
 
 ```bash
 cd example-react
@@ -238,7 +268,7 @@ npm run deploy
 
 Open `https://quixotic-viper-800.convex.site`. You should see the cream demo UI, the widget in the bottom right, and the file sidebar linking to `/llms.txt`, `/agents.md`, and `/llms-status`.
 
-## 13. Deploy the Svelte demo on Convex
+### Deploy the Svelte demo
 
 ```bash
 cd ../example-svelte
@@ -282,7 +312,7 @@ npm run deploy
 
 SvelteKit uses `@sveltejs/adapter-static`. The uploaded `build/` folder serves from the same deployment URL as the Convex functions.
 
-## 14. Confirm live file URLs
+### Confirm live file URLs
 
 Run these checks against both demo deployments:
 
@@ -294,7 +324,7 @@ curl -i https://your-deployment.convex.site/llms-status
 
 While `testMode: true` is on, non-localhost requests return `403`. That is the expected default.
 
-## 15. Flip testMode off
+### Flip testMode off
 
 ```bash
 npx agent-ready go-live --prod
@@ -304,7 +334,7 @@ The wizard asks for confirmation, prints the file URLs that become public, and f
 
 Repeat for the other demo app, then re-run the curls in section 14. Expect `200 OK` and generated content.
 
-## 16. Test ETag behavior
+### Test ETag behavior
 
 ```bash
 ETAG=$(curl -sI https://your-deployment.convex.site/llms.txt | awk '/etag/ {print $2}' | tr -d '\r"')
@@ -322,7 +352,7 @@ npx agent-ready regenerate --prod
 
 Re-run the curl. Expect `200 OK` with a new ETag.
 
-## 17. Test the UpdateBanner refresh flow
+### Test the UpdateBanner refresh flow
 
 1. Open the live React demo URL in a browser.
 2. Change any page description in `example-react/agent-ready.config.json`.
@@ -333,7 +363,7 @@ Re-run the curl. Expect `200 OK` with a new ETag.
 
 Repeat the same flow against the Svelte demo URL.
 
-## 18. Final release checklist
+## 13. Final release checklist
 
 - `npm view @waynesutton/agent-ready version` matches `package.json`
 - `npm view @waynesutton/agent-ready bin` lists `agent-ready`

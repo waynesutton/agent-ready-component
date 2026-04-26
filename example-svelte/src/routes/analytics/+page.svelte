@@ -3,6 +3,7 @@
   import { writable } from "svelte/store";
   import { useQuery } from "convex-svelte";
   import { api } from "../../../convex/_generated/api";
+  import AuthGate from "$lib/AuthGate.svelte";
 
   const INTERVAL_MS = 60_000;
   const roundedNow = writable(Math.floor(Date.now() / INTERVAL_MS) * INTERVAL_MS);
@@ -21,6 +22,8 @@
   }
 </script>
 
+<AuthGate>
+  {#snippet children()}
 {#if $summary === undefined}
   <div class="hero">
     <h1>Analytics</h1>
@@ -86,3 +89,5 @@
     </ul>
   {/if}
 {/if}
+  {/snippet}
+</AuthGate>

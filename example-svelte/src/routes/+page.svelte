@@ -71,7 +71,7 @@
   </div>
   <div class="callout"><strong>npm install</strong> @waynesutton/agent-ready @convex-dev/crons @convex-dev/workpool</div>
   <div class="callout"><strong>npx</strong> agent-ready</div>
-  <div class="meta-row">
+  <div class="meta-row" style="display: flex; gap: 24px;">
     <a href={installGuideUrl} target="_blank" rel="noreferrer">Read the Markdown install guide</a>
     <a href={installHtmlUrl} target="_blank" rel="noreferrer">Open the HTML install guide</a>
   </div>

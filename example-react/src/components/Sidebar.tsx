@@ -19,6 +19,7 @@ const external: Array<{ href: string; label: string; glyph: string }> = [
   { href: "/llms-status", label: "llms-status", glyph: ">" },
 ];
 
+
 interface SidebarProps {
   appUrl: string;
 }
@@ -57,6 +58,16 @@ export function Sidebar({ appUrl }: SidebarProps) {
           <span>{item.label}</span>
         </a>
       ))}
+
+      <div className="sidebar-divider" />
+
+      <Link
+        to="/resources"
+        className={`sidebar-item${location.pathname === "/resources" ? " active" : ""}`}
+      >
+        <span className="sidebar-icon">&rarr;</span>
+        <span>Resources</span>
+      </Link>
     </aside>
   );
 }

@@ -21,10 +21,12 @@
     { href: "/llms-status", label: "llms-status" },
   ];
 
+
   const filenameByPath: Record<string, string> = {
     "/": "home.mdx",
     "/settings": "settings.mdx",
     "/analytics": "analytics.mdx",
+    "/resources": "resources.mdx",
   };
 
   let filename = $derived(filenameByPath[$page.url.pathname] ?? "home.mdx");
@@ -38,9 +40,7 @@
     </div>
     <nav class="topbar-links">
       <a href={installGuideUrl} target="_blank" rel="noreferrer">Install guide</a>
-      <a href="https://llmstxt.org" target="_blank" rel="noreferrer">llms.txt spec</a>
-      <a href="https://agents.md" target="_blank" rel="noreferrer">agents.md</a>
-      <a href="https://www.convex.dev/components/static-hosting" target="_blank" rel="noreferrer">static hosting</a>
+      <a href="https://www.npmjs.com/package/@waynesutton/agent-ready" target="_blank" rel="noreferrer">npm</a>
       <a href="https://github.com/waynesutton/agent-ready-component" target="_blank" rel="noreferrer">GitHub</a>
     </nav>
   </header>
@@ -78,6 +78,16 @@
             <span>{item.label}</span>
           </a>
         {/each}
+
+        <div class="sidebar-divider"></div>
+
+        <a
+          href="/resources"
+          class="sidebar-item {$page.url.pathname === '/resources' ? 'active' : ''}"
+        >
+          <span class="sidebar-icon">&rarr;</span>
+          <span>Resources</span>
+        </a>
       </aside>
 
       <main class="content">{@render children()}</main>

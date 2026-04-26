@@ -15,8 +15,10 @@
     "@convex-dev/crons": "^0.2.0",
     "@convex-dev/static-hosting": "^0.1.0",
     "@convex-dev/workpool": "^0.3.0",
+    "@robelest/convex-auth": "^0.0.4-preview.30",
     "@waynesutton/agent-ready": "file:..",
     "convex": "^1.36.0",
+    "convex-helpers": "^0.1.115",
     "convex-svelte": "^0.0.11"
   },
   "devDependencies": {

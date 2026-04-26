@@ -68,6 +68,13 @@ export const applySyncConfig = internalMutation({
           agentSkillsEnabled: settings.agentSkillsEnabled,
           readinessEndpointEnabled: settings.readinessEndpointEnabled,
           widgetShowScoreTab: settings.widgetShowScoreTab,
+          widgetCleanMode: settings.widgetCleanMode,
+          widgetShowHumanTab: settings.widgetShowHumanTab,
+          widgetShowMachineTab: settings.widgetShowMachineTab,
+          widgetShowChatLinks: settings.widgetShowChatLinks,
+          widgetShowChatGPT: settings.widgetShowChatGPT,
+          widgetShowClaude: settings.widgetShowClaude,
+          widgetShowPerplexity: settings.widgetShowPerplexity,
         });
       } else {
         await ctx.db.patch(existing._id, settings);

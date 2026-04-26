@@ -1,7 +1,7 @@
 import { query } from "../_generated/server";
 import { components } from "../_generated/api";
 import { v } from "convex/values";
-import { authMutation, authAction } from "../functions";
+import { authMutation, authAction, assertAdmin } from "../functions";
 
 const fileTypeValidator = v.union(
   v.literal("llms.txt"),
@@ -71,11 +71,12 @@ export const listPages = query({
   },
 });
 
-// Auth-protected admin mutations
+// Auth-protected admin mutations (requires ADMIN_EMAILS env var)
 export const publishPage = authMutation({
   args: { path: v.string() },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await assertAdmin(ctx);
     await ctx.runMutation(components.agentReady.content.publishPage, args);
     return null;
   },
@@ -85,6 +86,7 @@ export const draftPage = authMutation({
   args: { path: v.string() },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await assertAdmin(ctx);
     await ctx.runMutation(components.agentReady.content.draftPage, args);
     return null;
   },
@@ -94,6 +96,7 @@ export const archivePage = authMutation({
   args: { path: v.string() },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await assertAdmin(ctx);
     await ctx.runMutation(components.agentReady.content.archivePage, args);
     return null;
   },
@@ -103,6 +106,7 @@ export const rollbackCache = authMutation({
   args: { fileType: fileTypeValidator },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await assertAdmin(ctx);
     await ctx.runMutation(components.agentReady.content.rollbackCache, args);
     return null;
   },
@@ -112,6 +116,7 @@ export const regenerateAll = authAction({
   args: {},
   returns: v.string(),
   handler: async (ctx) => {
+    await assertAdmin(ctx);
     return await ctx.runAction(components.agentReady.content.regenerateAll, {});
   },
 });

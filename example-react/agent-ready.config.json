@@ -10,6 +10,13 @@
     "widgetShowDescription": false,
     "widgetShowMeta": true,
     "widgetShowScoreTab": false,
+    "widgetCleanMode": false,
+    "widgetShowHumanTab": true,
+    "widgetShowMachineTab": true,
+    "widgetShowChatLinks": true,
+    "widgetShowChatGPT": true,
+    "widgetShowClaude": true,
+    "widgetShowPerplexity": true,
     "widgetColors": {
       "bg": "#1a1a1a",
       "border": "#333333",

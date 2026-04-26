@@ -1,5 +1,8 @@
 # @waynesutton/agent-ready
 
+[![npm version](https://img.shields.io/npm/v/@waynesutton/agent-ready.svg)](https://www.npmjs.com/package/@waynesutton/agent-ready)
+[![npm downloads](https://img.shields.io/npm/dm/@waynesutton/agent-ready.svg)](https://www.npmjs.com/package/@waynesutton/agent-ready)
+
 Auto-generate, cache, and serve `llms.txt`, `agents.md`, and `llms-full.txt` for any Convex app. One component, one deploy command, no external hosting.
 
 Ships with React and Svelte widgets, dynamic cron scheduling via `@convex-dev/crons`, opt-in agent analytics, AI-assisted description generation, a CLI with an interactive setup wizard, and both demo apps fully hosted on Convex via `@convex-dev/static-hosting`.
@@ -151,9 +154,52 @@ Not using React? The Convex wrapper functions work with any framework. Build you
 - Readiness self-score endpoint (`/llms-readiness`) with 11 checks across discoverability, content, bots, and protocol
 - `npx agent-ready agent-ready` enables all readiness flags in one command
 - `npx agent-ready scan` audits your deployment (CI-friendly, exits non-zero below 80)
-- Config-driven widget visibility: `widgetShowFiles`, `widgetShowAppName`, `widgetShowDescription`, `widgetShowMeta`, `widgetShowScoreTab`, and `widgetStatusVisible` in `agent-ready.config.json` control the widget without code changes. Props still work as overrides
+- Config-driven widget visibility: `widgetShowFiles`, `widgetShowAppName`, `widgetShowDescription`, `widgetShowMeta`, `widgetShowScoreTab`, `widgetStatusVisible`, `widgetCleanMode`, `widgetShowHumanTab`, `widgetShowMachineTab`, `widgetShowChatLinks`, `widgetShowChatGPT`, `widgetShowClaude`, and `widgetShowPerplexity` in `agent-ready.config.json` control the widget without code changes. Props still work as overrides
 - CLI covering setup, sync, status, regenerate, rollback, go-live, agent-ready, scan, analytics, cleanup, versions, and per-page state transitions
 - Both demo apps hosted entirely on Convex via `@convex-dev/static-hosting`
+
+## Widget display modes
+
+Control which tabs, content sections, and AI chat links the widget shows. Set these in `agent-ready.config.json` under `settings`, or pass them as props directly on the widget component. Props override config values.
+
+| Setting | Default | Effect |
+|---|---|---|
+| `widgetCleanMode` | `false` | Strips app name and description, keeps tabs and links functional |
+| `widgetShowHumanTab` | `true` | Show or hide the HUMAN tab |
+| `widgetShowMachineTab` | `true` | Show or hide the MACHINE tab |
+| `widgetShowScoreTab` | `false` | Show or hide the SCORE tab |
+| `widgetShowChatLinks` | `true` | Show or hide all three AI chat links on the HUMAN tab |
+| `widgetShowChatGPT` | `true` | Show or hide the "Open in ChatGPT" link |
+| `widgetShowClaude` | `true` | Show or hide the "Open in Claude" link |
+| `widgetShowPerplexity` | `true` | Show or hide the "Open in Perplexity" link |
+
+When all tabs are hidden, the widget renders nothing. When only one tab is visible, its tab button still renders so the label shows, but there is nothing to toggle.
+
+Example config for a minimal MACHINE-only widget with no chat links:
+
+```json
+{
+  "settings": {
+    "widgetShowHumanTab": false,
+    "widgetShowMachineTab": true,
+    "widgetShowScoreTab": false,
+    "widgetShowChatLinks": false
+  }
+}
+```
+
+Example React props override:
+
+```tsx
+<AgentReadyWidget
+  appUrl={appUrl}
+  showHumanTab={true}
+  showMachineTab={true}
+  showChatGPT={false}
+  showPerplexity={false}
+  cleanMode={true}
+/>
+```
 
 ## Sync and regenerate
 

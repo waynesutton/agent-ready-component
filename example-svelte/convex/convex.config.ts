@@ -3,8 +3,10 @@ import agentReady from "@waynesutton/agent-ready/convex.config.js";
 import crons from "@convex-dev/crons/convex.config.js";
 import workpool from "@convex-dev/workpool/convex.config.js";
 import staticHosting from "@convex-dev/static-hosting/convex.config.js";
+import auth from "@robelest/convex-auth/convex.config";
 
 const app = defineApp();
+app.use(auth);
 app.use(crons);
 app.use(workpool);
 app.use(agentReady);
