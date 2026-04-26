@@ -34,6 +34,7 @@ Plain text map of every file in the `@waynesutton/agent-ready` repo. This is a C
 - `prds/github-oauth-demo-app-recovery.md`: PRD documenting the GitHub OAuth demo app login fixes, root causes, verification steps, and future app checklist
 - `prds/docs-submission-readiness.md`: PRD documenting the final docs pass before Convex components directory submission
 - `prds/svelte-check-cleanup.md`: PRD documenting the Svelte demo typecheck cleanup for auth, settings, analytics, and generated Convex bindings
+- `prds/setup-widget-prompt.md`: PRD for setup wizard widget install guidance, framework selection, mount location defaults, and verification
 - `mockup-react.html`: Standalone HTML mockup of the React demo's agent-readiness control panel. Shows the score ring, per-check grid, response headers, schema toggles, and the 3-tab widget with SCORE active
 - `mockup-svelte.html`: Standalone HTML mockup of the Svelte demo's analytics dashboard with agent-readiness signals layered in. Shows the 4-card metric grid (including markdown-negotiation count and readiness scans), agent and file breakdowns, signals panel, and 3-tab widget
 
@@ -84,7 +85,7 @@ Plain text map of every file in the `@waynesutton/agent-ready` repo. This is a C
 
 - `cli/bin.mjs`: CLI entry, resolves subcommand
 - `cli/index.mjs`: CLI dispatcher and shared helpers
-- `cli/commands/setup.mjs`: Interactive first-run wizard. Writes `agent-ready.config.json`, scaffolds Convex wrapper files at `convex/agentReady/content.ts` and `convex/agentReady/analytics.ts`, syncs config to the deployment, and prints next steps including the optional settings panel
+- `cli/commands/setup.mjs`: Interactive first-run wizard. Writes `agent-ready.config.json`, scaffolds Convex wrapper files at `convex/agentReady/content.ts` and `convex/agentReady/analytics.ts`, syncs config to the deployment, prompts for optional React/Svelte widget install guidance, and prints next steps including the optional settings panel
 - `cli/commands/sync.mjs`: Reads `agent-ready.config.json`, applies to deployment
 - `cli/commands/status.mjs`: Prints cache and job state
 - `cli/commands/regenerate.mjs`: Queues a `regenerateAll` workpool job
@@ -100,6 +101,7 @@ Plain text map of every file in the `@waynesutton/agent-ready` repo. This is a C
 - `cli/commands/versions.mjs`: Shows version history for a page
 - `cli/commands/agent-ready.mjs`: One-command flag flip that enables every agent-readiness feature, syncs config, and regenerates files
 - `cli/commands/scan.mjs`: Pure HTTP auditor that checks every agent-readiness endpoint and prints a pass/fail table. Exits non-zero when score drops below 80 for CI use
+- `cli/lib/banner.mjs`: Reusable block-style ASCII banner printed by CLI setup and help output
 - `cli/lib/prompts.mjs`: Prompt helpers for the setup wizard
 - `cli/lib/convex.mjs`: Convex deployment helpers, auto-detects `agentReady:` prefix and converts to `--component agentReady` for the current Convex CLI
 

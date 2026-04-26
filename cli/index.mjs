@@ -15,6 +15,7 @@ import { cleanup } from "./commands/cleanup.mjs";
 import { versions } from "./commands/versions.mjs";
 import { agentReady } from "./commands/agent-ready.mjs";
 import { scan } from "./commands/scan.mjs";
+import { printCliBanner } from "./lib/banner.mjs";
 
 const COMMANDS = {
   setup,
@@ -36,6 +37,7 @@ const COMMANDS = {
 };
 
 function printHelp() {
+  printCliBanner();
   console.log(`
 @waynesutton/agent-ready CLI
 

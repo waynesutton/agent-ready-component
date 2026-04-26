@@ -5,6 +5,7 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import { prompt, confirm, choose } from "../lib/prompts.mjs";
 import { convexRun, formatError } from "../lib/convex.mjs";
+import { printCliBanner } from "../lib/banner.mjs";
 
 // Convex wrapper that exposes component functions to browser clients.
 const CONTENT_WRAPPER = `import { action, mutation, query } from "../_generated/server";
@@ -145,6 +146,54 @@ export const getTimeSeries = query({
 });
 `;
 
+const WIDGET_FRAMEWORKS = ["react", "svelte"];
+const WIDGET_MOUNT_LOCATIONS = ["root", "footer", "header"];
+
+function resolveWidgetPosition(mountLocation) {
+  return mountLocation === "footer" ? "footer" : "floating-bottom-right";
+}
+
+function formatMountLocation(mountLocation) {
+  if (mountLocation === "root") return "root app layout";
+  return mountLocation;
+}
+
+function widgetInstallSnippet(framework, widgetPosition) {
+  if (framework === "svelte") {
+    return `<script lang="ts">
+  import { AgentReadyWidget } from "@waynesutton/agent-ready/svelte";
+
+  const appUrl = import.meta.env.VITE_CONVEX_SITE_URL as string;
+</script>
+
+<AgentReadyWidget {appUrl} position="${widgetPosition}" theme="dark" />`;
+  }
+
+  return `import { AgentReadyWidget, UpdateBanner } from "@waynesutton/agent-ready/react";
+
+export default function App() {
+  const appUrl = import.meta.env.VITE_CONVEX_SITE_URL as string;
+
+  return (
+    <>
+      <UpdateBanner appUrl={appUrl} />
+      <AgentReadyWidget appUrl={appUrl} position="${widgetPosition}" theme="dark" />
+    </>
+  );
+}`;
+}
+
+function printWidgetInstallGuide({ framework, mountLocation, widgetPosition }) {
+  console.log("");
+  console.log("Widget install:");
+  console.log(`  Best default: root app layout. You picked: ${formatMountLocation(mountLocation)}.`);
+  console.log("  Add it once so the widget follows every page without duplicating.");
+  console.log("");
+  console.log("Copy and paste this into your app:");
+  console.log("");
+  console.log(widgetInstallSnippet(framework, widgetPosition));
+}
+
 async function scaffoldWrappers() {
   const convexDir = path.join(process.cwd(), "convex", "agentReady");
   const contentPath = path.join(convexDir, "content.ts");
@@ -175,6 +224,7 @@ async function scaffoldWrappers() {
 
 export async function setup(_args) {
   console.log("");
+  printCliBanner();
   console.log("@waynesutton/agent-ready setup wizard");
   console.log("");
 
@@ -207,6 +257,17 @@ export async function setup(_args) {
     }
   }
 
+  const showWidgetInstallCode = await confirm("Show widget install code?", true);
+  const widgetFramework = showWidgetInstallCode
+    ? await choose("Widget framework", WIDGET_FRAMEWORKS, "react")
+    : null;
+  const widgetMountLocation = showWidgetInstallCode
+    ? await choose("Where will you add the widget?", WIDGET_MOUNT_LOCATIONS, "root")
+    : null;
+  const selectedWidgetPosition = widgetMountLocation
+    ? resolveWidgetPosition(widgetMountLocation)
+    : existing.settings?.widgetPosition;
+
   const nextConfig = {
     ...existing,
     settings: {
@@ -220,7 +281,7 @@ export async function setup(_args) {
       testMode: existing.settings?.testMode ?? true,
       cronEnabled: existing.settings?.cronEnabled ?? true,
       cronIntervalHours: existing.settings?.cronIntervalHours ?? 24,
-      widgetPosition: existing.settings?.widgetPosition ?? "floating-bottom-right",
+      widgetPosition: selectedWidgetPosition ?? existing.settings?.widgetPosition ?? "floating-bottom-right",
       widgetStatusVisible: existing.settings?.widgetStatusVisible ?? true,
       widgetShowFiles: existing.settings?.widgetShowFiles ?? true,
       widgetShowAppName: existing.settings?.widgetShowAppName ?? true,
@@ -275,5 +336,12 @@ export async function setup(_args) {
     console.log("");
     console.log("Wrapper files were created at convex/agentReady/.");
     console.log("These expose the component API to your browser clients.");
+  }
+  if (showWidgetInstallCode && widgetFramework && widgetMountLocation) {
+    printWidgetInstallGuide({
+      framework: widgetFramework,
+      mountLocation: widgetMountLocation,
+      widgetPosition: selectedWidgetPosition ?? "floating-bottom-right",
+    });
   }
 }

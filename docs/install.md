@@ -207,6 +207,7 @@ The wizard asks for:
 - Analytics preference
 - AI description preference: `claude`, `openai`, or `off`
 - Test mode preference
+- Optional widget install guide: pick React or Svelte, pick mount location (root, footer, or header), then copy the printed snippet
 
 It writes `agent-ready.config.json` and syncs it to your Convex deployment.
 

@@ -21,6 +21,10 @@ All notable changes to `@waynesutton/agent-ready` (formerly `@convex-dev/llms-tx
 
 ### Added
 
+- Block-style ASCII `agent-ready` logo for CLI setup and help output
+- Setup wizard widget install guidance. `npx agent-ready setup` now asks whether to show widget code, asks for React or Svelte, asks where the widget will be mounted with root layout as the recommended default, and prints copyable code for the selected framework
+- Synced `README.md` and `docs/install.md` wizard prompt descriptions to mention the new optional widget install guide step
+- PRD: `prds/setup-widget-prompt.md`
 - PRD: `prds/svelte-check-cleanup.md`
 - PRD: `prds/github-oauth-demo-app-recovery.md`
 - Widget display mode options: `widgetCleanMode`, `widgetShowHumanTab`, `widgetShowMachineTab`, `widgetShowChatLinks`, `widgetShowChatGPT`, `widgetShowClaude`, `widgetShowPerplexity`. Configurable via `agent-ready.config.json` settings or as direct widget props (React and Svelte). Clean mode strips the app name and description while keeping all functionality. Individual chat link toggles let consumers hide any combination of ChatGPT, Claude, and Perplexity links. Tab toggles let consumers show only HUMAN, only MACHINE, or both. Widget hides entirely when all tabs are disabled

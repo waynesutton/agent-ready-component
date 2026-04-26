@@ -151,7 +151,7 @@ Svelte:
 npx agent-ready setup
 ```
 
-The wizard asks for your app name, URL, description, cron interval, analytics preference, AI description preference, and test mode preference. It writes `agent-ready.config.json`, scaffolds Convex wrapper files at `convex/agentReady/`, syncs the config to your deployment, and schedules the cron.
+The wizard asks for your app name, URL, description, cron interval, analytics preference, AI description preference, test mode preference, and an optional widget install guide. If you opt in, it asks whether you use React or Svelte and where you will mount the widget (root layout is the recommended default), then prints the matching code for you to copy in. It writes `agent-ready.config.json`, scaffolds Convex wrapper files at `convex/agentReady/`, syncs the config to your deployment, and schedules the cron.
 
 ### 6. Verify locally
 
