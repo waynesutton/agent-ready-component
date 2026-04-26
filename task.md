@@ -4,11 +4,12 @@ Source of truth: `prds/convex-llms-txt-prd-v6.md`. Agent readiness work tracked 
 
 ## In progress
 
-- [ ] M0: Scaffold repo structure, docs, and placeholder files (no Convex deploy, no install yet)
+- [ ] Follow `SETUP.md` end to end once you are ready to deploy: install, wire, sync, verify, publish, go-live, refresh test
+- [ ] Run `npx agent-ready go-live --prod` to disable testMode on the production React demo
 
 ## Next up
 
-- [ ] Follow `SETUP.md` end to end once you are ready to deploy: install, wire, sync, verify, publish, go-live, refresh test
+- [ ] M0: Scaffold repo structure, docs, and placeholder files (no Convex deploy, no install yet)
 - [ ] Capture screenshots of the PostHog-inspired demos for the README marketing section
 - [ ] Replace placeholder `@convex-dev/crons` + `@convex-dev/workpool` peer versions with the real pinned versions once resolved
 - [ ] Kick off Agent Readiness v1 (M31). PRD at `prds/agent-readiness-v1.md`
@@ -79,6 +80,8 @@ PRD: `prds/agent-readiness-v1.md`. Each milestone is independently shippable.
 
 ## Completed
 
+- [x] 2026-04-25 Fixed CLI and deploy pipeline for React demo production deployment. Fixed `convex run` calls to use `--component agentReady` and positional JSON args (old `--args` flag removed from Convex CLI). Added batch upload functions (`generateUploadUrls`, `recordAssets`) to `staticHosting.ts` for static-hosting v0.1.3. Added `.env.production.local` and `deploy:full` script for one-command deploys. Updated `SETUP.md` with `--prod` flags on go-live, sync, and regenerate. Fixed `agent-ready.config.json` appUrl. Applied same CLI and setup.mjs fixes to Svelte demo for parity.
+- [x] 2026-04-26 00:40 UTC Fixed React demo runtime 404 and CORS failures for `/llms-status`. Added app-facing wrapper functions for `api.agentReady.content.*` and `api.agentReady.analytics.*` in both demos, added CORS headers plus OPTIONS support to the status route, corrected static hosting component refs to `components.selfHosting`, added minimal root Convex health config, and uploaded the React demo functions with Convex codegen. PRD: `prds/demo-component-wrapper-cors-fix.md`. Verification: `npm run typecheck`, `npx tsc -p example-react/tsconfig.json --noEmit`, live `curl` CORS check, live OPTIONS check, `npx convex run agentReady/content:getCacheStatus`, and `npx convex-doctor@latest`
 - [x] 2026-04-26 00:30 UTC Resolved dependency install and audit blockers. Updated `@convex-dev/crons`, `@convex-dev/workpool`, `convex-helpers`, SvelteKit related packages, and the npm `cookie` override. Verification: `npm install`, `npm audit` returned 0 vulnerabilities
 - [x] 2026-04-26 00:28 UTC Fixed packaged component typecheck circularity. Moved internal content helpers into `src/component/contentInternal.ts`, added shared validators in `src/component/validators.ts`, replaced loose `v.any()` returns in touched content and analytics APIs, and kept public CLI function names stable. PRD: `prds/typecheck-component-circularity.md`. Verification: `npx convex codegen --component-dir ./src/component`, `npm run typecheck`
 - [x] 2026-04-26 00:27 UTC Fixed packaged component codegen blockers found while following `SETUP.md`. Removed unsupported `"use node"` from `src/component/generation.ts`, renamed reserved `src/component/crons.ts` to `src/component/cronWorker.ts`, regenerated component bindings, and verified `npx convex codegen --component-dir ./src/component`

@@ -11,7 +11,7 @@ registerRoutes(http, components.agentReady, {
   },
 });
 
-registerStaticRoutes(http, components.staticHosting, {
+registerStaticRoutes(http, components.selfHosting, {
   pathPrefix: "/",
   spaFallback: true,
 });

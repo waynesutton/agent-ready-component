@@ -5,15 +5,26 @@ import { promisify } from "node:util";
 
 const run = promisify(execFile);
 
-// Invoke a Convex function by reference. `fnRef` is the dotted reference string (e.g. "content:getSettings").
-// Returns the parsed stdout as JSON when the call returns JSON, otherwise the raw string.
+// Invoke a Convex function by reference.
+// `fnRef` uses the internal format "agentReady:module:fn". The Convex CLI
+// expects "--component agentReady module:fn", so we split the prefix here.
 export async function convexRun(fnRef, argsObj = {}, options = {}) {
-  const cliArgs = ["convex", "run", fnRef];
-  if (Object.keys(argsObj).length > 0) {
-    cliArgs.push("--args", JSON.stringify(argsObj));
-  }
+  const cliArgs = ["convex", "run"];
   if (options.prod) cliArgs.push("--prod");
+
+  let resolvedRef = fnRef;
+  const componentPrefix = "agentReady:";
+  if (fnRef.startsWith(componentPrefix)) {
+    const rest = fnRef.slice(componentPrefix.length);
+    cliArgs.push("--component", "agentReady");
+    resolvedRef = rest;
+  }
   if (options.component) cliArgs.push("--component", options.component);
+
+  cliArgs.push(resolvedRef);
+  if (Object.keys(argsObj).length > 0) {
+    cliArgs.push(JSON.stringify(argsObj));
+  }
   const { stdout } = await run("npx", cliArgs, {
     cwd: options.cwd ?? process.cwd(),
     env: process.env,

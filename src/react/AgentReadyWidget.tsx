@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { WidgetPosition, WidgetTheme } from "../client/types.js";
+import type { WidgetColors, WidgetPosition, WidgetTheme } from "../client/types.js";
 import { useAgentReadyStatus } from "./useAgentReadyStatus.js";
 
 export type AgentReadyWidgetProps = {
@@ -7,7 +7,8 @@ export type AgentReadyWidgetProps = {
   position?: WidgetPosition;
   theme?: WidgetTheme;
   showTestModeBadge?: boolean;
-  // Path overrides. Must match the `registerRoutes` options used on the server.
+  showStatus?: boolean;
+  colors?: Partial<WidgetColors>;
   llmsTxtPath?: string;
   agentsMdPath?: string;
   fullTxtPath?: string;
@@ -16,11 +17,27 @@ export type AgentReadyWidgetProps = {
 
 type Tab = "HUMAN" | "MACHINE";
 
-// Terminal-style widget with HUMAN / MACHINE toggle.
-// Styles are inline so the widget drops into any app without requiring a CSS bundle.
+// Inline Phosphor ArrowSquareOut icon (16x16, regular weight).
+function ArrowSquareOutIcon({ color = "currentColor" }: { color?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={14}
+      height={14}
+      viewBox="0 0 256 256"
+      fill={color}
+      style={{ flexShrink: 0 }}
+    >
+      <path d="M224,104a8,8,0,0,1-16,0V59.31l-66.34,66.35a8,8,0,0,1-11.32-11.32L196.69,48H152a8,8,0,0,1,0-16h64a8,8,0,0,1,8,8Zm-40,24a8,8,0,0,0-8,8v72H48V80h72a8,8,0,0,0,0-16H48A16,16,0,0,0,32,80V208a16,16,0,0,0,16,16H176a16,16,0,0,0,16-16V136A8,8,0,0,0,184,128Z" />
+    </svg>
+  );
+}
+
 export function AgentReadyWidget(props: AgentReadyWidgetProps) {
   const position = props.position ?? "floating-bottom-right";
   const theme = props.theme ?? "system";
+  const showStatus = props.showStatus !== false;
+  const colors = props.colors ?? {};
   const llmsTxtPath = props.llmsTxtPath ?? "/llms.txt";
   const agentsMdPath = props.agentsMdPath ?? "/agents.md";
   const fullTxtPath = props.fullTxtPath ?? "/llms-full.txt";
@@ -52,13 +69,33 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
     [baseUrl, llmsTxtPath, agentsMdPath, fullTxtPath, statusPath],
   );
 
+  // Build AI chat URLs from the raw llms.txt URL.
+  const chatLinks = useMemo(() => {
+    const encoded = encodeURIComponent(urls.llmsTxt);
+    return {
+      chatgpt: `https://chatgpt.com/?hints=search&q=Read+this+URL+${encoded}+and+summarize+the+app`,
+      claude: `https://claude.ai/new?q=Read+this+URL+${encoded}+and+summarize+the+app`,
+      perplexity: `https://www.perplexity.ai/?q=Read+this+URL+${encoded}+and+summarize+the+app`,
+    };
+  }, [urls.llmsTxt]);
+
   const containerStyle = positionStyle(position);
+
+  // Merge user hex colors into CSS custom properties.
+  const colorVars: Record<string, string> = {};
+  if (colors.bg) colorVars["--agent-ready-bg"] = colors.bg;
+  if (colors.border) colorVars["--agent-ready-panel-border"] = colors.border;
+  if (colors.textActive) colorVars["--agent-ready-text-active"] = colors.textActive;
+  if (colors.textInactive) colorVars["--agent-ready-text-inactive"] = colors.textInactive;
+  if (colors.tabActiveBg) colorVars["--agent-ready-tab-active-bg"] = colors.tabActiveBg;
+  if (colors.accent) colorVars["--agent-ready-accent"] = colors.accent;
 
   return (
     <div
       data-theme={theme}
       style={{
         ...containerStyle,
+        ...colorVars,
         width: 280,
         background: "var(--agent-ready-bg, #1a1a1a)",
         border: "1px solid var(--agent-ready-panel-border, #333333)",
@@ -83,9 +120,13 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
           <p style={subParagraphStyle}>
             These files help AI agents understand this app.
           </p>
-          <Row label="llms.txt" url={urls.llmsTxt} />
-          <Row label="agents.md" url={urls.agentsMd} />
-          {status?.fullTxtEnabled ? <Row label="llms-full.txt" url={urls.fullTxt} /> : null}
+          <CopyRow label="llms.txt" url={urls.llmsTxt} />
+          <CopyRow label="agents.md" url={urls.agentsMd} />
+          {status?.fullTxtEnabled ? <CopyRow label="llms-full.txt" url={urls.fullTxt} /> : null}
+          <div style={dividerStyle} />
+          <ExternalLink label="Open in ChatGPT" url={chatLinks.chatgpt} />
+          <ExternalLink label="Open in Claude" url={chatLinks.claude} />
+          <ExternalLink label="Open in Perplexity" url={chatLinks.perplexity} />
         </div>
       ) : (
         <div style={panelStyle}>
@@ -97,10 +138,10 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
               Content updated — refresh
             </div>
           ) : null}
-          <Row label="llms.txt" url={urls.llmsTxt} />
-          <Row label="agents.md" url={urls.agentsMd} />
-          {status?.fullTxtEnabled ? <Row label="llms-full.txt" url={urls.fullTxt} /> : null}
-          <Row label="status" url={urls.status} />
+          <FileRow label="llms.txt" url={urls.llmsTxt} />
+          <FileRow label="agents.md" url={urls.agentsMd} />
+          {status?.fullTxtEnabled ? <FileRow label="llms-full.txt" url={urls.fullTxt} /> : null}
+          {showStatus ? <FileRow label="status" url={urls.status} /> : null}
           <p style={metaStyle}>
             {status?.lastGeneratedAt
               ? `generated ${new Date(status.lastGeneratedAt).toLocaleString()}`
@@ -144,7 +185,8 @@ function TabButton(props: { label: string; active: boolean; onClick: () => void 
   );
 }
 
-function Row(props: { label: string; url: string }) {
+/** HUMAN tab: copy-to-clipboard row for file URLs. */
+function CopyRow(props: { label: string; url: string }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try {
@@ -152,7 +194,7 @@ function Row(props: { label: string; url: string }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 1200);
     } catch {
-      // Clipboard permission denied. Silent failure is acceptable.
+      // Clipboard permission denied.
     }
   };
   return (
@@ -164,6 +206,41 @@ function Row(props: { label: string; url: string }) {
         {copied ? "copied" : "copy"}
       </button>
     </div>
+  );
+}
+
+/** MACHINE tab: file link with an open-in-new-tab icon. */
+function FileRow(props: { label: string; url: string }) {
+  return (
+    <div style={rowStyle}>
+      <a href={props.url} target="_blank" rel="noreferrer" style={linkStyle}>
+        {props.label}
+      </a>
+      <a
+        href={props.url}
+        target="_blank"
+        rel="noreferrer"
+        style={iconLinkStyle}
+        title={`Open ${props.label}`}
+      >
+        <ArrowSquareOutIcon color="#888888" />
+      </a>
+    </div>
+  );
+}
+
+/** HUMAN tab: external AI chat link with arrow icon. */
+function ExternalLink(props: { label: string; url: string }) {
+  return (
+    <a
+      href={props.url}
+      target="_blank"
+      rel="noreferrer"
+      style={externalLinkStyle}
+    >
+      <span>{props.label}</span>
+      <ArrowSquareOutIcon color="#888888" />
+    </a>
   );
 }
 
@@ -199,6 +276,14 @@ function positionStyle(position: WidgetPosition): React.CSSProperties {
       return { position: "relative", margin: "24px auto" };
     case "floating-bottom-left":
       return { position: "fixed", bottom: 24, left: 24, zIndex: 9999 };
+    case "floating-center":
+      return {
+        position: "fixed",
+        bottom: 24,
+        left: "50%",
+        transform: "translateX(-50%)",
+        zIndex: 9999,
+      };
     case "floating-bottom-right":
     default:
       return { position: "fixed", bottom: 24, right: 24, zIndex: 9999 };
@@ -230,6 +315,31 @@ const copyButtonStyle: React.CSSProperties = {
   fontSize: 10,
   letterSpacing: "0.1em",
   cursor: "pointer",
+};
+const iconLinkStyle: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  padding: "2px 4px",
+  borderRadius: 3,
+  textDecoration: "none",
+  cursor: "pointer",
+  transition: "opacity 120ms ease",
+};
+const externalLinkStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  gap: 8,
+  color: "#888888",
+  textDecoration: "none",
+  fontSize: 11,
+  padding: "3px 0",
+  transition: "color 120ms ease",
+};
+const dividerStyle: React.CSSProperties = {
+  height: 1,
+  background: "var(--agent-ready-panel-border, #333333)",
+  margin: "4px 0",
 };
 const metaStyle: React.CSSProperties = { margin: "6px 0 0", color: "#666666", fontSize: 10 };
 const staleBannerStyle: React.CSSProperties = {

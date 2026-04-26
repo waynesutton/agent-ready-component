@@ -53,6 +53,8 @@ export async function setup(_args) {
       cronEnabled: existing.settings?.cronEnabled ?? true,
       cronIntervalHours: existing.settings?.cronIntervalHours ?? 24,
       widgetPosition: existing.settings?.widgetPosition ?? "floating-bottom-right",
+      widgetStatusVisible: existing.settings?.widgetStatusVisible ?? true,
+      widgetColors: existing.settings?.widgetColors ?? {},
       theme: existing.settings?.theme ?? "system",
       fullTxtEnabled: existing.settings?.fullTxtEnabled ?? false,
       permissiveMode: existing.settings?.permissiveMode ?? false,

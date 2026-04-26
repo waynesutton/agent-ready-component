@@ -15,6 +15,7 @@ Plain text map of every file in the repo. Regenerate by hand as files are added 
 - `package-lock.json`: npm lockfile for the root workspace and example apps, including dependency updates used to resolve npm audit and peer dependency conflicts
 - `tsconfig.json`: Base TypeScript config for component source
 - `tsconfig.build.json`: Build config for the publishable package
+- `convex.json`: Root Convex config pointing functions to `convex/`
 - `task.md`: Milestone tracker, aligned with `prds/convex-llms-txt-prd-v6.md`
 - `changelog.md`: Keep a Changelog formatted release notes
 - `files.md`: This file
@@ -25,12 +26,13 @@ Plain text map of every file in the repo. Regenerate by hand as files are added 
 - `prds/agent-readiness-v1.md`: PRD for the 10 agent-readiness features, widget tab visibility controls, CLI commands, and doc updates that turn any consumer app into an isitagentready.com pass
 - `prds/setup-docs-split.md`: PRD for splitting author setup docs from consumer install docs and linking the install guide from both demos
 - `prds/typecheck-component-circularity.md`: PRD for fixing packaged component codegen and TypeScript circular reference failures
+- `prds/demo-component-wrapper-cors-fix.md`: PRD for fixing demo component API wrappers and `/llms-status` CORS failures
 - `mockup-react.html`: Standalone HTML mockup of the React demo's agent-readiness control panel. Shows the score ring, per-check grid, response headers, schema toggles, and the 3-tab widget with SCORE active
 - `mockup-svelte.html`: Standalone HTML mockup of the Svelte demo's analytics dashboard with agent-readiness signals layered in. Shows the 4-card metric grid (including markdown-negotiation count and readiness scans), agent and file breakdowns, signals panel, and 3-tab widget
 
 ## Component source — `src/`
 
-- `src/client/index.ts`: Public package entry, exports `registerRoutes`, `AgentReady` class client, `createTypedAgentReadyClient`, types
+- `src/client/index.ts`: Public package entry, exports `registerRoutes`, `AgentReady` class client, `createTypedAgentReadyClient`, types, and status route CORS handling
 - `src/client/types.ts`: Shared type definitions for settings, pages, endpoints, cached files, route names, event payloads
 - `src/component/convex.config.ts`: Component declaration via `defineComponent("agentReady")`
 - `src/component/_generated/`: Generated Convex component bindings created by `npx convex codegen --component-dir ./src/component`
@@ -46,6 +48,7 @@ Plain text map of every file in the repo. Regenerate by hand as files are added 
 ## Root Convex scaffolding — `convex/`
 
 - `convex/README.md`: Convex generated starter README
+- `convex/schema.ts`: Empty root Convex schema for the author scaffold
 - `convex/tsconfig.json`: Convex generated TypeScript config for the root deployment scaffold
 - `convex/_generated/`: Generated root Convex app bindings and AI guidelines from `npx convex dev --once`
 
@@ -84,20 +87,25 @@ Plain text map of every file in the repo. Regenerate by hand as files are added 
 - `cli/commands/scan.mjs`: Planned. Pure HTTP auditor that curls every agent-readiness endpoint and prints a pass-fail table. Exits non-zero when score drops below 80 so it works in CI
 - `cli/commands/robots.mjs`: Planned. Prints the recommended `robots.txt` fragment for the operator to inspect. No deployment required
 - `cli/lib/prompts.mjs`: Prompt helpers for the setup wizard
-- `cli/lib/convex.mjs`: Convex deployment helpers (env parsing, run command)
+- `cli/lib/convex.mjs`: Convex deployment helpers, auto-detects `agentReady:` prefix and converts to `--component agentReady` for the current Convex CLI
 
 ## React demo — `example-react/`
 
-- `example-react/package.json`: Scripts for dev, build, deploy via `static-hosting`
+- `example-react/package.json`: Scripts for dev, build, deploy, and `deploy:full` one-command production deploy via `static-hosting`
 - `example-react/vite.config.ts`: Vite config
 - `example-react/tsconfig.json`: TS config for the demo
 - `example-react/index.html`: Vite entry HTML
-- `example-react/setup.mjs`: Idempotent seed script that runs before dev
-- `example-react/agent-ready.config.json`: Starter config consumed by `sync`
+- `example-react/setup.mjs`: Idempotent seed script that runs before dev, uses `--component agentReady` for Convex CLI
+- `example-react/agent-ready.config.json`: Starter config consumed by `sync`, appUrl set to the production deployment
+- `example-react/.env.production.local`: Production Convex URLs for Vite build (git-ignored)
 - `example-react/convex/convex.config.ts`: Uses `crons`, `workpool`, `agentReady`, `staticHosting`
 - `example-react/convex/schema.ts`: Host app schema (empty tables allowed)
-- `example-react/convex/http.ts`: `registerRoutes` for agent-ready plus `registerStaticRoutes` for the demo
-- `example-react/convex/staticHosting.ts`: Re-exports `exposeUploadApi`
+- `example-react/convex/_generated/`: Generated Convex app bindings for the React demo
+- `example-react/convex/tsconfig.json`: Convex function TypeScript config for the React demo
+- `example-react/convex/agentReady/content.ts`: App-facing content wrappers around `components.agentReady.content` for browser clients
+- `example-react/convex/agentReady/analytics.ts`: App-facing analytics wrappers around `components.agentReady.analytics` for browser clients
+- `example-react/convex/http.ts`: `registerRoutes` for agent-ready plus `registerStaticRoutes` for the demo through `components.selfHosting`
+- `example-react/convex/staticHosting.ts`: Re-exports `exposeUploadApi` against `components.selfHosting` including batch upload functions
 - `example-react/convex/myApp.ts`: Example callbacks for `onGenerationComplete`, `onAnalyticsThreshold`
 - `example-react/src/main.tsx`: React root
 - `example-react/src/App.tsx`: Landing page with PostHog-inspired window chrome, sidebar, tabs, widget, and install guide links
@@ -115,12 +123,14 @@ Plain text map of every file in the repo. Regenerate by hand as files are added 
 - `example-svelte/svelte.config.js`: Uses `@sveltejs/adapter-static`
 - `example-svelte/vite.config.ts`: Vite config
 - `example-svelte/tsconfig.json`: TS config
-- `example-svelte/setup.mjs`: Idempotent seed script
+- `example-svelte/setup.mjs`: Idempotent seed script, uses `--component agentReady` for Convex CLI
 - `example-svelte/agent-ready.config.json`: Starter config
 - `example-svelte/convex/convex.config.ts`: Component wiring
 - `example-svelte/convex/schema.ts`: Host app schema
-- `example-svelte/convex/http.ts`: `registerRoutes` plus static routes
-- `example-svelte/convex/staticHosting.ts`: Upload API re-exports
+- `example-svelte/convex/agentReady/content.ts`: App-facing content wrappers around `components.agentReady.content` for browser clients
+- `example-svelte/convex/agentReady/analytics.ts`: App-facing analytics wrappers around `components.agentReady.analytics` for browser clients
+- `example-svelte/convex/http.ts`: `registerRoutes` plus static routes through `components.selfHosting`
+- `example-svelte/convex/staticHosting.ts`: Upload API re-exports against `components.selfHosting` including batch upload functions
 - `example-svelte/src/app.html`: SvelteKit HTML shell
 - `example-svelte/src/app.css`: Global styles
 - `example-svelte/src/routes/+layout.svelte`: Root layout with widget and install guide topbar link

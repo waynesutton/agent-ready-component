@@ -15,7 +15,7 @@ registerRoutes(http, components.agentReady, {
 });
 
 // Serve the React app at the root with SPA fallback so deep links resolve to index.html.
-registerStaticRoutes(http, components.staticHosting, {
+registerStaticRoutes(http, components.selfHosting, {
   pathPrefix: "/",
   spaFallback: true,
 });

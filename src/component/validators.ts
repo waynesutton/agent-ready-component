@@ -16,7 +16,17 @@ export const widgetPositionValidator = v.union(
   v.literal("footer"),
   v.literal("floating-bottom-right"),
   v.literal("floating-bottom-left"),
+  v.literal("floating-center"),
 );
+
+export const widgetColorsValidator = v.object({
+  bg: v.optional(v.string()),
+  border: v.optional(v.string()),
+  textActive: v.optional(v.string()),
+  textInactive: v.optional(v.string()),
+  tabActiveBg: v.optional(v.string()),
+  accent: v.optional(v.string()),
+});
 
 export const themeValidator = v.union(
   v.literal("light"),

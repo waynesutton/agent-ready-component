@@ -24,6 +24,11 @@ const DEFAULT_PATHS = {
 
 // Cache-Control header used when the component serves cached file content.
 const CACHE_CONTROL = "public, max-age=3600";
+const STATUS_CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+} as const;
 
 type ComponentApi = {
   content: {
@@ -31,7 +36,6 @@ type ComponentApi = {
     getCachedFile: any;
     getCacheStatus: any;
     upsertSettings: any;
-    invalidateCache: any;
     rollbackCache: any;
     regenerateAll: any;
     generateDescriptions: any;
@@ -85,6 +89,11 @@ export function registerRoutes(
   });
 
   // Status route.
+  http.route({
+    path: statusPath,
+    method: "OPTIONS",
+    handler: buildCorsPreflightRoute(),
+  });
   http.route({
     path: statusPath,
     method: "GET",
@@ -223,6 +232,12 @@ function buildStatusRoute(
   options: RegisterRoutesOptions,
 ) {
   return httpActionGeneric(async (ctx, req) => {
+    if (req.method === "OPTIONS") {
+      return new Response(null, {
+        status: 204,
+        headers: STATUS_CORS_HEADERS,
+      });
+    }
     await maybeOnEvent(options, ctx, req, route);
     const override = await maybeRouteHandler(options, ctx, req, route);
     if (override) return override;
@@ -233,9 +248,19 @@ function buildStatusRoute(
     return new Response(JSON.stringify(status ?? {}), {
       status: 200,
       headers: {
+        ...STATUS_CORS_HEADERS,
         "Content-Type": "application/json",
         "Cache-Control": "public, max-age=30",
       },
+    });
+  });
+}
+
+function buildCorsPreflightRoute() {
+  return httpActionGeneric(async () => {
+    return new Response(null, {
+      status: 204,
+      headers: STATUS_CORS_HEADERS,
     });
   });
 }

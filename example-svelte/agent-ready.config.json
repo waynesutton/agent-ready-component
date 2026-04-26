@@ -4,6 +4,15 @@
     "appUrl": "https://your-deployment.convex.site",
     "description": "Demo app for @waynesutton/agent-ready on SvelteKit, hosted on Convex via static-hosting.",
     "widgetPosition": "floating-bottom-right",
+    "widgetStatusVisible": true,
+    "widgetColors": {
+      "bg": "#1a1a1a",
+      "border": "#333333",
+      "textActive": "#e5e5e5",
+      "textInactive": "#666666",
+      "tabActiveBg": "#2a2a2a",
+      "accent": "#ffffff"
+    },
     "theme": "dark",
     "testMode": true,
     "cronEnabled": true,

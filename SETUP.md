@@ -202,34 +202,41 @@ For a stricter component check, run:
 npx convex dev --typecheck-components
 ```
 
-Deploy the Convex backend:
+Deploy the Convex backend once to create or confirm the production deployment:
 
 ```bash
 npx convex deploy
 ```
 
-Export the deployment URLs so the static bundle can find Convex at build time:
+Save the production URLs so the static bundle can find Convex at build time:
 
 ```bash
-export VITE_CONVEX_URL="https://your-react-deployment.convex.cloud"
-export VITE_CONVEX_SITE_URL="https://your-react-deployment.convex.site"
+cat > .env.production.local <<'EOF'
+VITE_CONVEX_URL=https://quixotic-viper-800.convex.cloud
+VITE_CONVEX_SITE_URL=https://quixotic-viper-800.convex.site
+EOF
 ```
 
-Seed demo content and generate the first files:
+Use the URLs printed by `npx convex deploy` if your production deployment name is different. The `.convex.cloud` URL is `VITE_CONVEX_URL`. The matching `.convex.site` URL is `VITE_CONVEX_SITE_URL`.
+
+After the file exists, deploy the backend, sync production content, regenerate, and upload the static bundle with one command:
 
 ```bash
-node setup.mjs
-npx agent-ready sync
-npx agent-ready regenerate
+npm run deploy:full
 ```
 
-Upload the static bundle:
+If the production deployment name changes, update `.env.production.local` before running the full deploy again.
+
+The full deploy script runs:
 
 ```bash
+npx convex deploy
+npx agent-ready sync --prod
+npx agent-ready regenerate --prod
 npm run deploy
 ```
 
-Open `https://your-react-deployment.convex.site`. You should see the cream demo UI, the widget in the bottom right, and the file sidebar linking to `/llms.txt`, `/agents.md`, and `/llms-status`.
+Open `https://quixotic-viper-800.convex.site`. You should see the cream demo UI, the widget in the bottom right, and the file sidebar linking to `/llms.txt`, `/agents.md`, and `/llms-status`.
 
 ## 13. Deploy the Svelte demo on Convex
 
@@ -290,7 +297,7 @@ While `testMode: true` is on, non-localhost requests return `403`. That is the e
 ## 15. Flip testMode off
 
 ```bash
-npx agent-ready go-live
+npx agent-ready go-live --prod
 ```
 
 The wizard asks for confirmation, prints the file URLs that become public, and flips the `testMode` flag.
@@ -309,8 +316,8 @@ Expect `HTTP/1.1 304 Not Modified`.
 Change a page description in `agent-ready.config.json`, then run:
 
 ```bash
-npx agent-ready sync
-npx agent-ready regenerate
+npx agent-ready sync --prod
+npx agent-ready regenerate --prod
 ```
 
 Re-run the curl. Expect `200 OK` with a new ETag.
@@ -319,7 +326,7 @@ Re-run the curl. Expect `200 OK` with a new ETag.
 
 1. Open the live React demo URL in a browser.
 2. Change any page description in `example-react/agent-ready.config.json`.
-3. Run `npx agent-ready sync`.
+3. Run `npx agent-ready sync --prod`.
 4. The open browser tab shows a content updated refresh prompt.
 5. Click `Refresh`.
 6. Confirm the generated timestamp changed in the widget.

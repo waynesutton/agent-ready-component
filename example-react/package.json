@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "deploy": "npx @convex-dev/static-hosting deploy",
+    "deploy:full": "npx convex deploy && npx agent-ready sync --prod && npx agent-ready regenerate --prod && npm run deploy",
     "deploy:static": "npx @convex-dev/static-hosting upload --build --prod",
     "seed": "node setup.mjs"
   },

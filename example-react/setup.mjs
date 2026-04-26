@@ -19,7 +19,7 @@ async function main() {
   }
   const config = JSON.parse(await readFile(cfgPath, "utf8"));
   try {
-    await run("npx", ["convex", "run", "agentReady:content:sync", "--args", JSON.stringify({ config })]);
+    await run("npx", ["convex", "run", "--component", "agentReady", "content:sync", JSON.stringify({ config })]);
     console.log(`[setup] Synced ${path.basename(cfgPath)}`);
   } catch (err) {
     console.warn("[setup] Could not sync config. Is `npx convex dev` running?");

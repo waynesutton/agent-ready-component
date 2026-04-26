@@ -6,12 +6,16 @@ All notable changes to `@waynesutton/agent-ready` (formerly `@convex-dev/llms-tx
 
 ### Added
 
-- Added `docs/install.md` and `docs/install.html` as consumer-facing install guides for Convex users adding `@waynesutton/agent-ready` to their own app
-- Added install guide links to the React and Svelte demo apps
-- Added `package-lock.json` after resolving workspace dependency conflicts and audit findings
-- Added generated Convex bindings for the packaged component under `src/component/_generated/`
-- Added root Convex scaffold files from the author setup flow so `npx convex dev --once` can establish `CONVEX_DEPLOYMENT`
-- Added `prds/typecheck-component-circularity.md` to document the typecheck failure, root cause, fix, and verification
+- Added `example-react/.env.production.local` for persisting production Convex URLs across deploys
+- Added `deploy:full` script to `example-react/package.json` that runs backend deploy, sync, regenerate, and static upload in one command
+- Added batch upload functions (`generateUploadUrls`, `recordAssets`) to both demo `staticHosting.ts` files so static-hosting v0.1.3 CLI deploys succeed
+
+### Fixed
+
+- Fixed CLI wrapper (`cli/lib/convex.mjs`) to use `--component agentReady` and positional JSON args instead of the removed `--args` flag. All CLI commands (sync, regenerate, go-live, status, etc.) now work with current Convex CLI
+- Fixed `example-react/setup.mjs` and `example-svelte/setup.mjs` to pass `--component agentReady` and use positional args for `convex run`
+- Fixed `SETUP.md` production deploy instructions: replaced manual `export` commands with `.env.production.local`, added `--prod` flag to `go-live`, `sync`, and `regenerate` commands, documented the one-command `npm run deploy:full` flow
+- Fixed `agent-ready.config.json` appUrl to use the real production deployment URL
 
 ### Changed
 
@@ -27,6 +31,8 @@ All notable changes to `@waynesutton/agent-ready` (formerly `@convex-dev/llms-tx
 - Renamed the component cron worker from `src/component/crons.ts` to `src/component/cronWorker.ts` so Convex does not treat it as the reserved native cron config file
 - Moved internal content action helpers to `src/component/contentInternal.ts` to remove generated API circular type references while preserving public `agentReady:content:*` CLI function names
 - Added shared component validators in `src/component/validators.ts` and replaced loose `v.any()` return validators in the content and analytics surfaces
+- Added CORS headers and OPTIONS support to the public `/llms-status` route so widgets can poll it from local Vite origins
+- Updated demo static hosting references to `components.selfHosting`, matching the generated component binding name
 - Updated `README.md` to point consumers to the Markdown and HTML install guides
 - Fixed the author clone instructions to use `cd agent-ready-component`
 - Updated npm package contents so `cli/`, `docs/`, and `SETUP.md` are included with the published package. This keeps `npx agent-ready` available after install

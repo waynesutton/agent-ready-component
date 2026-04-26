@@ -27,6 +27,18 @@ export default defineSchema({
       v.literal("footer"),
       v.literal("floating-bottom-right"),
       v.literal("floating-bottom-left"),
+      v.literal("floating-center"),
+    ),
+    widgetStatusVisible: v.optional(v.boolean()),
+    widgetColors: v.optional(
+      v.object({
+        bg: v.optional(v.string()),
+        border: v.optional(v.string()),
+        textActive: v.optional(v.string()),
+        textInactive: v.optional(v.string()),
+        tabActiveBg: v.optional(v.string()),
+        accent: v.optional(v.string()),
+      }),
     ),
     theme: v.union(v.literal("light"), v.literal("dark"), v.literal("system")),
     testMode: v.boolean(),

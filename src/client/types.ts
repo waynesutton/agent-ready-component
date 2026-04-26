@@ -12,9 +12,19 @@ export type RouteName =
 export type WidgetPosition =
   | "footer"
   | "floating-bottom-right"
-  | "floating-bottom-left";
+  | "floating-bottom-left"
+  | "floating-center";
 
 export type WidgetTheme = "light" | "dark" | "system";
+
+export type WidgetColors = {
+  bg?: string;
+  border?: string;
+  textActive?: string;
+  textInactive?: string;
+  tabActiveBg?: string;
+  accent?: string;
+};
 
 export type ContentStatus = "draft" | "published" | "archived";
 
@@ -39,6 +49,8 @@ export type AgentReadySettings = {
   fullTxtEnabled: boolean;
   permissiveMode: boolean;
   versioningEnabled: boolean;
+  widgetStatusVisible?: boolean;
+  widgetColors?: WidgetColors;
 };
 
 export type AgentReadyPage = {
