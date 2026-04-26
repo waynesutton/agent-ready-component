@@ -302,9 +302,30 @@ code {
   background: var(--surface-alt);
 }
 
+.btn-sm {
+  padding: 5px 12px;
+  font-size: 13px;
+  box-shadow: 1px 1px 0 var(--border);
+}
+
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Auth bar */
+.auth-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 8px 0;
+}
+
+.auth-bar-label {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
 }
 
 /* Tabs */
@@ -421,6 +442,80 @@ code {
 .file-tile .file-desc {
   color: var(--muted);
   font-size: 12.5px;
+}
+
+/* Docs page */
+.docs-page {
+  max-width: 760px;
+}
+
+.docs-stack {
+  display: grid;
+  gap: 16px;
+}
+
+.docs-section {
+  padding: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+}
+
+.docs-section p {
+  margin: 0 0 14px;
+  color: var(--muted);
+}
+
+.docs-section p:last-child {
+  margin-bottom: 0;
+}
+
+.docs-steps {
+  display: grid;
+  gap: 12px;
+}
+
+.docs-step {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.docs-step h3 {
+  margin-top: 0;
+}
+
+.docs-step-index {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  color: var(--accent);
+  font-family: "JetBrains Mono", "Courier New", Courier, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--surface-accent);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+}
+
+.docs-code {
+  margin: 10px 0 0;
+  padding: 14px;
+  overflow-x: auto;
+  color: #fff8ef;
+  background: #151515;
+  border-radius: 8px;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+.docs-code code {
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: 0;
 }
 
 /* Section titles */

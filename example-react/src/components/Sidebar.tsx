@@ -8,6 +8,7 @@ interface SidebarLink {
 
 const primary: Array<SidebarLink> = [
   { to: "/", label: "home.mdx", glyph: "#" },
+  { to: "/docs", label: "docs.mdx", glyph: "?" },
   { to: "/settings", label: "settings.mdx", glyph: "=" },
   { to: "/analytics", label: "analytics.mdx", glyph: "~" },
 ];

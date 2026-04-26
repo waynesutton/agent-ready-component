@@ -4,10 +4,10 @@ Plain text map of every file in the `@waynesutton/agent-ready` repo. This is a C
 
 ## Root
 
-- `README.md`: Project overview for the Convex component with React/Svelte widgets, install quick start, demo commands, and links to consumer install docs
-- `SETUP.md`: Author release guide for shipping the package to GitHub, npm, and Convex static hosting. Includes dev deployment configuration, component codegen, npm package checks, and newbie friendly production deploy instructions
-- `docs/install.md`: Install guide for adding this Convex component and widget to a React or Svelte app
-- `docs/install.html`: Standalone HTML version of the install guide
+- `README.md`: Project overview for the Convex component with React/Svelte widgets, canonical app developer install guide, demo commands, and submission-ready docs links
+- `SETUP.md`: Author release guide for shipping the package to GitHub, npm, and Convex static hosting. Includes dev deployment configuration, component codegen, npm package checks, demo GitHub OAuth setup, and production deploy instructions
+- `docs/install.md`: Lightweight install entry point that links readers to the canonical README install guide
+- `docs/install.html`: Standalone HTML install entry point that links readers to the canonical README install guide
 - `INTEGRATION.md`: LLM-optimized integration guide for the Convex component, covering React and Svelte widgets, static hosting, and manual paths
 - `CONTRIBUTING.md`: Widget contract, local dev flow, publishing rules
 - `LICENSE`: Apache 2.0
@@ -31,6 +31,9 @@ Plain text map of every file in the `@waynesutton/agent-ready` repo. This is a C
 - `prds/widget-v2-config.md`: PRD for widget v2 features: center position, HUMAN tab AI chat links, MACHINE tab Phosphor icons, status visibility toggle, and custom hex colors
 - `prds/security-hardening.md`: PRD for auth integration, demo lockdown, bounded analytics queries, and cron worker `internal.*` fix
 - `prds/widget-display-modes.md`: PRD for widget display mode options: clean mode, tab visibility, and per-provider chat link toggles
+- `prds/github-oauth-demo-app-recovery.md`: PRD documenting the GitHub OAuth demo app login fixes, root causes, verification steps, and future app checklist
+- `prds/docs-submission-readiness.md`: PRD documenting the final docs pass before Convex components directory submission
+- `prds/svelte-check-cleanup.md`: PRD documenting the Svelte demo typecheck cleanup for auth, settings, analytics, and generated Convex bindings
 - `mockup-react.html`: Standalone HTML mockup of the React demo's agent-readiness control panel. Shows the score ring, per-check grid, response headers, schema toggles, and the 3-tab widget with SCORE active
 - `mockup-svelte.html`: Standalone HTML mockup of the Svelte demo's analytics dashboard with agent-readiness signals layered in. Shows the 4-card metric grid (including markdown-negotiation count and readiness scans), agent and file breakdowns, signals panel, and 3-tab widget
 
@@ -126,12 +129,12 @@ A Convex app (React + Vite) that shows the component and React widget in action.
 - `example-react/convex/myApp.ts`: Example callbacks for `onGenerationComplete`, `onAnalyticsThreshold`
 - `example-react/src/main.tsx`: React root with ConvexProvider
 - `example-react/src/auth.tsx`: Auth client hook (`useAuth`) and `AuthGate` component for protecting admin routes with GitHub OAuth sign-in
-- `example-react/src/App.tsx`: Landing page with window chrome, sidebar, tabs, widget, and install guide links. Settings and Analytics routes wrapped in `AuthGate`
+- `example-react/src/App.tsx`: Landing page with window chrome, sidebar, tabs, widget, README install guide links, internal README-style Docs page, and Resources cards. Settings and Analytics routes wrapped in `AuthGate`
 - `example-react/src/Settings.tsx`: Settings panel with tabbed pages, cache status, and actions
 - `example-react/src/Analytics.tsx`: Analytics dashboard with metric grid plus agent and file breakdown
 - `example-react/src/index.css`: Global styles with cream palette, window chrome, tabs, buttons, pills
 - `example-react/src/components/Window.tsx`: Shared window-chrome wrapper
-- `example-react/src/components/Sidebar.tsx`: File-style navigation sidebar
+- `example-react/src/components/Sidebar.tsx`: File-style navigation sidebar with Project links, internal Docs route, live file links, and Resources route
 - `example-react/src/components/Tabs.tsx`: Tab strip with active orange underline
 - `example-react/src/components/Button.tsx`: Primary and ghost button variants
 
@@ -140,6 +143,7 @@ A Convex app (React + Vite) that shows the component and React widget in action.
 A Convex app (SvelteKit) that shows the component and Svelte widget in action.
 
 - `example-svelte/package.json`: Scripts for dev, build, deploy via `static-hosting`
+- `example-svelte/.gitignore`: Ignores local Svelte demo artifacts such as `.env.local` and `.svelte-kit`
 - `example-svelte/svelte.config.js`: Uses `@sveltejs/adapter-static`
 - `example-svelte/vite.config.ts`: Vite config
 - `example-svelte/tsconfig.json`: TS config
@@ -147,6 +151,7 @@ A Convex app (SvelteKit) that shows the component and Svelte widget in action.
 - `example-svelte/agent-ready.config.json`: Starter config with all widget visibility flags, `widgetShowScoreTab`, widget display mode flags (`widgetCleanMode`, `widgetShowHumanTab`, `widgetShowMachineTab`, `widgetShowChatLinks`, `widgetShowChatGPT`, `widgetShowClaude`, `widgetShowPerplexity`), `widgetColors` defaults, and agent readiness flags enabled
 - `example-svelte/convex/convex.config.ts`: Component wiring
 - `example-svelte/convex/schema.ts`: Host app schema
+- `example-svelte/convex/_generated/`: Generated Convex app bindings for the Svelte demo
 - `example-svelte/convex/agentReady/content.ts`: App-facing content wrappers around `components.agentReady.content` for browser clients
 - `example-svelte/convex/agentReady/analytics.ts`: App-facing analytics wrappers around `components.agentReady.analytics` for browser clients
 - `example-svelte/convex/http.ts`: `registerRoutes` plus static routes through `components.selfHosting`
@@ -156,8 +161,10 @@ A Convex app (SvelteKit) that shows the component and Svelte widget in action.
 - `example-svelte/convex/auth/core.ts`: Lightweight auth context for queries and mutations
 - `example-svelte/src/lib/AuthGate.svelte`: Auth gate component for protecting admin routes with GitHub OAuth sign-in
 - `example-svelte/src/app.html`: SvelteKit HTML shell
-- `example-svelte/src/app.css`: Global styles
-- `example-svelte/src/routes/+layout.svelte`: Root layout with widget and install guide topbar link
-- `example-svelte/src/routes/+page.svelte`: Landing page with usage panels and install guide links
+- `example-svelte/src/app.css`: Global styles for the demo shell, cards, tables, metrics, and README-style docs page
+- `example-svelte/src/routes/+layout.svelte`: Root layout with widget, README install guide topbar link, internal Docs route, and Resources route
+- `example-svelte/src/routes/+page.svelte`: Landing page with usage panels, README install guide link, and internal Docs link
+- `example-svelte/src/routes/docs/+page.svelte`: README-style docs page for installing and wiring the component in a Convex app, with Diffs by Pierre as a reference link
 - `example-svelte/src/routes/settings/+page.svelte`: Settings panel
 - `example-svelte/src/routes/analytics/+page.svelte`: Analytics page
+- `example-svelte/src/routes/resources/+page.svelte`: Resources page with internal Agent Ready docs, Diffs by Pierre, Convex docs, component docs, auth docs, and agent discovery specs

@@ -61,7 +61,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         "mutation",
         "internal",
         {
-          fileType: "llms.txt" | "agents.md" | "llms-full.txt";
+          fileType:
+            | "llms.txt"
+            | "agents.md"
+            | "llms-full.txt"
+            | "robots.txt"
+            | "sitemap.xml"
+            | "agent-skills.json";
           requestedAt: number;
           userAgent: string;
         },
@@ -108,12 +114,26 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
       getCachedFile: FunctionReference<
         "query",
         "internal",
-        { fileType: "llms.txt" | "agents.md" | "llms-full.txt" },
+        {
+          fileType:
+            | "llms.txt"
+            | "agents.md"
+            | "llms-full.txt"
+            | "robots.txt"
+            | "sitemap.xml"
+            | "agent-skills.json";
+        },
         null | {
           _creationTime: number;
           _id: string;
           content: string;
-          fileType: "llms.txt" | "agents.md" | "llms-full.txt";
+          fileType:
+            | "llms.txt"
+            | "agents.md"
+            | "llms-full.txt"
+            | "robots.txt"
+            | "sitemap.xml"
+            | "agent-skills.json";
           generatedAt: number;
           generatedFromVersion: string;
           lastJobId?: string;
@@ -128,14 +148,33 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         "internal",
         {},
         {
+          agentSkillsEnabled: boolean;
           appName: string | null;
           appUrl: string | null;
+          discoveryHeaders: boolean;
           fullTxtEnabled: boolean;
           generatedFromVersion: string | null;
           generationInProgress: boolean;
           hasDrafts: boolean;
           lastGeneratedAt: number | null;
+          markdownNegotiation: boolean;
+          readinessEndpointEnabled: boolean;
+          robotsTxtEnabled: boolean;
+          sitemapEnabled: boolean;
           testMode: boolean;
+          widgetCleanMode: boolean;
+          widgetShowAppName: boolean;
+          widgetShowChatGPT: boolean;
+          widgetShowChatLinks: boolean;
+          widgetShowClaude: boolean;
+          widgetShowDescription: boolean;
+          widgetShowFiles: boolean;
+          widgetShowHumanTab: boolean;
+          widgetShowMachineTab: boolean;
+          widgetShowMeta: boolean;
+          widgetShowPerplexity: boolean;
+          widgetShowScoreTab: boolean;
+          widgetStatusVisible: boolean;
         },
         Name
       >;
@@ -145,7 +184,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         { jobId: string },
         {
           files?: Array<{
-            fileType: "llms.txt" | "agents.md" | "llms-full.txt";
+            fileType:
+              | "llms.txt"
+              | "agents.md"
+              | "llms-full.txt"
+              | "robots.txt"
+              | "sitemap.xml"
+              | "agent-skills.json";
             generatedAt: number;
             status: "current" | "generating" | "failed";
             version: string;
@@ -179,6 +224,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           _creationTime: number;
           _id: string;
           agentInstructions?: string;
+          agentSkillsEnabled?: boolean;
           aiDescriptionsEnabled: boolean;
           aiProvider?: "claude" | "openai";
           analyticsEnabled: boolean;
@@ -187,20 +233,54 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           appName: string;
           appUrl: string;
           contactEmail?: string;
+          contentSignals?: {
+            aiInput: boolean;
+            aiTrain: boolean;
+            search: boolean;
+          };
           cronEnabled: boolean;
           cronIntervalHours: number;
           description: string;
+          discoveryHeaders?: boolean;
           fullTxtEnabled: boolean;
+          markdownNegotiation?: boolean;
           onAnalyticsThreshold?: string;
           onGenerationComplete?: string;
           permissiveMode: boolean;
+          readinessEndpointEnabled?: boolean;
+          robotsTxtAllowAiBots?: boolean;
+          robotsTxtDisallowPaths?: Array<string>;
+          robotsTxtEnabled?: boolean;
+          sitemapEnabled?: boolean;
           testMode: boolean;
           theme: "light" | "dark" | "system";
           versioningEnabled: boolean;
+          widgetCleanMode?: boolean;
+          widgetColors?: {
+            accent?: string;
+            bg?: string;
+            border?: string;
+            tabActiveBg?: string;
+            textActive?: string;
+            textInactive?: string;
+          };
           widgetPosition:
             | "footer"
             | "floating-bottom-right"
-            | "floating-bottom-left";
+            | "floating-bottom-left"
+            | "floating-center";
+          widgetShowAppName?: boolean;
+          widgetShowChatGPT?: boolean;
+          widgetShowChatLinks?: boolean;
+          widgetShowClaude?: boolean;
+          widgetShowDescription?: boolean;
+          widgetShowFiles?: boolean;
+          widgetShowHumanTab?: boolean;
+          widgetShowMachineTab?: boolean;
+          widgetShowMeta?: boolean;
+          widgetShowPerplexity?: boolean;
+          widgetShowScoreTab?: boolean;
+          widgetStatusVisible?: boolean;
         },
         Name
       >;
@@ -258,7 +338,15 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
       rollbackCache: FunctionReference<
         "mutation",
         "internal",
-        { fileType: "llms.txt" | "agents.md" | "llms-full.txt" },
+        {
+          fileType:
+            | "llms.txt"
+            | "agents.md"
+            | "llms-full.txt"
+            | "robots.txt"
+            | "sitemap.xml"
+            | "agent-skills.json";
+        },
         null,
         Name
       >;
@@ -287,6 +375,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             }>;
             settings?: {
               agentInstructions?: string;
+              agentSkillsEnabled?: boolean;
               aiDescriptionsEnabled?: boolean;
               aiProvider?: "claude" | "openai";
               analyticsEnabled?: boolean;
@@ -295,20 +384,54 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               appName?: string;
               appUrl?: string;
               contactEmail?: string;
+              contentSignals?: {
+                aiInput: boolean;
+                aiTrain: boolean;
+                search: boolean;
+              };
               cronEnabled?: boolean;
               cronIntervalHours?: number;
               description?: string;
+              discoveryHeaders?: boolean;
               fullTxtEnabled?: boolean;
+              markdownNegotiation?: boolean;
               onAnalyticsThreshold?: string;
               onGenerationComplete?: string;
               permissiveMode?: boolean;
+              readinessEndpointEnabled?: boolean;
+              robotsTxtAllowAiBots?: boolean;
+              robotsTxtDisallowPaths?: Array<string>;
+              robotsTxtEnabled?: boolean;
+              sitemapEnabled?: boolean;
               testMode?: boolean;
               theme?: "light" | "dark" | "system";
               versioningEnabled?: boolean;
+              widgetCleanMode?: boolean;
+              widgetColors?: {
+                accent?: string;
+                bg?: string;
+                border?: string;
+                tabActiveBg?: string;
+                textActive?: string;
+                textInactive?: string;
+              };
               widgetPosition?:
                 | "footer"
                 | "floating-bottom-right"
-                | "floating-bottom-left";
+                | "floating-bottom-left"
+                | "floating-center";
+              widgetShowAppName?: boolean;
+              widgetShowChatGPT?: boolean;
+              widgetShowChatLinks?: boolean;
+              widgetShowClaude?: boolean;
+              widgetShowDescription?: boolean;
+              widgetShowFiles?: boolean;
+              widgetShowHumanTab?: boolean;
+              widgetShowMachineTab?: boolean;
+              widgetShowMeta?: boolean;
+              widgetShowPerplexity?: boolean;
+              widgetShowScoreTab?: boolean;
+              widgetStatusVisible?: boolean;
             };
           };
         },
@@ -351,6 +474,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         {
           patch: {
             agentInstructions?: string;
+            agentSkillsEnabled?: boolean;
             aiDescriptionsEnabled?: boolean;
             aiProvider?: "claude" | "openai";
             analyticsEnabled?: boolean;
@@ -359,26 +483,61 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             appName?: string;
             appUrl?: string;
             contactEmail?: string;
+            contentSignals?: {
+              aiInput: boolean;
+              aiTrain: boolean;
+              search: boolean;
+            };
             cronEnabled?: boolean;
             cronIntervalHours?: number;
             description?: string;
+            discoveryHeaders?: boolean;
             fullTxtEnabled?: boolean;
+            markdownNegotiation?: boolean;
             onAnalyticsThreshold?: string;
             onGenerationComplete?: string;
             permissiveMode?: boolean;
+            readinessEndpointEnabled?: boolean;
+            robotsTxtAllowAiBots?: boolean;
+            robotsTxtDisallowPaths?: Array<string>;
+            robotsTxtEnabled?: boolean;
+            sitemapEnabled?: boolean;
             testMode?: boolean;
             theme?: "light" | "dark" | "system";
             versioningEnabled?: boolean;
+            widgetCleanMode?: boolean;
+            widgetColors?: {
+              accent?: string;
+              bg?: string;
+              border?: string;
+              tabActiveBg?: string;
+              textActive?: string;
+              textInactive?: string;
+            };
             widgetPosition?:
               | "footer"
               | "floating-bottom-right"
-              | "floating-bottom-left";
+              | "floating-bottom-left"
+              | "floating-center";
+            widgetShowAppName?: boolean;
+            widgetShowChatGPT?: boolean;
+            widgetShowChatLinks?: boolean;
+            widgetShowClaude?: boolean;
+            widgetShowDescription?: boolean;
+            widgetShowFiles?: boolean;
+            widgetShowHumanTab?: boolean;
+            widgetShowMachineTab?: boolean;
+            widgetShowMeta?: boolean;
+            widgetShowPerplexity?: boolean;
+            widgetShowScoreTab?: boolean;
+            widgetStatusVisible?: boolean;
           };
         },
         {
           _creationTime: number;
           _id: string;
           agentInstructions?: string;
+          agentSkillsEnabled?: boolean;
           aiDescriptionsEnabled: boolean;
           aiProvider?: "claude" | "openai";
           analyticsEnabled: boolean;
@@ -387,20 +546,54 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           appName: string;
           appUrl: string;
           contactEmail?: string;
+          contentSignals?: {
+            aiInput: boolean;
+            aiTrain: boolean;
+            search: boolean;
+          };
           cronEnabled: boolean;
           cronIntervalHours: number;
           description: string;
+          discoveryHeaders?: boolean;
           fullTxtEnabled: boolean;
+          markdownNegotiation?: boolean;
           onAnalyticsThreshold?: string;
           onGenerationComplete?: string;
           permissiveMode: boolean;
+          readinessEndpointEnabled?: boolean;
+          robotsTxtAllowAiBots?: boolean;
+          robotsTxtDisallowPaths?: Array<string>;
+          robotsTxtEnabled?: boolean;
+          sitemapEnabled?: boolean;
           testMode: boolean;
           theme: "light" | "dark" | "system";
           versioningEnabled: boolean;
+          widgetCleanMode?: boolean;
+          widgetColors?: {
+            accent?: string;
+            bg?: string;
+            border?: string;
+            tabActiveBg?: string;
+            textActive?: string;
+            textInactive?: string;
+          };
           widgetPosition:
             | "footer"
             | "floating-bottom-right"
-            | "floating-bottom-left";
+            | "floating-bottom-left"
+            | "floating-center";
+          widgetShowAppName?: boolean;
+          widgetShowChatGPT?: boolean;
+          widgetShowChatLinks?: boolean;
+          widgetShowClaude?: boolean;
+          widgetShowDescription?: boolean;
+          widgetShowFiles?: boolean;
+          widgetShowHumanTab?: boolean;
+          widgetShowMachineTab?: boolean;
+          widgetShowMeta?: boolean;
+          widgetShowPerplexity?: boolean;
+          widgetShowScoreTab?: boolean;
+          widgetStatusVisible?: boolean;
         },
         Name
       >;

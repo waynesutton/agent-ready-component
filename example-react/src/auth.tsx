@@ -33,26 +33,20 @@ export function useAuth() {
     return auth.signOut();
   }, [auth]);
 
-  return { state, signIn, signOut, isAuthenticated: state?.userId != null };
+  return { state, signIn, signOut, isAuthenticated: state.isAuthenticated };
 }
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
-  const { state, signIn, signOut, isAuthenticated } = useAuth();
+  const { signIn, signOut, isAuthenticated } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   if (isAuthenticated) {
     return (
       <div>
-        <div style={{ display: "flex", justifyContent: "flex-end", padding: "8px 0", gap: 8 }}>
-          <span style={{ color: "var(--muted)", fontSize: 13 }}>
-            Signed in
-          </span>
-          <button
-            type="button"
-            onClick={() => signOut()}
-            style={{ fontSize: 13, cursor: "pointer" }}
-          >
+        <div className="auth-bar">
+          <span className="auth-bar-label">Signed in</span>
+          <button type="button" className="btn btn-ghost btn-sm" onClick={() => signOut()}>
             Sign out
           </button>
         </div>

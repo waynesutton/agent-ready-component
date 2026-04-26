@@ -19,7 +19,7 @@
     });
   });
 
-  const isAuthenticated = $derived(authState?.userId != null);
+  const isAuthenticated = $derived(authState?.isAuthenticated === true);
 
   async function handleSignInWithGitHub() {
     error = null;

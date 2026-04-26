@@ -3,6 +3,218 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Install @waynesutton/agent-ready</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #eeefe9;
+        --surface: #ffffff;
+        --surface-alt: #f7f3ec;
+        --border: #151515;
+        --border-soft: #d8d3c4;
+        --text: #151515;
+        --muted: #5f5f5f;
+        --accent: #f54e00;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: Inter, "SF Pro Text", system-ui, sans-serif;
+        font-size: 16px;
+        line-height: 1.6;
+      }
+
+      main {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 48px 24px 80px;
+      }
+
+      article {
+        overflow: hidden;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: 6px 6px 0 var(--border);
+      }
+
+      header,
+      section {
+        padding: 28px 32px;
+      }
+
+      header {
+        background: var(--surface-alt);
+        border-bottom: 1px solid var(--border);
+      }
+
+      section {
+        border-bottom: 1px solid var(--border-soft);
+      }
+
+      section:last-child {
+        border-bottom: 0;
+      }
+
+      h1,
+      h2 {
+        margin: 0 0 12px;
+        line-height: 1.12;
+        letter-spacing: -0.025em;
+      }
+
+      h1 {
+        font-size: clamp(1.75rem, 4vw, 2.5rem);
+      }
+
+      h2 {
+        font-size: 1.35rem;
+      }
+
+      p {
+        margin: 0 0 16px;
+      }
+
+      ul {
+        margin: 0 0 16px;
+        padding-left: 1.4rem;
+      }
+
+      a {
+        color: var(--text);
+        text-underline-offset: 3px;
+      }
+
+      a:hover {
+        color: var(--accent);
+      }
+
+      code,
+      pre {
+        font-family: "JetBrains Mono", "Courier New", monospace;
+      }
+
+      code {
+        padding: 1px 5px;
+        background: var(--surface-alt);
+        border: 1px solid var(--border-soft);
+        border-radius: 4px;
+      }
+
+      pre {
+        margin: 14px 0 18px;
+        padding: 16px;
+        overflow-x: auto;
+        color: #fff8ef;
+        background: #151515;
+        border-radius: 8px;
+      }
+
+      pre code {
+        padding: 0;
+        color: inherit;
+        background: transparent;
+        border: 0;
+      }
+
+      .lede {
+        max-width: 680px;
+        color: var(--muted);
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 32px;
+        padding: 4px 10px;
+        margin-bottom: 16px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        background: #fff3e9;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+      }
+
+      @media (max-width: 720px) {
+        main {
+          padding: 24px 16px 56px;
+        }
+
+        header,
+        section {
+          padding: 24px 18px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <article>
+        <header>
+          <span class="pill">Convex component install guide</span>
+          <h1>Install @waynesutton/agent-ready</h1>
+          <p class="lede">
+            The full install guide now lives in the repo README so everyone starts
+            from the same source.
+          </p>
+        </header>
+
+        <section>
+          <h2>Start here</h2>
+          <p>
+            Use the canonical install guide in the README:
+            <a href="https://github.com/waynesutton/agent-ready-component#install">github.com/waynesutton/agent-ready-component#install</a>
+          </p>
+          <p>
+            The README covers package install, component registration, HTTP routes,
+            React and Svelte widgets, local verification, production deploys, and go-live.
+          </p>
+        </section>
+
+        <section>
+          <h2>Fast path</h2>
+          <pre><code>npm install @waynesutton/agent-ready @convex-dev/crons @convex-dev/workpool</code></pre>
+          <p>
+            Register the component in <code>convex/convex.config.ts</code>, mount
+            routes in <code>convex/http.ts</code>, add the widget, then run:
+          </p>
+          <pre><code>npx agent-ready setup</code></pre>
+        </section>
+
+        <section>
+          <h2>Verify locally</h2>
+          <pre><code>npx convex dev
+npm run dev
+curl -i http://127.0.0.1:3210/llms.txt
+npx agent-ready status</code></pre>
+        </section>
+
+        <section>
+          <h2>Deploy and go live</h2>
+          <pre><code>npx convex deploy
+npx agent-ready sync --prod
+npx agent-ready regenerate --prod
+npx agent-ready go-live --prod</code></pre>
+          <p>
+            For the full version with code snippets, use the
+            <a href="https://github.com/waynesutton/agent-ready-component#install">README install guide</a>.
+          </p>
+        </section>
+      </article>
+    </main>
+  </body>
+</html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Install @waynesutton/agent-ready · Convex component</title>
     <style>
       :root {
@@ -329,6 +541,18 @@ curl -i https://your-deployment.convex.site/llms-status</code></pre>
         </section>
 
         <section>
+          <h2>Demo app GitHub auth</h2>
+          <p>The React and Svelte demos use GitHub OAuth for settings and analytics. The GitHub Authorization callback URL must point to Convex HTTP actions, not localhost:</p>
+          <pre><code>https://your-deployment.convex.site/api/auth/callback/github</code></pre>
+          <p>For local React dev, set the GitHub Homepage URL and Convex Auth <code>SITE_URL</code> to <code>http://localhost:5173</code>:</p>
+          <pre><code>npx convex env set AUTH_GITHUB_ID "your-github-client-id"
+npx convex env set AUTH_GITHUB_SECRET "your-github-client-secret"
+npx convex env set SITE_URL "http://localhost:5173"
+npx convex env set ADMIN_EMAILS "your-email@example.com"</code></pre>
+          <p>For production, set the same values with <code>--prod</code> and use your deployed frontend URL for <code>SITE_URL</code>.</p>
+        </section>
+
+        <section>
           <h2>Troubleshooting</h2>
           <table>
             <thead>
@@ -342,6 +566,8 @@ curl -i https://your-deployment.convex.site/llms-status</code></pre>
               <tr><td><code>503 "not configured"</code></td><td>Run <code>npx agent-ready setup</code> or <code>npx agent-ready sync</code></td></tr>
               <tr><td><code>503 "not generated yet"</code></td><td>Run <code>npx agent-ready regenerate</code></td></tr>
               <tr><td>Widget is offline</td><td>Check <code>registerRoutes</code> in <code>convex/http.ts</code></td></tr>
+              <tr><td>GitHub login returns but admin access is still blocked</td><td>Check <code>SITE_URL</code>, the Convex callback URL, root auth initialization, <code>state.isAuthenticated</code>, and <code>ADMIN_EMAILS</code></td></tr>
+              <tr><td>Settings opens then <code>getCacheStatus</code> throws</td><td>Update the app-facing <code>convex/agentReady/content.ts</code> return validator to match the component return shape</td></tr>
             </tbody>
           </table>
           <p>

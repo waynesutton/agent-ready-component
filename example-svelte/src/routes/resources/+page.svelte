@@ -1,5 +1,7 @@
 <script lang="ts">
   const links = [
+    { href: "/docs", label: "Agent Ready docs", description: "In-demo README-style install guide" },
+    { href: "https://diffs.com/docs", label: "Diffs by Pierre", description: "Reference docs for rendering code and diffs on the web" },
     { href: "https://docs.convex.dev/home", label: "Convex docs", description: "Official Convex documentation and guides" },
     { href: "https://docs.convex.dev/components/authoring", label: "Authoring components", description: "Build reusable Convex components with isolated tables" },
     { href: "https://docs.convex.dev/components/using", label: "Using components", description: "Install and wire up Convex components in your app" },
@@ -22,7 +24,12 @@
 
 <div class="file-grid">
   {#each links as link}
-    <a class="file-tile" href={link.href} target="_blank" rel="noreferrer">
+    <a
+      class="file-tile"
+      href={link.href}
+      target={link.href.startsWith("/") ? undefined : "_blank"}
+      rel={link.href.startsWith("/") ? undefined : "noreferrer"}
+    >
       <span class="file-name">{link.label}</span>
       <span class="file-desc">{link.description}</span>
     </a>

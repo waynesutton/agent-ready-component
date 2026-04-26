@@ -6,6 +6,8 @@ All notable changes to `@waynesutton/agent-ready` (formerly `@convex-dev/llms-tx
 
 ### Changed
 
+- Made `README.md` the canonical app developer install guide. `docs/install.md` and `docs/install.html` now point readers back to the README install section. Added internal README-style `/docs` pages to both demo apps, pointed demo `Docs` links to those pages, and kept `https://diffs.com/docs` as a Diffs by Pierre reference resource
+- Expanded GitHub OAuth setup docs across `SETUP.md`, `docs/install.md`, `docs/install.html`, `INTEGRATION.md`, and `README.md` with the production login recovery checklist: Convex callback URL, `SITE_URL`, production auth secrets, root auth initialization, `state.isAuthenticated`, `ADMIN_EMAILS`, and wrapper validator parity
 - Simplified SETUP.md production deploy instructions for both React and Svelte demos. Replaced `cat > <<'EOF'` heredoc with plain "create a file" instructions. Replaced `export` shell variables in the Svelte section with a persistent `.env.production.local` file. Added one sentence explaining why the file matters. Written for new developers who may not know shell tricks
 - Clarified docs, demos, and configs to make it clear this is a Convex component with React and Svelte widgets. Updated opening lines, hero text, section headings, and descriptions across README.md, SETUP.md, INTEGRATION.md, CONTRIBUTING.md, docs/install.md, docs/install.html, files.md, and package.json. Both demo app landing pages, configs, and HTML titles updated to say "Convex component" and name the widget framework. No functional changes
 - Removed all PostHog references from the codebase. Renamed `prds/setup-and-demo-posthog-redesign.md` to `prds/setup-and-demo-redesign.md`. Updated all file path references in changelog, task.md, and files.md. Replaced "PostHog-inspired" with neutral terms in PRD content, changelog entries, and task entries
@@ -19,6 +21,8 @@ All notable changes to `@waynesutton/agent-ready` (formerly `@convex-dev/llms-tx
 
 ### Added
 
+- PRD: `prds/svelte-check-cleanup.md`
+- PRD: `prds/github-oauth-demo-app-recovery.md`
 - Widget display mode options: `widgetCleanMode`, `widgetShowHumanTab`, `widgetShowMachineTab`, `widgetShowChatLinks`, `widgetShowChatGPT`, `widgetShowClaude`, `widgetShowPerplexity`. Configurable via `agent-ready.config.json` settings or as direct widget props (React and Svelte). Clean mode strips the app name and description while keeping all functionality. Individual chat link toggles let consumers hide any combination of ChatGPT, Claude, and Perplexity links. Tab toggles let consumers show only HUMAN, only MACHINE, or both. Widget hides entirely when all tabs are disabled
 - PRD: `prds/widget-display-modes.md`
 - `@robelest/convex-auth` integration in both demo apps with GitHub OAuth. Admin mutations (`publishPage`, `draftPage`, `archivePage`, `rollbackCache`, `regenerateAll`) are gated behind `authMutation`/`authAction` from `convex-helpers` custom functions. Settings and Analytics routes require sign-in via `AuthGate` component
@@ -29,6 +33,9 @@ All notable changes to `@waynesutton/agent-ready` (formerly `@convex-dev/llms-tx
 
 ### Fixed
 
+- Fixed Svelte demo `npm run check` failures. Regenerated package component bindings and Svelte demo Convex bindings, updated `AuthGate.svelte` to use `state.isAuthenticated`, changed analytics and settings pages to read `convex-svelte` query result objects through `.data`, moved Svelte `{@const}` declarations to valid positions, and narrowed rollback file type arguments
+- Fixed React demo GitHub OAuth gate so successful sign-ins unlock `/settings` and `/analytics`. The auth client now initializes at the app root to catch OAuth callback codes, and `AuthGate` checks `state.isAuthenticated` from `@robelest/convex-auth` instead of a nonexistent `state.userId`
+- Fixed demo wrapper `getCacheStatus` return validators for React and Svelte so newer widget display mode fields from the component no longer trigger Convex `ReturnsValidationError`
 - `src/component/cronWorker.ts` now uses `internal.analytics.internalCleanupOldRequests` instead of `api.analytics.cleanupOldRequests` for server-to-server calls (security: never use `api.*` for internal calls)
 - Removed orphaned `src/component/analyticsInternal.ts` that was not recognized by Convex codegen. Its logic now lives in `analytics.ts` where the generated API already picks it up
 - Bounded all analytics `.collect()` calls with `.take(10000)` or `.take(1000)` to prevent unbounded table scans in `getSummary`, `getTimeSeries`, `recordRequest`, `cleanupOldRequests`, and `cleanupOrphanedCacheEntries`

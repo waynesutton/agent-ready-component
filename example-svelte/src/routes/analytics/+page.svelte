@@ -1,19 +1,21 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
-  import { writable } from "svelte/store";
   import { useQuery } from "convex-svelte";
   import { api } from "../../../convex/_generated/api";
   import AuthGate from "$lib/AuthGate.svelte";
 
   const INTERVAL_MS = 60_000;
-  const roundedNow = writable(Math.floor(Date.now() / INTERVAL_MS) * INTERVAL_MS);
+  let roundedNow = $state(Math.floor(Date.now() / INTERVAL_MS) * INTERVAL_MS);
   const timer = setInterval(() => {
-    roundedNow.set(Math.floor(Date.now() / INTERVAL_MS) * INTERVAL_MS);
+    roundedNow = Math.floor(Date.now() / INTERVAL_MS) * INTERVAL_MS;
   }, INTERVAL_MS);
   onDestroy(() => clearInterval(timer));
 
-  $: summary = useQuery(api.agentReady.analytics.getSummary, { now: $roundedNow });
-  $: series = useQuery(api.agentReady.analytics.getTimeSeries, { now: $roundedNow, bucketHours: 24 });
+  const summary = useQuery(api.agentReady.analytics.getSummary, () => ({ now: roundedNow }));
+  const series = useQuery(api.agentReady.analytics.getTimeSeries, () => ({
+    now: roundedNow,
+    bucketHours: 24,
+  }));
 
   function topPair(record: Record<string, number> | undefined) {
     const entries = Object.entries(record ?? {});
@@ -24,12 +26,12 @@
 
 <AuthGate>
   {#snippet children()}
-{#if $summary === undefined}
+{#if summary.data === undefined}
   <div class="hero">
     <h1>Analytics</h1>
     <p class="lede">Loading request history...</p>
   </div>
-{:else if $summary === null}
+{:else if summary.data === null}
   <div class="hero">
     <h1>Analytics</h1>
     <p class="lede">
@@ -38,6 +40,9 @@
     </p>
   </div>
 {:else}
+  {@const analyticsSummary = summary.data}
+  {@const topAgent = topPair(analyticsSummary.byAgent)}
+  {@const topFile = topPair(analyticsSummary.byFile)}
   <div class="hero">
     <h1>Analytics</h1>
     <p class="lede">
@@ -49,38 +54,36 @@
   <div class="metric-grid">
     <div class="metric">
       <span class="label">Total requests</span>
-      <span class="value">{$summary.totalRequests.toLocaleString()}</span>
+      <span class="value">{analyticsSummary.totalRequests.toLocaleString()}</span>
     </div>
     <div class="metric">
       <span class="label">Top agent</span>
-      {@const ta = topPair($summary.byAgent)}
-      <span class="value" style="font-size: 18px;">{ta ? `${ta[0]} · ${ta[1]}` : "—"}</span>
+      <span class="value" style="font-size: 18px;">{topAgent ? `${topAgent[0]} · ${topAgent[1]}` : "—"}</span>
     </div>
     <div class="metric">
       <span class="label">Top file</span>
-      {@const tf = topPair($summary.byFile)}
-      <span class="value" style="font-size: 18px;">{tf ? `${tf[0]} · ${tf[1]}` : "—"}</span>
+      <span class="value" style="font-size: 18px;">{topFile ? `${topFile[0]} · ${topFile[1]}` : "—"}</span>
     </div>
   </div>
 
   <h3>By agent</h3>
   <ul class="kv-list">
-    {#each Object.entries($summary.byAgent ?? {}) as [agent, count]}
+    {#each Object.entries(analyticsSummary.byAgent ?? {}) as [agent, count]}
       <li><span>{agent}</span><strong>{count}</strong></li>
     {/each}
   </ul>
 
   <h3>By file type</h3>
   <ul class="kv-list">
-    {#each Object.entries($summary.byFile ?? {}) as [file, count]}
+    {#each Object.entries(analyticsSummary.byFile ?? {}) as [file, count]}
       <li><span>{file}</span><strong>{count}</strong></li>
     {/each}
   </ul>
 
-  {#if $series}
+  {#if series.data}
     <h3>Daily buckets</h3>
     <ul class="kv-list">
-      {#each $series as point}
+      {#each series.data as point}
         <li>
           <span>{new Date(point.timestamp).toISOString().slice(0, 10)}</span>
           <strong>{point.count}</strong>

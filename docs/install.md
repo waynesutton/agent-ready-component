@@ -1,3 +1,45 @@
+# Install @waynesutton/agent-ready
+
+The install guide now lives in the repo README so new developers, vibe coders, and full-stack teams all start from one clear source.
+
+Use the main guide:
+
+- [README install guide](../README.md#install)
+- [GitHub README install guide](https://github.com/waynesutton/agent-ready-component#install)
+
+## Fast path
+
+Install the package:
+
+```bash
+npm install @waynesutton/agent-ready @convex-dev/crons @convex-dev/workpool
+```
+
+Register the component in `convex/convex.config.ts`, mount the routes in `convex/http.ts`, add the React or Svelte widget, then run:
+
+```bash
+npx agent-ready setup
+```
+
+Verify locally:
+
+```bash
+npx convex dev
+npm run dev
+curl -i http://127.0.0.1:3210/llms.txt
+npx agent-ready status
+```
+
+Deploy and go live:
+
+```bash
+npx convex deploy
+npx agent-ready sync --prod
+npx agent-ready regenerate --prod
+npx agent-ready go-live --prod
+```
+
+The full step-by-step version is in [`README.md`](../README.md#install).
 # Install @waynesutton/agent-ready in your Convex app
 
 `@waynesutton/agent-ready` is a [Convex component](https://docs.convex.dev/components) that generates, caches, and serves `llms.txt`, `agents.md`, and `llms-full.txt` from your Convex backend. It ships with drop-in React and Svelte widgets that show humans and AI agents the same discovery files.
@@ -276,6 +318,8 @@ Add `--prod` to any command to target your production deployment instead of your
 | Widget shows `offline` | Check that `registerRoutes` is wired in `convex/http.ts`. |
 | UpdateBanner never appears | Make a real content edit, then run `npx agent-ready sync` or `npx agent-ready regenerate`. |
 | AI descriptions throw `aiDescriptionsEnabled is false` | Enable AI descriptions in settings, sync, then rerun `generate-descriptions`. |
+| GitHub login returns but admin access is still blocked | Check `SITE_URL`, the Convex callback URL, root auth initialization, `state.isAuthenticated`, and `ADMIN_EMAILS`. |
+| Settings opens then `getCacheStatus` throws | Update the app-facing `convex/agentReady/content.ts` return validator to match the component return shape. |
 
 ## Example apps
 
@@ -285,3 +329,26 @@ The repo includes two working Convex demo apps:
 - `example-svelte` (SvelteKit with the Svelte widget)
 
 Each demo shows how to register the Convex component, mount the widget, wire static hosting, seed content, and serve live discovery files.
+
+Both demos use GitHub OAuth for the settings and analytics pages. Create a GitHub OAuth app with this callback URL shape:
+
+```text
+https://your-deployment.convex.site/api/auth/callback/github
+```
+
+The callback URL points to Convex, not the local frontend. For local React dev, use `http://localhost:5173` as the GitHub Homepage URL and as the Convex Auth `SITE_URL` value:
+
+```bash
+npx convex env set AUTH_GITHUB_ID "your-github-client-id"
+npx convex env set AUTH_GITHUB_SECRET "your-github-client-secret"
+npx convex env set SITE_URL "http://localhost:5173"
+npx convex env set ADMIN_EMAILS "your-email@example.com"
+```
+
+For production, set the same variables with `--prod` and set `SITE_URL` to the deployed frontend URL:
+
+```bash
+npx convex env set SITE_URL "https://your-deployment.convex.site" --prod
+```
+
+If GitHub redirects back but the page still says "Admin access required", check that the React demo initializes the auth client at the app root and that `AuthGate` reads `state.isAuthenticated`. If auth works but settings throws a Convex server error, check that `convex/agentReady/content.ts` return validators match the component `getCacheStatus` return shape.

@@ -2,7 +2,9 @@
 
 Author release guide for `@waynesutton/agent-ready`, a Convex component with React and Svelte widgets.
 
-This file is for the package author shipping the Convex component to GitHub, npm, and Convex static hosting. If you are adding the component to your own Convex React or Svelte app, use `docs/install.md` or `docs/install.html`.
+This file is for the package author shipping the Convex component to GitHub, npm, and Convex static hosting.
+
+If you only want to add `@waynesutton/agent-ready` to your own Convex app, start with the install guide in [`README.md`](README.md#install). That path is shorter and written for app developers.
 
 Related reading:
 
@@ -15,6 +17,8 @@ Related reading:
 - [https://docs.convex.dev/components/understanding](https://docs.convex.dev/components/understanding)
 
 ## 1. Prerequisites
+
+You need these tools before you publish or deploy the demos:
 
 ```bash
 node -v          # expect v20 or newer
@@ -38,7 +42,7 @@ cd agent-ready-component
 npm install
 ```
 
-`npm install` installs the root component plus both workspaces: `example-react` and `example-svelte`.
+`npm install` installs the root component plus both demo apps: `example-react` and `example-svelte`.
 
 ## 3. Configure a Convex dev deployment
 
@@ -188,13 +192,17 @@ gh release create v0.1.0 --generate-notes
 
 ## 12. Demo apps (optional)
 
-The `example-react` and `example-svelte` directories are working Convex apps that show how to register the component, wire the widget, and serve live discovery files. `example-react` uses React + Vite with the React widget. `example-svelte` uses SvelteKit with the Svelte widget. They are not required to use `@waynesutton/agent-ready` in your own app. If you forked this repo to build your own product, you can safely ignore or delete both directories.
+The `example-react` and `example-svelte` directories are working Convex apps that show how to register the component, wire the widget, and serve live discovery files. `example-react` uses React + Vite with the React widget. `example-svelte` uses SvelteKit with the Svelte widget.
+
+You do not need these demo apps to use `@waynesutton/agent-ready` in your own project. If you forked this repo to build your own product, you can ignore them.
 
 The remaining steps in this guide only matter if you want to run and deploy the demo apps.
 
 ### Auth and admin access
 
 Both demo apps use `@robelest/convex-auth` with GitHub OAuth. The settings and analytics pages require sign-in. Admin emails are stored in a Convex environment variable so they never appear in the codebase.
+
+The working shape is: GitHub redirects to Convex, Convex exchanges the OAuth code, then Convex Auth redirects back to the frontend URL in `SITE_URL`. If any one of those URLs points at the wrong environment, sign-in can look successful while the app still shows "Admin access required".
 
 #### 1. Create a GitHub OAuth app
 
@@ -222,12 +230,14 @@ Click **Register application**, then **Generate a new client secret**.
 cd example-react
 npx convex env set AUTH_GITHUB_ID "your-github-client-id"
 npx convex env set AUTH_GITHUB_SECRET "your-github-client-secret"
+npx convex env set SITE_URL "http://localhost:5173"
 ```
 
 ```bash
 cd ../example-svelte
 npx convex env set AUTH_GITHUB_ID "your-github-client-id"
 npx convex env set AUTH_GITHUB_SECRET "your-github-client-secret"
+npx convex env set SITE_URL "http://localhost:5173"
 ```
 
 For production deployments, add `--prod`:
@@ -235,7 +245,10 @@ For production deployments, add `--prod`:
 ```bash
 npx convex env set AUTH_GITHUB_ID "your-github-client-id" --prod
 npx convex env set AUTH_GITHUB_SECRET "your-github-client-secret" --prod
+npx convex env set SITE_URL "https://your-production-deployment.convex.site" --prod
 ```
+
+Use separate production values for `JWT_PRIVATE_KEY`, `JWKS`, and `AUTH_SECRET_ENCRYPTION_KEY`. Do not copy long-lived dev auth keys into production. If production already used dev keys during testing, rotate the production values after verifying login. Existing sessions may sign out after rotation.
 
 #### 3. Set admin emails
 
@@ -264,13 +277,28 @@ Repeat for the Svelte demo if needed. The wizard is idempotent and will skip fil
 
 #### Production callback URL
 
-When deploying to production, create a second GitHub OAuth app (or update the existing one) with the production callback URL:
+When deploying to production, create a second GitHub OAuth app or update the existing OAuth app with the production callback URL:
 
 ```
 https://your-production-deployment.convex.site/api/auth/callback/github
 ```
 
 Set the production secrets with `--prod` as shown above.
+
+For local and production at the same time, two GitHub OAuth apps are easier to manage because a GitHub OAuth app has one Authorization callback URL. Use one app for the dev Convex deployment and one app for the production Convex deployment.
+
+#### Troubleshooting GitHub login
+
+If GitHub says sign-in worked but the app still shows "Admin access required", check these in order:
+
+1. The GitHub Authorization callback URL points to `.convex.site/api/auth/callback/github`, not localhost.
+2. `SITE_URL` matches the frontend URL for the deployment you are using.
+3. The React demo initializes `useAuth()` in `src/App.tsx` so OAuth callback codes are processed after root redirects.
+4. The React `AuthGate` reads `state.isAuthenticated`, not `state.userId`.
+5. `ADMIN_EMAILS` includes the email returned by GitHub, with comma-separated values for multiple admins.
+6. If settings loads after auth but throws a Convex server error, run `npx convex run --prod agentReady/content:getCacheStatus '{}'` and check the app-facing return validator.
+
+The browser `unload` permission warning and a missing `favicon.ico` request are unrelated to GitHub auth.
 
 ### Deploy the React demo
 
@@ -447,7 +475,7 @@ Repeat the same flow against the Svelte demo URL.
 - `npx agent-ready scan --url <url>` returns score of 80 or higher
 - ETag returns `304 Not Modified` on unchanged content
 - UpdateBanner reload works end to end
-- `README.md` links to `docs/install.md`
-- `docs/install.html` opens locally and matches the install flow
+- `README.md` contains the app developer install guide
+- `docs/install.md` and `docs/install.html` point readers back to the README install guide
 
 You are shipped.

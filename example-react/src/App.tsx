@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Route, Routes, useLocation } from "react-router-dom";
+import { Link, Route, Routes, useLocation } from "react-router-dom";
 import { AgentReadyWidget, UpdateBanner } from "@waynesutton/agent-ready/react";
 import { Window } from "./components/Window";
 import { Sidebar } from "./components/Sidebar";
@@ -7,22 +7,22 @@ import { Tabs } from "./components/Tabs";
 import { Button } from "./components/Button";
 import Settings from "./Settings.tsx";
 import Analytics from "./Analytics.tsx";
-import { AuthGate } from "./auth.tsx";
+import { AuthGate, useAuth } from "./auth.tsx";
 
 const appUrl = import.meta.env.VITE_CONVEX_SITE_URL as string;
 const installGuideUrl =
-  "https://github.com/waynesutton/agent-ready-component/blob/main/docs/install.md";
-const installHtmlUrl =
-  "https://htmlpreview.github.io/?https://github.com/waynesutton/agent-ready-component/blob/main/docs/install.html";
+  "https://github.com/waynesutton/agent-ready-component#install";
 
 const filenameByPath: Record<string, string> = {
   "/": "home.mdx",
+  "/docs": "docs.mdx",
   "/settings": "settings.mdx",
   "/analytics": "analytics.mdx",
   "/resources": "resources.mdx",
 };
 
 export default function App() {
+  useAuth();
   const location = useLocation();
   const filename = filenameByPath[location.pathname] ?? "home.mdx";
 
@@ -41,6 +41,7 @@ export default function App() {
         </div>
         <nav className="topbar-links">
           <a href={installGuideUrl} target="_blank" rel="noreferrer">Install guide</a>
+          <Link to="/docs">Docs</Link>
           <a href="https://www.npmjs.com/package/@waynesutton/agent-ready" target="_blank" rel="noreferrer">npm</a>
           <a href="https://github.com/waynesutton/agent-ready-component" target="_blank" rel="noreferrer">GitHub</a>
         </nav>
@@ -51,6 +52,7 @@ export default function App() {
         <main className="content">
           <Routes>
             <Route path="/" element={<Overview />} />
+            <Route path="/docs" element={<DocsPage />} />
             <Route path="/settings" element={<AuthGate><Settings /></AuthGate>} />
             <Route path="/analytics" element={<AuthGate><Analytics /></AuthGate>} />
             <Route path="/resources" element={<Resources />} />
@@ -126,8 +128,8 @@ function UsagePanel() {
         <strong>npx</strong> agent-ready
       </div>
       <div className="meta-row" style={{ display: "flex", gap: 24 }}>
-        <a href={installGuideUrl} target="_blank" rel="noreferrer">Read the Markdown install guide</a>
-        <a href={installHtmlUrl} target="_blank" rel="noreferrer">Open the HTML install guide</a>
+        <a href={installGuideUrl} target="_blank" rel="noreferrer">Read the install guide</a>
+        <Link to="/docs">Open docs</Link>
       </div>
     </div>
   );
@@ -201,7 +203,106 @@ function WidgetPanel() {
   );
 }
 
+const installSteps = [
+  {
+    label: "Install the package",
+    command: "npm install @waynesutton/agent-ready @convex-dev/crons @convex-dev/workpool",
+  },
+  {
+    label: "Run the setup wizard",
+    command: "npx agent-ready setup",
+  },
+  {
+    label: "Verify locally",
+    command: "npx convex dev\nnpm run dev\ncurl -i http://127.0.0.1:3210/llms.txt\nnpx agent-ready status",
+  },
+  {
+    label: "Deploy and go live",
+    command: "npx convex deploy\nnpx agent-ready sync --prod\nnpx agent-ready regenerate --prod\nnpx agent-ready go-live --prod",
+  },
+];
+
+function DocsPage() {
+  return (
+    <div className="docs-page">
+      <div className="hero">
+        <h1>Docs</h1>
+        <p className="lede">
+          A README-style guide for adding the Agent Ready Convex component to a React or Svelte app.
+          Install it, register the component, mount the routes, then ship live discovery files.
+        </p>
+        <div className="meta-row">
+          <a href={installGuideUrl} target="_blank" rel="noreferrer">Full README</a>
+        </div>
+      </div>
+
+      <div className="docs-stack">
+        <section className="docs-section">
+          <h2>What it does</h2>
+          <p>
+            Agent Ready generates, caches, and serves <code>llms.txt</code>, <code>agents.md</code>,
+            and <code>llms-full.txt</code> from your Convex backend. The widget lets humans see the
+            same files that coding agents read.
+          </p>
+        </section>
+
+        <section className="docs-section">
+          <h2>Install flow</h2>
+          <div className="docs-steps">
+            {installSteps.map((step, index) => (
+              <article className="docs-step" key={step.label}>
+                <span className="docs-step-index">{String(index + 1).padStart(2, "0")}</span>
+                <div>
+                  <h3>{step.label}</h3>
+                  <pre className="docs-code"><code>{step.command}</code></pre>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="docs-section">
+          <h2>Convex wiring</h2>
+          <p>Register the component in <code>convex/convex.config.ts</code>:</p>
+          <pre className="docs-code"><code>{`import { defineApp } from "convex/server";
+import agentReady from "@waynesutton/agent-ready/convex.config.js";
+import crons from "@convex-dev/crons/convex.config.js";
+import workpool from "@convex-dev/workpool/convex.config.js";
+
+const app = defineApp();
+app.use(crons);
+app.use(workpool);
+app.use(agentReady);
+export default app;`}</code></pre>
+          <p>Mount the routes in <code>convex/http.ts</code>:</p>
+          <pre className="docs-code"><code>{`import { httpRouter } from "convex/server";
+import { registerRoutes } from "@waynesutton/agent-ready";
+import { components } from "./_generated/api";
+
+const http = httpRouter();
+registerRoutes(http, components.agentReady);
+export default http;`}</code></pre>
+        </section>
+
+        <section className="docs-section">
+          <h2>Widget</h2>
+          <p>Drop the widget into React or Svelte and pass your Convex site URL.</p>
+          <pre className="docs-code"><code>{`import { AgentReadyWidget } from "@waynesutton/agent-ready/react";
+
+<AgentReadyWidget
+  appUrl={import.meta.env.VITE_CONVEX_SITE_URL}
+  position="floating-bottom-right"
+  theme="dark"
+/>`}</code></pre>
+        </section>
+      </div>
+    </div>
+  );
+}
+
 const resourceLinks: Array<{ href: string; label: string; description: string }> = [
+  { href: "/docs", label: "Agent Ready docs", description: "In-demo README-style install guide" },
+  { href: "https://diffs.com/docs", label: "Diffs by Pierre", description: "Reference docs for rendering code and diffs on the web" },
   { href: "https://docs.convex.dev/home", label: "Convex docs", description: "Official Convex documentation and guides" },
   { href: "https://docs.convex.dev/components/authoring", label: "Authoring components", description: "Build reusable Convex components with isolated tables" },
   { href: "https://docs.convex.dev/components/using", label: "Using components", description: "Install and wire up Convex components in your app" },
@@ -224,18 +325,21 @@ function Resources() {
         </p>
       </div>
       <div className="file-grid">
-        {resourceLinks.map((link) => (
+        {resourceLinks.map((link) => {
+          const isInternal = link.href.startsWith("/");
+          return (
           <a
             key={link.href}
             className="file-tile"
             href={link.href}
-            target="_blank"
-            rel="noreferrer"
+            target={isInternal ? undefined : "_blank"}
+            rel={isInternal ? undefined : "noreferrer"}
           >
             <span className="file-name">{link.label}</span>
             <span className="file-desc">{link.description}</span>
           </a>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

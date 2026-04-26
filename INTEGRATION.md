@@ -631,6 +631,13 @@ npx convex env set AUTH_GITHUB_SECRET "your-github-client-secret"
 
 In your GitHub OAuth app settings, set the Authorization callback URL to your Convex HTTP Actions URL plus `/api/auth/callback/github`. For example: `https://your-deployment.convex.site/api/auth/callback/github`. The callback goes to Convex, not localhost.
 
+Set `SITE_URL` to the frontend URL Convex Auth should redirect to after GitHub completes. For local React dev, that is usually `http://localhost:5173`. For a production demo hosted on Convex static hosting, it is usually `https://your-deployment.convex.site`.
+
+```bash
+npx convex env set SITE_URL "http://localhost:5173"
+npx convex env set SITE_URL "https://your-deployment.convex.site" --prod
+```
+
 Wire auth routes in `convex/http.ts`:
 
 ```typescript
@@ -669,6 +676,10 @@ export const publishPage = authMutation({
 ```
 
 Read-only queries like `getCacheStatus` and `listPages` can stay as plain `query` functions.
+
+For React apps, initialize the browser auth client at the app root so it can process OAuth callback codes after GitHub redirects back to the frontend. The demo does this by calling `useAuth()` in `src/App.tsx`. In the auth gate, read the browser state with `state.isAuthenticated`; do not infer login from `state.userId`.
+
+If a protected page opens but a query fails with a Convex return validation error, update the app-facing wrapper validator. The wrapper return shape must match the component function return shape, especially for `agentReady/content:getCacheStatus`.
 
 ### Using Clerk or other auth providers
 

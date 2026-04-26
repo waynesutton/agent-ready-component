@@ -5,11 +5,12 @@
 
   const appUrl = import.meta.env.VITE_CONVEX_SITE_URL as string;
   const installGuideUrl =
-    "https://github.com/waynesutton/agent-ready-component/blob/main/docs/install.md";
+    "https://github.com/waynesutton/agent-ready-component#install";
   let { children } = $props();
 
   const primary = [
     { to: "/", label: "home.mdx", glyph: "#" },
+    { to: "/docs", label: "docs.mdx", glyph: "?" },
     { to: "/settings", label: "settings.mdx", glyph: "=" },
     { to: "/analytics", label: "analytics.mdx", glyph: "~" },
   ];
@@ -24,6 +25,7 @@
 
   const filenameByPath: Record<string, string> = {
     "/": "home.mdx",
+    "/docs": "docs.mdx",
     "/settings": "settings.mdx",
     "/analytics": "analytics.mdx",
     "/resources": "resources.mdx",
@@ -40,6 +42,7 @@
     </div>
     <nav class="topbar-links">
       <a href={installGuideUrl} target="_blank" rel="noreferrer">Install guide</a>
+      <a href="/docs">Docs</a>
       <a href="https://www.npmjs.com/package/@waynesutton/agent-ready" target="_blank" rel="noreferrer">npm</a>
       <a href="https://github.com/waynesutton/agent-ready-component" target="_blank" rel="noreferrer">GitHub</a>
     </nav>

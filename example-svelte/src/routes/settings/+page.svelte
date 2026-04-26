@@ -14,6 +14,13 @@
     { id: "cache", label: "Cache" },
     { id: "actions", label: "Actions" },
   ];
+  type RollbackFileType =
+    | "llms.txt"
+    | "agents.md"
+    | "llms-full.txt"
+    | "robots.txt"
+    | "sitemap.xml"
+    | "agent-skills.json";
 
   async function regenerate() {
     busy = true;
@@ -24,7 +31,7 @@
     }
   }
 
-  async function rollback(fileType: string) {
+  async function rollback(fileType: RollbackFileType) {
     await client.mutation(api.agentReady.content.rollbackCache, { fileType });
   }
 
@@ -56,7 +63,7 @@
 
 {#if tab === "pages"}
   <h3>Pages</h3>
-  {#if $pages}
+  {#if pages.data}
     <table class="pages-table">
       <thead>
         <tr>
@@ -67,7 +74,7 @@
         </tr>
       </thead>
       <tbody>
-        {#each $pages as page}
+        {#each pages.data as page}
           <tr>
             <td style="font-weight: 600;">{page.title}</td>
             <td><code>{page.path}</code></td>
@@ -86,8 +93,8 @@
 
 {#if tab === "cache"}
   <h3>Live status</h3>
-  {#if $status}
-    <pre class="status-block">{JSON.stringify($status, null, 2)}</pre>
+  {#if status.data}
+    <pre class="status-block">{JSON.stringify(status.data, null, 2)}</pre>
   {:else}
     <p style="color: var(--muted);">Loading status...</p>
   {/if}

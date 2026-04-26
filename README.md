@@ -23,18 +23,34 @@ LLMs and coding agents read your app through standard discovery files. `llms.txt
 
 ## Install
 
+Use this guide when you are adding `@waynesutton/agent-ready` to an existing Convex React or Svelte app.
+
+If you are new to Convex, follow the steps in order. If you already ship Convex apps, the whole flow is: install the package, register the component, mount routes, add the widget, run the setup wizard, then verify the files.
+
+### Before you start
+
+You need:
+
+- A Convex app with `convex/convex.config.ts`
+- Node 20 or newer
+- Convex CLI 1.36 or newer
+- A public app URL for your generated files
+
+### 1. Install the package
+
 ```bash
-npm i @waynesutton/agent-ready @convex-dev/crons @convex-dev/workpool
-npx agent-ready
+npm install @waynesutton/agent-ready @convex-dev/crons @convex-dev/workpool
 ```
 
-The setup wizard asks for your app name, URL, description, analytics preference, and AI description preference. It writes `agent-ready.config.json`, scaffolds Convex wrapper files at `convex/agentReady/`, syncs the config to your deployment, and schedules the cron.
+If Convex will host your frontend too, install static hosting:
 
-Need the full consumer flow? Start with `docs/install.md`. Prefer a browser page? Open `docs/install.html`.
+```bash
+npm install @convex-dev/static-hosting
+```
 
-## Quick wire-up
+### 2. Register the Convex component
 
-Register the component in your Convex app, mount the HTTP routes, and add the widget to your frontend.
+Add the component to `convex/convex.config.ts`:
 
 ```ts
 // convex/convex.config.ts
@@ -50,41 +66,168 @@ app.use(agentReady);
 export default app;
 ```
 
+If you installed static hosting, register it in the same file:
+
+```ts
+import staticHosting from "@convex-dev/static-hosting/convex.config.js";
+
+app.use(staticHosting);
+```
+
+### 3. Mount the HTTP routes
+
+Add the routes in `convex/http.ts`:
+
 ```ts
 // convex/http.ts
 import { httpRouter } from "convex/server";
 import { registerRoutes } from "@waynesutton/agent-ready";
-import { components, internal } from "./_generated/api";
+import { components } from "./_generated/api";
 
 const http = httpRouter();
 
-registerRoutes(http, components.agentReady, {
-  onGenerationComplete: internal.myApp.handleGenerationComplete,
-  onEvent: async (ctx, req, route) => {
-    console.log(`[agent-ready] ${route} requested`);
-  },
-});
+registerRoutes(http, components.agentReady);
 
 export default http;
 ```
 
-```tsx
-// src/App.tsx
-import { AgentReadyWidget } from "@waynesutton/agent-ready/react";
+This serves the generated files and status routes:
 
-<AgentReadyWidget appUrl={import.meta.env.VITE_CONVEX_SITE_URL} />
-```
-
-Your files are live at:
 - `https://your-deployment.convex.site/llms.txt`
 - `https://your-deployment.convex.site/agents.md`
-- `https://your-deployment.convex.site/llms-full.txt` (opt-in)
-- `https://your-deployment.convex.site/llms-analytics`
+- `https://your-deployment.convex.site/llms-full.txt`
 - `https://your-deployment.convex.site/llms-status`
-- `https://your-deployment.convex.site/robots.txt` (opt-in)
-- `https://your-deployment.convex.site/sitemap.xml` (opt-in)
-- `https://your-deployment.convex.site/.well-known/agent-skills` (opt-in)
-- `https://your-deployment.convex.site/llms-readiness` (opt-in)
+- `https://your-deployment.convex.site/llms-analytics`
+- `https://your-deployment.convex.site/robots.txt` when enabled
+- `https://your-deployment.convex.site/sitemap.xml` when enabled
+- `https://your-deployment.convex.site/.well-known/agent-skills` when enabled
+- `https://your-deployment.convex.site/llms-readiness` when enabled
+
+You can add callbacks later:
+
+```ts
+registerRoutes(http, components.agentReady, {
+  onEvent: async (ctx, req, route) => {
+    console.log(`[agent-ready] ${route} requested`);
+  },
+});
+```
+
+### 4. Add the widget
+
+React:
+
+```tsx
+// src/App.tsx
+import { AgentReadyWidget, UpdateBanner } from "@waynesutton/agent-ready/react";
+
+export default function App() {
+  const appUrl = import.meta.env.VITE_CONVEX_SITE_URL as string;
+
+  return (
+    <>
+      <UpdateBanner appUrl={appUrl} />
+      <AgentReadyWidget appUrl={appUrl} position="floating-bottom-right" theme="dark" />
+    </>
+  );
+}
+```
+
+Svelte:
+
+```svelte
+<script lang="ts">
+  import { AgentReadyWidget } from "@waynesutton/agent-ready/svelte";
+
+  const appUrl = import.meta.env.VITE_CONVEX_SITE_URL as string;
+</script>
+
+<AgentReadyWidget {appUrl} position="floating-bottom-right" theme="dark" />
+```
+
+### 5. Run the setup wizard
+
+```bash
+npx agent-ready setup
+```
+
+The wizard asks for your app name, URL, description, cron interval, analytics preference, AI description preference, and test mode preference. It writes `agent-ready.config.json`, scaffolds Convex wrapper files at `convex/agentReady/`, syncs the config to your deployment, and schedules the cron.
+
+### 6. Verify locally
+
+Start Convex and your frontend in two terminals:
+
+```bash
+npx convex dev
+```
+
+```bash
+npm run dev
+```
+
+Or run both from one command:
+
+```bash
+npx convex dev --start 'npm run dev'
+```
+
+Then check the component:
+
+```bash
+curl -i http://127.0.0.1:3210/llms.txt
+npx agent-ready status
+```
+
+Open your app. The widget should show `HUMAN` and `MACHINE` tabs plus a `TEST MODE` badge.
+
+### 7. Deploy
+
+Deploy your Convex backend:
+
+```bash
+npx convex deploy
+```
+
+If you host the frontend on Convex static hosting:
+
+```bash
+export VITE_CONVEX_URL="https://your-deployment.convex.cloud"
+export VITE_CONVEX_SITE_URL="https://your-deployment.convex.site"
+npx @convex-dev/static-hosting deploy
+```
+
+Then sync your config and generate production files:
+
+```bash
+npx agent-ready sync --prod
+npx agent-ready regenerate --prod
+```
+
+### 8. Go live
+
+`testMode` blocks public access until you are ready. When the files should be public, run:
+
+```bash
+npx agent-ready go-live --prod
+```
+
+Verify the public files:
+
+```bash
+curl -i https://your-deployment.convex.site/llms.txt
+curl -i https://your-deployment.convex.site/agents.md
+curl -i https://your-deployment.convex.site/llms-status
+```
+
+Expect `200 OK`.
+
+Check production status at any time:
+
+```bash
+npx agent-ready status --prod
+```
+
+If you want the older standalone guide, `docs/install.md` and `docs/install.html` now point back to this README.
 
 ## Agent readiness
 
@@ -266,7 +409,11 @@ Then set the GitHub secrets on your Convex deployment:
 ```bash
 npx convex env set AUTH_GITHUB_ID "your-github-client-id"
 npx convex env set AUTH_GITHUB_SECRET "your-github-client-secret"
+npx convex env set SITE_URL "http://localhost:5173"
+npx convex env set ADMIN_EMAILS "your-email@example.com"
 ```
+
+For production, set the same values with `--prod` and use your deployed frontend URL for `SITE_URL`.
 
 Run the React demo:
 
@@ -288,8 +435,9 @@ The demo URL becomes `https://your-deployment.convex.site`. The widget, the file
 
 ## Documentation
 
-- `docs/install.md` is the install guide for adding this Convex component to your React or Svelte app
-- `docs/install.html` is the same install guide as a standalone HTML page
+- `README.md#install` is the canonical install guide for adding this Convex component to your React or Svelte app
+- `docs/install.md` points package readers back to the README install guide
+- `docs/install.html` is the same redirect-style install entry point as a standalone HTML page
 - `SETUP.md` is the author release guide for shipping this package to GitHub, npm, and Convex static hosting
 - `INTEGRATION.md` covers every integration path in a format optimized for AI coding agents
 - `CONTRIBUTING.md` documents the widget contract for community ports (Vue, Solid, Angular)
