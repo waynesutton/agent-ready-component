@@ -6,6 +6,15 @@ All notable changes to `@waynesutton/agent-ready` (formerly `@convex-dev/llms-tx
 
 ### Added
 
+- `widgetShowScoreTab` config option to independently control SCORE tab visibility in the widget. Defaults to `false`. The readiness endpoint can stay enabled for CI scanning while the tab stays hidden. Added to validators, component schema, status query, sync handler, client types, React widget, Svelte widget, and both example configs
+- Widget preview screenshots in README (`public/human-agent-ready-demo.png`, `public/agent-agent-ready-demo.png`) using absolute GitHub raw URLs so they render on both GitHub and npm
+
+### Fixed
+
+- Build error in `src/client/index.ts` where `"agent-skills.json"` (file type) was passed directly as a route name. Added a lookup table mapping file types to route names
+- Build error in `src/component/generation.ts` where `versions[i]` had `string | undefined` type due to array access. Added non-null assertion since the arrays are always the same length
+- Missing `dist/` folder preventing the example app from picking up updated validators, causing `ArgumentValidationError: Object contains extra field agentSkillsEnabled` on sync
+
 - Agent readiness v1 (M31 through M45) implementing Cloudflare's agent readiness standards
 - `Content-Signal` response header on all content routes with configurable `aiTrain`, `search`, `aiInput` signals
 - `x-markdown-tokens` response header reporting estimated token count for each file
@@ -81,25 +90,6 @@ All notable changes to `@waynesutton/agent-ready` (formerly `@convex-dev/llms-tx
 - Public web routes (`/llms.txt`, `/agents.md`, `/llms-full.txt`, `/llms-status`, `/llms-analytics`) are unchanged. They are public web standards and stay as-is
 - Rewrote `mockup-react.html` and `mockup-svelte.html` to demo the v1 agent-readiness surface: score panel with conic-gradient ring and 11-row check grid, response headers panel (Content-Signal, x-markdown-tokens, Link, Vary, ETag), schema toggle grid, sidebar with NEW tags on `robots.txt` / `sitemap.xml` / `agent-skills.json` / `/llms-readiness`, and a third widget tab (HUMAN | MACHINE | SCORE)
 - Updated package name and component identifier in both mockups (`@waynesutton/agent-ready`, `components.agentReady`)
-
-### Planned (Agent readiness v1)
-
-Tracked in `prds/agent-readiness-v1.md`, milestones M31 through M45 in `TASK.md`. Nothing shipped yet, just announcing the surface area:
-
-- `Content-Signal` response header on every file route, with per-signal config (`aiTrain`, `search`, `aiInput`)
-- `x-markdown-tokens` header on `/llms.txt`, `/agents.md`, `/llms-full.txt`, and any negotiated markdown response
-- RFC 8288 `Link` discovery headers, opt-in via `discoveryHeaders` setting
-- `GET /robots.txt` route generated from published pages and known AI bots, with `disallowPaths` config and sanitization
-- `GET /sitemap.xml` route with XML escaping
-- `GET /.well-known/agent-skills` route built from `pages` plus `apiEndpoints`
-- `GET /llms-readiness` self-score endpoint with checks across discoverability, content, bots, and protocol categories. Optional bearer auth via `AGENT_READY_READINESS_SECRET` (legacy `LLMS_READINESS_SECRET` still works)
-- Markdown content negotiation helper `mountMarkdownNegotiation(http, components.agentReady)` for serving `Accept: text/markdown` requests directly from `pages.fullContent`
-- React and Svelte widget gain a third `SCORE` tab plus `showHumanTab`, `showMachineTab`, `showScoreTab`, `defaultTab`, and `tabs` props for full visibility control. Tab strip collapses to a single panel when only one tab is visible
-- New CLI commands: `npx agent-ready` (default flow: one-shot enable plus regenerate plus score), `npx agent-ready scan [--url]` (HTTP audit with CI-friendly exit codes), `npx agent-ready robots` (prints recommended fragment)
-- New optional schema fields on the `settings` table: `contentSignals`, `markdownNegotiation`, `discoveryHeaders`, `robotsTxtEnabled`, `robotsTxtAllowAiBots`, `robotsTxtDisallowPaths`, `sitemapEnabled`, `agentSkillsEnabled`, `readinessEndpointEnabled`. All `v.optional()` for backward compatibility
-- New `fileType` literals on the `cachedFiles` table: `robots.txt`, `sitemap.xml`, `agent-skills.json`
-- `SETUP.md` gains a new section 14 for enabling agent readiness on the demos
-- `INTEGRATION.md` gains eight new consumer-facing sections covering quick start, Content-Signal, markdown negotiation, robots and sitemap, agent-skills, readiness score, widget tab configuration, and a security reference
 
 ### Changed
 

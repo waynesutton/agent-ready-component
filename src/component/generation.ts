@@ -44,7 +44,7 @@ export const runGeneration = internalAction({
     const results = files.map((f, i) => ({
       fileType: f.fileType as "llms.txt" | "agents.md" | "llms-full.txt" | "robots.txt" | "sitemap.xml" | "agent-skills.json",
       content: f.content,
-      version: versions[i],
+      version: versions[i]!,
     }));
 
     await ctx.runMutation(internal.generation.writeGenerationResult, {

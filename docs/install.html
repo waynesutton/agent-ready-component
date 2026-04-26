@@ -228,7 +228,9 @@ export default http;</code></pre>
           <p>
             This serves <code>/llms.txt</code>, <code>/agents.md</code>,
             <code>/llms-full.txt</code>, <code>/llms-status</code>, and
-            <code>/llms-analytics</code>.
+            <code>/llms-analytics</code>. With readiness flags enabled, it also serves
+            <code>/robots.txt</code>, <code>/sitemap.xml</code>,
+            <code>/.well-known/agent-skills</code>, and <code>/llms-readiness</code>.
           </p>
         </section>
 
@@ -292,10 +294,23 @@ curl -i https://your-deployment.convex.site/llms-status</code></pre>
               <tr><td><code>regenerate</code></td><td>Builds fresh generated files</td></tr>
               <tr><td><code>rollback</code></td><td>Restores previous cached content</td></tr>
               <tr><td><code>go-live</code></td><td>Turns off test mode</td></tr>
+              <tr><td><code>agent-ready</code></td><td>Enables all readiness flags, syncs, and regenerates</td></tr>
+              <tr><td><code>scan</code></td><td>Audits deployment endpoints, exits non-zero below 80</td></tr>
               <tr><td><code>analytics</code></td><td>Prints request summary</td></tr>
               <tr><td><code>cleanup</code></td><td>Trims expired analytics and cache rows</td></tr>
             </tbody>
           </table>
+          <p>Add <code>--prod</code> to any command to target your production deployment.</p>
+        </section>
+
+        <section>
+          <h2>Agent readiness</h2>
+          <p>Enable all Cloudflare agent readiness features with one command:</p>
+          <pre><code>npx agent-ready agent-ready</code></pre>
+          <p>This turns on <code>Content-Signal</code> headers, <code>robots.txt</code>, <code>sitemap.xml</code>, <code>/.well-known/agent-skills</code>, the <code>/llms-readiness</code> self-score endpoint, and markdown content negotiation.</p>
+          <p>Audit your deployment:</p>
+          <pre><code>npx agent-ready scan --url https://your-deployment.convex.site</code></pre>
+          <p>The SCORE tab in the widget shows your readiness score. Control its visibility with <code>widgetShowScoreTab</code> in your config or the <code>showScoreTab</code> prop.</p>
         </section>
 
         <section>

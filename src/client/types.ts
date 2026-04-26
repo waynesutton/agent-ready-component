@@ -80,6 +80,7 @@ export type AgentReadySettings = {
   sitemapEnabled?: boolean;
   agentSkillsEnabled?: boolean;
   readinessEndpointEnabled?: boolean;
+  widgetShowScoreTab?: boolean;
 };
 
 export type AgentReadyPage = {
@@ -116,6 +117,7 @@ export type AgentReadyStatus = {
   widgetShowAppName: boolean;
   widgetShowDescription: boolean;
   widgetShowMeta: boolean;
+  widgetShowScoreTab: boolean;
   readinessEndpointEnabled: boolean;
   robotsTxtEnabled: boolean;
   sitemapEnabled: boolean;

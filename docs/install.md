@@ -73,6 +73,10 @@ Default routes:
 - `/llms-full.txt`
 - `/llms-status`
 - `/llms-analytics`
+- `/robots.txt` (opt-in)
+- `/sitemap.xml` (opt-in)
+- `/.well-known/agent-skills` (opt-in)
+- `/llms-readiness` (opt-in)
 
 You can customize route behavior when you register the routes:
 
@@ -128,9 +132,10 @@ Svelte:
 | `showAppName` | `boolean` | config value |
 | `showDescription` | `boolean` | config value |
 | `showMeta` | `boolean` | config value |
+| `showScoreTab` | `boolean` | config value |
 | `colors` | `Partial<WidgetColors>` | `{}` |
 
-All `show*` props are optional. When omitted, the widget reads the matching `widgetShow*` value from your `agent-ready.config.json` (via the `/llms-status` endpoint). Change the config, run `npx agent-ready sync`, and the widget updates without code changes.
+All `show*` props are optional. When omitted, the widget reads the matching `widgetShow*` value from your `agent-ready.config.json` (via the `/llms-status` endpoint). Change the config, run `npx agent-ready sync`, and the widget updates without code changes. The SCORE tab defaults to hidden. Set `widgetShowScoreTab: true` in your config or pass `showScoreTab={true}` as a prop to enable it.
 
 Set `colors` to match your site palette:
 
@@ -236,6 +241,8 @@ Expect `200 OK`.
 | `regenerate` | Builds fresh `llms.txt`, `agents.md`, and `llms-full.txt` |
 | `rollback --file <name>` | Swaps the active cache entry for the previous version |
 | `go-live` | Flips `testMode` off with a confirmation prompt |
+| `agent-ready` | Enables all readiness flags, syncs, and regenerates |
+| `scan --url <url>` | Audits deployment endpoints, exits non-zero below 80 |
 | `generate-descriptions` | Fills empty page descriptions when AI descriptions are enabled |
 | `publish-page --path <p>` | Sets page status to published |
 | `draft-page --path <p>` | Sets page status to draft |
@@ -244,6 +251,8 @@ Expect `200 OK`.
 | `analytics` | Prints agent request summary for the last 30 days |
 | `cleanup` | Trims expired analytics rows and orphan cache entries |
 | `versions --path <p>` | Lists version history for one page |
+
+Add `--prod` to any command to target your production deployment.
 
 ## Troubleshooting
 

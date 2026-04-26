@@ -57,7 +57,7 @@
     }
   }
 
-  $: scoreTabVisible = showScoreTab ?? currentStatus?.readinessEndpointEnabled ?? false;
+  $: scoreTabVisible = showScoreTab ?? currentStatus?.widgetShowScoreTab ?? false;
 
   $: if (scoreTabVisible) {
     void fetchReadiness();

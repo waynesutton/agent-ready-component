@@ -67,6 +67,7 @@ export const applySyncConfig = internalMutation({
           sitemapEnabled: settings.sitemapEnabled,
           agentSkillsEnabled: settings.agentSkillsEnabled,
           readinessEndpointEnabled: settings.readinessEndpointEnabled,
+          widgetShowScoreTab: settings.widgetShowScoreTab,
         });
       } else {
         await ctx.db.patch(existing._id, settings);

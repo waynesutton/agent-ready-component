@@ -71,6 +71,7 @@ export const upsertSettings = mutation({
         sitemapEnabled: args.patch?.sitemapEnabled,
         agentSkillsEnabled: args.patch?.agentSkillsEnabled,
         readinessEndpointEnabled: args.patch?.readinessEndpointEnabled,
+        widgetShowScoreTab: args.patch?.widgetShowScoreTab,
       });
       const doc = await ctx.db.get(inserted);
       if (!doc) throw new Error("settings insert failed");
@@ -331,6 +332,7 @@ export const getCacheStatus = query({
     widgetShowAppName: v.boolean(),
     widgetShowDescription: v.boolean(),
     widgetShowMeta: v.boolean(),
+    widgetShowScoreTab: v.boolean(),
     readinessEndpointEnabled: v.boolean(),
     robotsTxtEnabled: v.boolean(),
     sitemapEnabled: v.boolean(),
@@ -367,6 +369,7 @@ export const getCacheStatus = query({
       widgetShowAppName: settings?.widgetShowAppName ?? true,
       widgetShowDescription: settings?.widgetShowDescription ?? true,
       widgetShowMeta: settings?.widgetShowMeta ?? true,
+      widgetShowScoreTab: settings?.widgetShowScoreTab ?? false,
       readinessEndpointEnabled: settings?.readinessEndpointEnabled ?? false,
       robotsTxtEnabled: settings?.robotsTxtEnabled ?? false,
       sitemapEnabled: settings?.sitemapEnabled ?? false,

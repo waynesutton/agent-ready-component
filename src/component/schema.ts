@@ -37,6 +37,7 @@ export default defineSchema({
     widgetShowAppName: v.optional(v.boolean()),
     widgetShowDescription: v.optional(v.boolean()),
     widgetShowMeta: v.optional(v.boolean()),
+    widgetShowScoreTab: v.optional(v.boolean()),
     widgetColors: v.optional(
       v.object({
         bg: v.optional(v.string()),

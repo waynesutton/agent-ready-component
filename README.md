@@ -10,6 +10,8 @@ Ships with React and Svelte widgets, dynamic cron scheduling via `@convex-dev/cr
 |---|---|
 | ![Human tab showing app name and Open in ChatGPT, Claude, Perplexity links](https://raw.githubusercontent.com/waynesutton/agent-ready-component/main/public/human-agent-ready-demo.png) | ![Machine tab showing llms.txt, agents.md, llms-full.txt, and status links](https://raw.githubusercontent.com/waynesutton/agent-ready-component/main/public/agent-agent-ready-demo.png) |
 
+![Score tab showing 100/100 readiness with 11 passing checks](https://raw.githubusercontent.com/waynesutton/agent-ready-component/main/public/score-agent-ready-demo.png)
+
 ## Why this exists
 
 LLMs and coding agents read your app through standard discovery files. `llms.txt` tells an agent what your product is and which pages matter. `agents.md` documents your API. `llms-full.txt` ships your long-form docs. Today most teams hand-write these, forget to update them, or never ship them at all.
@@ -149,9 +151,48 @@ Not using React? The Convex wrapper functions work with any framework. Build you
 - Readiness self-score endpoint (`/llms-readiness`) with 11 checks across discoverability, content, bots, and protocol
 - `npx agent-ready agent-ready` enables all readiness flags in one command
 - `npx agent-ready scan` audits your deployment (CI-friendly, exits non-zero below 80)
-- Config-driven widget visibility and custom hex colors via `WidgetColors`
+- Config-driven widget visibility: `widgetShowFiles`, `widgetShowAppName`, `widgetShowDescription`, `widgetShowMeta`, `widgetShowScoreTab`, and `widgetStatusVisible` in `agent-ready.config.json` control the widget without code changes. Props still work as overrides
 - CLI covering setup, sync, status, regenerate, rollback, go-live, agent-ready, scan, analytics, cleanup, versions, and per-page state transitions
 - Both demo apps hosted entirely on Convex via `@convex-dev/static-hosting`
+
+## Sync and regenerate
+
+After editing `agent-ready.config.json`, push the changes to your deployment:
+
+```bash
+npx agent-ready sync
+npx agent-ready regenerate
+```
+
+For production deployments, add the `--prod` flag:
+
+```bash
+npx agent-ready sync --prod
+npx agent-ready regenerate --prod
+```
+
+## CLI reference
+
+| Command | What it does |
+|---|---|
+| `setup` | Interactive first-run wizard, writes `agent-ready.config.json`, calls `sync` |
+| `sync` | Reads `agent-ready.config.json` and applies it to the deployment |
+| `status` | Prints cache status, current versions, and test mode state |
+| `regenerate` | Builds fresh `llms.txt`, `agents.md`, and `llms-full.txt` |
+| `rollback --file <name>` | Swaps the active cache entry for the previous version |
+| `go-live` | Flips `testMode` off with a confirmation prompt |
+| `agent-ready` | Enables all readiness flags, syncs, and regenerates |
+| `scan --url <url>` | Audits deployment endpoints, exits non-zero below 80 |
+| `generate-descriptions` | Fills empty page descriptions when AI descriptions are enabled |
+| `publish-page --path <p>` | Sets page status to published |
+| `draft-page --path <p>` | Sets page status to draft |
+| `archive-page --path <p>` | Sets page status to archived |
+| `restore-page --path <p>` | Clears `deletedAt` on a soft-deleted page |
+| `analytics` | Prints agent request summary for the last 30 days |
+| `cleanup` | Trims expired analytics rows and orphan cache entries |
+| `versions --path <p>` | Lists version history for one page |
+
+Add `--prod` to any command to target your production deployment.
 
 ## Demo apps
 

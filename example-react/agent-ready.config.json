@@ -9,6 +9,7 @@
     "widgetShowAppName": true,
     "widgetShowDescription": false,
     "widgetShowMeta": true,
+    "widgetShowScoreTab": false,
     "widgetColors": {
       "bg": "#1a1a1a",
       "border": "#333333",

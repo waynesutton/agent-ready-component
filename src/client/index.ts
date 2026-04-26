@@ -564,7 +564,16 @@ export class AgentReady {
   httpHandler(type: AgentReadyFileType | "analytics" | "status") {
     if (type === "analytics") return buildAnalyticsRoute(this.component, "llms-analytics", {});
     if (type === "status") return buildStatusRoute(this.component, "llms-status", {});
-    return buildFileRoute(this.component, type, type, {});
+    const fileTypeToRoute: Record<AgentReadyFileType, RouteName> = {
+      "llms.txt": "llms.txt",
+      "agents.md": "agents.md",
+      "llms-full.txt": "llms-full.txt",
+      "robots.txt": "robots.txt",
+      "sitemap.xml": "sitemap.xml",
+      "agent-skills.json": "agent-skills",
+    };
+    const route = fileTypeToRoute[type];
+    return buildFileRoute(this.component, route, type, {});
   }
 
   async upsertSettings(ctx: any, patch: Partial<AgentReadySettings>): Promise<AgentReadySettings> {

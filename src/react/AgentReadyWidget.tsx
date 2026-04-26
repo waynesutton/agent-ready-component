@@ -59,7 +59,7 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
   const showAppName = props.showAppName ?? status?.widgetShowAppName ?? true;
   const showDescription = props.showDescription ?? status?.widgetShowDescription ?? true;
   const showMeta = props.showMeta ?? status?.widgetShowMeta ?? true;
-  const scoreTabVisible = props.showScoreTab ?? status?.readinessEndpointEnabled ?? false;
+  const scoreTabVisible = props.showScoreTab ?? status?.widgetShowScoreTab ?? false;
   const [tab, setTab] = useState<Tab>("HUMAN");
   const [initialVersion, setInitialVersion] = useState<string | null>(null);
 

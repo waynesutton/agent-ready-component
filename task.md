@@ -9,10 +9,9 @@ Source of truth: `prds/convex-llms-txt-prd-v6.md`. Agent readiness work tracked 
 
 ## Next up
 
-- [ ] M0: Scaffold repo structure, docs, and placeholder files (no Convex deploy, no install yet)
 - [ ] Capture screenshots of the PostHog-inspired demos for the README marketing section
-- [ ] Replace placeholder `@convex-dev/crons` + `@convex-dev/workpool` peer versions with the real pinned versions once resolved
-- [ ] Kick off Agent Readiness v1 (M31). PRD at `prds/agent-readiness-v1.md`
+- [ ] Run `convex-test` full coverage (M29)
+- [ ] npm publish and Convex components directory submission (M30)
 
 ## To do
 
@@ -80,6 +79,9 @@ PRD: `prds/agent-readiness-v1.md`. Each milestone is independently shippable.
 
 ## Completed
 
+- [x] 2025-04-25 Added `widgetShowScoreTab` config option for independent SCORE tab visibility control. Updated validators, schema, content.ts, contentInternal.ts, client types, React widget, Svelte widget, both example configs. Rebuilt component.
+- [x] 2025-04-25 Fixed build errors: `agent-skills.json` to `agent-skills` route name mapping in client, non-null assertion on `versions[i]` in generation. Rebuilt missing `dist/` folder that was blocking example app sync.
+- [x] 2025-04-25 Added widget preview screenshots to README with absolute GitHub raw URLs for npm rendering.
 - [x] 2026-04-25 Agent readiness v1 (M31 through M45). Added Content-Signal, x-markdown-tokens, and Link discovery headers to all content routes. New routes: `/robots.txt`, `/sitemap.xml`, `/.well-known/agent-skills`, `/llms-readiness`. SCORE tab in React and Svelte widgets with 60s readiness polling. CLI commands `agent-ready` (enable all) and `scan` (audit). Security hardening with escapeXml, sanitizePath, and testMode gating. Updated both example app configs and wrapper validators. Schema expanded with 9 new optional settings fields, fileType union expanded to 6 values.
 - [x] 2026-04-25 Exported `<AgentReadySettingsPanel />` from `@waynesutton/agent-ready/react` as an optional drop-in settings panel. CLI setup wizard now scaffolds Convex wrapper files at `convex/agentReady/`. Updated README with `npm i` install command and settings panel docs. Added wrapper code and settings panel section to INTEGRATION.md. PRD: `prds/settings-panel-export.md`
 - [x] 2026-04-25 Config-driven widget visibility. The `/llms-status` endpoint now returns `widgetShowFiles`, `widgetShowAppName`, `widgetShowDescription`, `widgetShowMeta`, and `widgetStatusVisible` from the settings table. Both React and Svelte widgets resolve `show*` props as: explicit prop > config value from status endpoint > `true`. Changing values in `agent-ready.config.json` and running `npx agent-ready sync` updates the widget without code changes. Updated `AgentReadyStatus` type, `getCacheStatus` query, component schema, validators, CLI setup defaults, both example configs, build script (copies `.svelte` to dist), and all docs (CONTRIBUTING, INTEGRATION, README, docs/install.md, files.md, changelog.md)

@@ -340,8 +340,11 @@ Repeat the same flow against the Svelte demo URL.
 - `gh release view v0.1.0` shows release notes
 - Both demo URLs render the cream UI
 - Widget shows `HUMAN` and `MACHINE` tabs. HUMAN tab includes "Open in ChatGPT / Claude / Perplexity" links. MACHINE tab shows file links with open-in-new-tab icons
+- SCORE tab visible when `widgetShowScoreTab: true` is set in config. Shows readiness score with 11 checks
 - `testMode` is off on both demo deployments
 - `/llms.txt`, `/agents.md`, and `/llms-status` return `200 OK`
+- `/robots.txt`, `/sitemap.xml`, `/.well-known/agent-skills`, and `/llms-readiness` return `200 OK` when readiness flags are enabled
+- `npx agent-ready scan --url <url>` returns score of 80 or higher
 - ETag returns `304 Not Modified` on unchanged content
 - UpdateBanner reload works end to end
 - `README.md` links to `docs/install.md`
