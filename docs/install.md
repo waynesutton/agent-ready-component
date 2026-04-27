@@ -321,6 +321,7 @@ Add `--prod` to any command to target your production deployment instead of your
 | AI descriptions throw `aiDescriptionsEnabled is false` | Enable AI descriptions in settings, sync, then rerun `generate-descriptions`. |
 | GitHub login returns but admin access is still blocked | Check `SITE_URL`, the Convex callback URL, root auth initialization, `state.isAuthenticated`, and `ADMIN_EMAILS`. |
 | Settings opens then `getCacheStatus` throws | Update the app-facing `convex/agentReady/content.ts` return validator to match the component return shape. |
+| `Path '/sitemap.xml' for method GET already in use` | Your app already defines that route. Add `skipRoutes: ["/sitemap.xml"]` to `registerRoutes` options. Same fix for `/robots.txt`. |
 
 ## Example apps
 

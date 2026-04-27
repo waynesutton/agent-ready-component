@@ -113,6 +113,16 @@ registerRoutes(http, components.agentReady, {
 });
 ```
 
+If your app already defines `/sitemap.xml` or `/robots.txt`, skip those routes to avoid conflicts:
+
+```ts
+registerRoutes(http, components.agentReady, {
+  skipRoutes: ["/sitemap.xml", "/robots.txt"],
+});
+```
+
+The setup wizard detects existing routes automatically and prints the right `skipRoutes` snippet.
+
 ### 4. Add the widget
 
 React:

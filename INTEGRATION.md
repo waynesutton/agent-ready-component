@@ -69,6 +69,10 @@ registerRoutes(http, components.agentReady, {
   analyticsPath: "/llms-analytics",
   statusPath: "/llms-status",
 
+  // Skip routes your app already owns. Prevents "Path already in use" errors.
+  // Valid values: "/robots.txt", "/sitemap.xml", "/.well-known/agent-skills"
+  skipRoutes: [],
+
   // Per-route handlers. Return null to run default handler. Return a Response to override.
   routes: {
     "llms.txt": async (ctx, req) => null,
