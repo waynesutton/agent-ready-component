@@ -18,6 +18,11 @@ export type AgentReadyWidgetProps = {
   publicAppUrl?: string;
   position?: WidgetPosition;
   theme?: WidgetTheme;
+  /**
+   * Hide the entire widget while keeping generated files and routes active.
+   * Resolves from prop, then config (`widgetVisible`), then `true`.
+   */
+  visible?: boolean;
   showTestModeBadge?: boolean;
   showStatus?: boolean;
   showFiles?: boolean;
@@ -148,6 +153,7 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
   const readiness = useAgentReadyReadiness({ appUrl: props.appUrl, readinessPath });
 
   // Props override config. When prop is undefined, fall back to status endpoint (config-driven).
+  const widgetVisible = props.visible ?? status?.widgetVisible ?? true;
   const showStatus = props.showStatus ?? status?.widgetStatusVisible ?? true;
   const showFiles = props.showFiles ?? status?.widgetShowFiles ?? true;
   const showAppName = props.showAppName ?? status?.widgetShowAppName ?? true;
@@ -274,8 +280,8 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
   if (colors.tabActiveBg) colorVars["--agent-ready-tab-active-bg"] = colors.tabActiveBg;
   if (colors.accent) colorVars["--agent-ready-accent"] = colors.accent;
 
-  // Hide widget entirely when no tabs are visible.
-  if (visibleTabs.length === 0) return null;
+  // Hide widget entirely without affecting generated files or HTTP routes.
+  if (!widgetVisible || visibleTabs.length === 0) return null;
 
   // Resolve effective app name / description visibility under clean mode.
   const effectiveShowAppName = cleanMode ? false : showAppName;

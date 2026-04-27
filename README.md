@@ -217,7 +217,7 @@ Vite tip: set `VITE_CONVEX_SITE_URL` to your `.convex.site` deployment URL and `
 npx agent-ready setup
 ```
 
-The wizard asks for your app name, URL, description, cron interval, analytics preference, AI description preference, test mode preference, and an optional widget install guide. If you opt in, it asks whether you use React or Svelte and where you will mount the widget (root layout is the recommended default), then prints the matching code for you to copy in. It writes `agent-ready.config.json`, scaffolds Convex wrapper files at `convex/agentReady/`, syncs the config to your deployment, and schedules the cron.
+The wizard asks for your app name, URL, description, cron interval, analytics preference, AI description preference, test mode preference, and widget display preference. Choose `hidden` when you want files like `llms.txt`, `agents.md`, `llms-full.txt`, `robots.txt`, and `sitemap.xml` to keep generating without showing the widget. If you choose `visible`, the wizard can print React or Svelte install code for your root layout. It writes `agent-ready.config.json`, scaffolds Convex wrapper files at `convex/agentReady/`, syncs the config to your deployment, and schedules the cron.
 
 ### 6. Verify locally
 
@@ -242,6 +242,7 @@ Then check the component:
 ```bash
 curl -i http://127.0.0.1:3210/llms.txt
 npx agent-ready status
+npx agent-ready links
 ```
 
 Open your app. The widget should show `HUMAN` and `MACHINE` tabs plus a `TEST MODE` badge.
@@ -366,8 +367,9 @@ Not using React? The Convex wrapper functions work with any framework. Build you
 - Readiness self-score endpoint (`/llms-readiness`) with 11 checks across discoverability, content, bots, and protocol
 - `npx agent-ready agent-ready` enables all readiness flags in one command
 - `npx agent-ready scan` audits your deployment (CI-friendly, exits non-zero below 80)
-- Config-driven widget visibility: `widgetShowFiles`, `widgetShowAppName`, `widgetShowDescription`, `widgetShowMeta`, `widgetShowScoreTab`, `widgetStatusVisible`, `widgetCleanMode`, `widgetDesktopCollapse`, `widgetShowHumanTab`, `widgetShowMachineTab`, `widgetShowChatLinks`, `widgetShowChatGPT`, `widgetShowClaude`, and `widgetShowPerplexity` in `agent-ready.config.json` control the widget without code changes. Props still work as overrides
-- CLI covering setup, sync, status, regenerate, rollback, go-live, agent-ready, scan, analytics, cleanup, versions, and per-page state transitions
+- `npx agent-ready links` prints copyable discovery and AI chat URLs, useful when the widget is hidden
+- Config-driven widget visibility: `widgetVisible`, `widgetShowFiles`, `widgetShowAppName`, `widgetShowDescription`, `widgetShowMeta`, `widgetShowScoreTab`, `widgetStatusVisible`, `widgetCleanMode`, `widgetDesktopCollapse`, `widgetShowHumanTab`, `widgetShowMachineTab`, `widgetShowChatLinks`, `widgetShowChatGPT`, `widgetShowClaude`, and `widgetShowPerplexity` in `agent-ready.config.json` control the widget without code changes. Props still work as overrides
+- CLI covering setup, sync, status, links, regenerate, rollback, go-live, agent-ready, scan, analytics, cleanup, versions, and per-page state transitions
 - Both demo apps hosted entirely on Convex via `@convex-dev/static-hosting`
 
 ## Widget display modes
@@ -376,6 +378,7 @@ Control which tabs, content sections, and AI chat links the widget shows. Set th
 
 | Setting                 | Default | Effect                                                                                                                                                                                       |
 | ----------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `widgetVisible`         | `true`  | Show or hide the entire widget. Set `false` to keep generating files and serving routes while rendering no widget                                                                            |
 | `widgetCleanMode`       | `false` | Strips app name and description, keeps tabs and links functional                                                                                                                             |
 | `widgetShowHumanTab`    | `true`  | Show or hide the HUMAN tab                                                                                                                                                                   |
 | `widgetShowMachineTab`  | `true`  | Show or hide the MACHINE tab                                                                                                                                                                 |
@@ -387,6 +390,23 @@ Control which tabs, content sections, and AI chat links the widget shows. Set th
 | `widgetShowPerplexity`  | `true`  | Show or hide the "Open in Perplexity" link                                                                                                                                                   |
 
 When all tabs are hidden, the widget renders nothing. When only one tab is visible, its tab button still renders so the label shows, but there is nothing to toggle.
+
+To hide the widget while keeping generated files live:
+
+```json
+{
+  "settings": {
+    "widgetVisible": false
+  }
+}
+```
+
+Then run:
+
+```bash
+npx agent-ready sync
+npx agent-ready links
+```
 
 ### Mobile collapse
 
@@ -460,6 +480,7 @@ curl -i https://your-deployment.convex.site/llms.txt
 | `setup`                   | Interactive first-run wizard, writes `agent-ready.config.json`, calls `sync` |
 | `sync`                    | Reads `agent-ready.config.json` and applies it to the deployment             |
 | `status`                  | Prints cache status, current versions, and test mode state                   |
+| `links [--url <url>]`     | Prints copyable discovery file URLs and AI chat links                       |
 | `regenerate`              | Builds fresh `llms.txt`, `agents.md`, and `llms-full.txt`                    |
 | `rollback --file <name>`  | Swaps the active cache entry for the previous version                        |
 | `go-live`                 | Flips `testMode` off with a confirmation prompt                              |

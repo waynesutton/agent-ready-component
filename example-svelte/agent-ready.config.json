@@ -4,6 +4,7 @@
     "appUrl": "https://your-deployment.convex.site",
     "description": "SvelteKit demo app showing the @waynesutton/agent-ready Convex component and Svelte widget, hosted on Convex via static-hosting.",
     "widgetPosition": "floating-bottom-right",
+    "widgetVisible": true,
     "widgetStatusVisible": true,
     "widgetShowFiles": true,
     "widgetShowAppName": true,

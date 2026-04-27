@@ -4,6 +4,7 @@
     "appUrl": "https://quixotic-viper-800.convex.site",
     "description": "React + Vite demo app showing the @waynesutton/agent-ready Convex component and React widget, hosted on Convex via static-hosting.",
     "widgetPosition": "floating-bottom-right",
+    "widgetVisible": true,
     "widgetStatusVisible": true,
     "widgetShowFiles": false,
     "widgetShowAppName": true,

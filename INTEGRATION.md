@@ -164,6 +164,7 @@ Vite tip: set `VITE_CONVEX_SITE_URL` to your Convex `.site` URL and `VITE_SITE_U
 |---|---|---|---|
 | `appUrl` | `string` | required | Endpoint base URL used to fetch `/llms-status` and `/llms-readiness`. Typically `*.convex.site` |
 | `publicAppUrl` | `string` | optional | Public app URL used for visible file links and AI chat prompts. Set when the production frontend lives on a different domain |
+| `visible` | `boolean` | config value | Show or hide the entire widget. When `false`, generated files and HTTP routes stay active |
 | `position` | `"footer" \| "floating-bottom-right" \| "floating-bottom-left" \| "floating-center"` | `"floating-bottom-right"` | Layout mode. `floating-center` pins the widget to the bottom center of the viewport |
 | `theme` | `"light" \| "dark" \| "system"` | `"system"` | Color theme |
 | `showTestModeBadge` | `boolean` | `true` | Display the `testMode` badge |
@@ -174,7 +175,9 @@ Vite tip: set `VITE_CONVEX_SITE_URL` to your Convex `.site` URL and `VITE_SITE_U
 | `showMeta` | `boolean` | config value | Show the generation timestamp and progress indicators in the MACHINE tab |
 | `colors` | `Partial<WidgetColors>` | `{}` | Custom hex colors to match your site |
 
-All `show*` props follow a three-tier resolution: explicit prop > config value from `/llms-status` > `true`. Change them in `agent-ready.config.json` and run `npx agent-ready sync` to apply without touching code.
+`visible` and all `show*` props follow a three-tier resolution: explicit prop > config value from `/llms-status` > `true`. Change them in `agent-ready.config.json` and run `npx agent-ready sync` to apply without touching code.
+
+Set `widgetVisible: false` when you want the app to keep generating `llms.txt`, `agents.md`, `llms-full.txt`, `robots.txt`, and `sitemap.xml` without rendering the widget. Use `npx agent-ready links` to print the URLs for copying.
 
 ### Custom colors example
 
@@ -468,6 +471,7 @@ npx agent-ready versions --path /dashboard            # show version history
 npx agent-ready import --from public/llms.txt         # migrate an existing llms.txt into config
 npx agent-ready import --from public/llms.txt --dry-run
 npx agent-ready discover                              # print discovery report from local files
+npx agent-ready links                                 # print copyable discovery and AI chat URLs
 npx agent-ready scan --url https://your.site          # score a deployment for agent readiness
 ```
 

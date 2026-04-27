@@ -474,10 +474,12 @@ Repeat the same flow against the Svelte demo URL.
 - Both demo URLs render the cream UI
 - Widget shows `HUMAN` and `MACHINE` tabs. HUMAN tab includes "Open in ChatGPT / Claude / Perplexity" links. MACHINE tab shows file links with open-in-new-tab icons
 - SCORE tab visible when `widgetShowScoreTab: true` is set in config. Shows readiness score with 11 checks
+- Hidden widget mode verified by setting `widgetVisible: false`, running `npx agent-ready sync --prod`, and confirming generated routes still return `200 OK`
 - `testMode` is off on both demo deployments
 - `/llms.txt`, `/agents.md`, and `/llms-status` return `200 OK`
 - `/robots.txt`, `/sitemap.xml`, `/.well-known/agent-skills`, and `/llms-readiness` return `200 OK` when readiness flags are enabled
 - `npx agent-ready scan --url <url>` returns score of 80 or higher
+- `npx agent-ready links --url <url>` prints copyable discovery and AI chat URLs
 - ETag returns `304 Not Modified` on unchanged content
 - UpdateBanner reload works end to end
 - `README.md` contains the app developer install guide

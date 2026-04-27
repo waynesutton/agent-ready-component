@@ -28,6 +28,7 @@ npx convex dev
 npm run dev
 curl -i http://127.0.0.1:3210/llms.txt
 npx agent-ready status
+npx agent-ready links
 ```
 
 Deploy and go live:
@@ -179,6 +180,7 @@ Use `appUrl` for the Convex endpoint URL (`*.convex.site`) and `publicAppUrl` fo
 |---|---|---|
 | `appUrl` | `string` | required. Endpoint base used to fetch `/llms-status` and `/llms-readiness`. |
 | `publicAppUrl` | `string \| undefined` | optional. Visible base used for copy links and AI chat prompts. Falls back to `status.appUrl`, then `window.location.origin`, then `appUrl`. |
+| `visible` | `boolean` | config value. Set to `false` to hide the whole widget while generated files and routes stay live. |
 | `position` | `"footer" \| "floating-bottom-right" \| "floating-bottom-left" \| "floating-center"` | `"floating-bottom-right"` |
 | `theme` | `"light" \| "dark" \| "system"` | `"system"` |
 | `showTestModeBadge` | `boolean` | `true` |
@@ -222,6 +224,7 @@ The wizard asks for:
 - Analytics preference
 - AI description preference: `claude`, `openai`, or `off`
 - Test mode preference
+- Widget display: `visible` or `hidden`. Hidden writes `widgetVisible: false` so files still generate but no widget renders
 - Optional widget install guide: pick React or Svelte, pick mount location (root, footer, or header), then copy the printed snippet
 - Allow widget collapse on desktop (default `true`): renders the Phosphor caret toggle on desktop and starts collapsed. Pass `desktopCollapse={false}` on the widget or set `widgetDesktopCollapse: false` in `agent-ready.config.json` to opt out
 
@@ -250,6 +253,7 @@ Verify the component:
 ```bash
 curl -i http://127.0.0.1:3210/llms.txt
 npx agent-ready status
+npx agent-ready links
 ```
 
 Open your app. The widget should show `HUMAN` and `MACHINE` tabs plus a `TEST MODE` badge.

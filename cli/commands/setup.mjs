@@ -89,6 +89,27 @@ const cacheStatusValidator = v.object({
   generationInProgress: v.boolean(),
   hasDrafts: v.boolean(),
   fullTxtEnabled: v.boolean(),
+  widgetVisible: v.boolean(),
+  widgetStatusVisible: v.boolean(),
+  widgetShowFiles: v.boolean(),
+  widgetShowAppName: v.boolean(),
+  widgetShowDescription: v.boolean(),
+  widgetShowMeta: v.boolean(),
+  widgetShowScoreTab: v.boolean(),
+  widgetDesktopCollapse: v.boolean(),
+  widgetCleanMode: v.boolean(),
+  widgetShowHumanTab: v.boolean(),
+  widgetShowMachineTab: v.boolean(),
+  widgetShowChatLinks: v.boolean(),
+  widgetShowChatGPT: v.boolean(),
+  widgetShowClaude: v.boolean(),
+  widgetShowPerplexity: v.boolean(),
+  readinessEndpointEnabled: v.boolean(),
+  robotsTxtEnabled: v.boolean(),
+  sitemapEnabled: v.boolean(),
+  agentSkillsEnabled: v.boolean(),
+  discoveryHeaders: v.boolean(),
+  markdownNegotiation: v.boolean(),
 });
 
 export const getCacheStatus = query({
@@ -442,7 +463,15 @@ export async function setup(_args) {
     }
   }
 
-  const showWidgetInstallCode = await confirm("Show widget install code?", true);
+  const widgetVisibility = await choose(
+    "Widget display",
+    ["visible", "hidden"],
+    existing.settings?.widgetVisible === false ? "hidden" : "visible",
+  );
+  const widgetVisible = widgetVisibility === "visible";
+  const showWidgetInstallCode = widgetVisible
+    ? await confirm("Show widget install code?", true)
+    : false;
   const widgetFramework = showWidgetInstallCode
     ? await choose("Widget framework", WIDGET_FRAMEWORKS, "react")
     : null;
@@ -455,10 +484,12 @@ export async function setup(_args) {
 
   // Desktop collapse mirrors the mobile collapsed presentation on desktop viewports too.
   // Default true for new installs; existing configs keep their saved value.
-  const widgetDesktopCollapse = await confirm(
-    "Allow widget collapse on desktop?",
-    existing.settings?.widgetDesktopCollapse ?? true,
-  );
+  const widgetDesktopCollapse = widgetVisible
+    ? await confirm(
+        "Allow widget collapse on desktop?",
+        existing.settings?.widgetDesktopCollapse ?? true,
+      )
+    : existing.settings?.widgetDesktopCollapse ?? true;
 
   const nextConfig = {
     ...existing,
@@ -474,6 +505,7 @@ export async function setup(_args) {
       cronEnabled: existing.settings?.cronEnabled ?? true,
       cronIntervalHours: existing.settings?.cronIntervalHours ?? 24,
       widgetPosition: selectedWidgetPosition ?? existing.settings?.widgetPosition ?? "floating-bottom-right",
+      widgetVisible,
       widgetStatusVisible: existing.settings?.widgetStatusVisible ?? true,
       widgetShowFiles: existing.settings?.widgetShowFiles ?? true,
       widgetShowAppName: existing.settings?.widgetShowAppName ?? true,
@@ -528,7 +560,11 @@ export async function setup(_args) {
       `     Use skipRoutes to avoid conflicts: registerRoutes(http, components.agentReady, { skipRoutes: [${skipRoutesUnique.join(", ")}] })`,
     );
   }
-  console.log("  2. Add <AgentReadyWidget /> to your app layout");
+  if (widgetVisible) {
+    console.log("  2. Add <AgentReadyWidget /> to your app layout");
+  } else {
+    console.log("  2. Widget is hidden. Run `npx agent-ready links` to copy file URLs.");
+  }
   console.log("  3. (Optional) Add a settings page using <AgentReadySettingsPanel />");
   console.log("     See INTEGRATION.md for the full example.");
   console.log("  4. Run: npx agent-ready go-live   (when ready for production)");
@@ -536,6 +572,7 @@ export async function setup(_args) {
   console.log("Your files will be available at:");
   console.log("  https://<your-deployment>.convex.site/llms.txt");
   console.log("  https://<your-deployment>.convex.site/agents.md");
+  console.log("  Run `npx agent-ready links --url https://<your-deployment>.convex.site` for every generated route.");
 
   // Warn when the saved config has no pages or endpoints. Without content, llms.txt is
   // basically a stub and agents will have nothing to discover. Point users at import/discover.

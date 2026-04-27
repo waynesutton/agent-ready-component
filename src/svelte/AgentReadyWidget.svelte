@@ -12,6 +12,8 @@
   export let publicAppUrl: string | undefined = undefined;
   export let position: WidgetPosition = "floating-bottom-right";
   export let theme: WidgetTheme = "system";
+  // Hide the entire widget while keeping generated files and routes active.
+  export let visible: boolean | undefined = undefined;
   export let showTestModeBadge: boolean = true;
   export let showStatus: boolean | undefined = undefined;
   export let showFiles: boolean | undefined = undefined;
@@ -138,6 +140,7 @@
       : "#666666";
 
   // Props override config. When prop is undefined, fall back to status endpoint (config-driven).
+  $: resolvedVisible = visible ?? currentStatus?.widgetVisible ?? true;
   $: resolvedShowStatus = showStatus ?? currentStatus?.widgetStatusVisible ?? true;
   $: resolvedShowFiles = showFiles ?? currentStatus?.widgetShowFiles ?? true;
   $: resolvedShowAppName = showAppName ?? currentStatus?.widgetShowAppName ?? true;
@@ -154,7 +157,7 @@
   $: effectiveShowAppName = resolvedCleanMode ? false : resolvedShowAppName;
   $: effectiveShowDescription = resolvedCleanMode ? false : resolvedShowDescription;
 
-  $: anyTabVisible = resolvedHumanTab || resolvedMachineTab || scoreTabVisible;
+  $: anyTabVisible = resolvedVisible && (resolvedHumanTab || resolvedMachineTab || scoreTabVisible);
 
   // Endpoint base: where the widget fetches /llms-status and /llms-readiness.
   $: endpointBase = (appUrl || (typeof window !== "undefined" ? window.location.origin : "")).replace(

@@ -13,7 +13,7 @@
     },
     {
       label: "Verify locally",
-      command: "npx convex dev\nnpm run dev\ncurl -i http://127.0.0.1:3210/llms.txt\nnpx agent-ready status",
+      command: "npx convex dev\nnpm run dev\ncurl -i http://127.0.0.1:3210/llms.txt\nnpx agent-ready status\nnpx agent-ready links",
     },
     {
       label: "Deploy and go live",
@@ -84,7 +84,7 @@ export default http;`}</code></pre>
 
     <section class="docs-section">
       <h2>Widget</h2>
-      <p>Drop the widget into Svelte and pass your Convex site URL.</p>
+      <p>Drop the widget into Svelte and pass your Convex site URL. Set <code>widgetVisible: false</code> in config when you want files to keep generating without showing the widget.</p>
       <pre class="docs-code"><code>{`import { AgentReadyWidget } from "@waynesutton/agent-ready/svelte";
 
 <AgentReadyWidget appUrl={appUrl} publicAppUrl={publicAppUrl} position="floating-bottom-right" theme="dark" />`}</code></pre>

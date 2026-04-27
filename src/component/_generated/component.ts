@@ -176,6 +176,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           widgetShowPerplexity: boolean;
           widgetShowScoreTab: boolean;
           widgetStatusVisible: boolean;
+          widgetVisible: boolean;
         },
         Name
       >;
@@ -257,7 +258,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           theme: "light" | "dark" | "system";
           versioningEnabled: boolean;
           widgetCleanMode?: boolean;
-          widgetDesktopCollapse?: boolean;
           widgetColors?: {
             accent?: string;
             bg?: string;
@@ -266,6 +266,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             textActive?: string;
             textInactive?: string;
           };
+          widgetDesktopCollapse?: boolean;
           widgetPosition:
             | "footer"
             | "floating-bottom-right"
@@ -283,6 +284,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           widgetShowPerplexity?: boolean;
           widgetShowScoreTab?: boolean;
           widgetStatusVisible?: boolean;
+          widgetVisible?: boolean;
         },
         Name
       >;
@@ -317,6 +319,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           isOptional?: boolean;
           order?: number;
           path: string;
+          section?: string;
           status: "draft" | "published" | "archived";
           title: string;
         }>,
@@ -372,6 +375,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               isOptional?: boolean;
               order?: number;
               path: string;
+              section?: string;
               status?: "draft" | "published" | "archived";
               title: string;
             }>;
@@ -409,7 +413,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               theme?: "light" | "dark" | "system";
               versioningEnabled?: boolean;
               widgetCleanMode?: boolean;
-              widgetDesktopCollapse?: boolean;
               widgetColors?: {
                 accent?: string;
                 bg?: string;
@@ -418,6 +421,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 textActive?: string;
                 textInactive?: string;
               };
+              widgetDesktopCollapse?: boolean;
               widgetPosition?:
                 | "footer"
                 | "floating-bottom-right"
@@ -435,6 +439,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               widgetShowPerplexity?: boolean;
               widgetShowScoreTab?: boolean;
               widgetStatusVisible?: boolean;
+              widgetVisible?: boolean;
             };
           };
         },
@@ -465,6 +470,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           isOptional?: boolean;
           order?: number;
           path: string;
+          section?: string;
           status?: "draft" | "published" | "archived";
           title: string;
         },
@@ -509,7 +515,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             theme?: "light" | "dark" | "system";
             versioningEnabled?: boolean;
             widgetCleanMode?: boolean;
-            widgetDesktopCollapse?: boolean;
             widgetColors?: {
               accent?: string;
               bg?: string;
@@ -518,6 +523,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               textActive?: string;
               textInactive?: string;
             };
+            widgetDesktopCollapse?: boolean;
             widgetPosition?:
               | "footer"
               | "floating-bottom-right"
@@ -535,6 +541,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             widgetShowPerplexity?: boolean;
             widgetShowScoreTab?: boolean;
             widgetStatusVisible?: boolean;
+            widgetVisible?: boolean;
           };
         },
         {
@@ -573,7 +580,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           theme: "light" | "dark" | "system";
           versioningEnabled: boolean;
           widgetCleanMode?: boolean;
-          widgetDesktopCollapse?: boolean;
           widgetColors?: {
             accent?: string;
             bg?: string;
@@ -582,6 +588,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             textActive?: string;
             textInactive?: string;
           };
+          widgetDesktopCollapse?: boolean;
           widgetPosition:
             | "footer"
             | "floating-bottom-right"
@@ -599,6 +606,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           widgetShowPerplexity?: boolean;
           widgetShowScoreTab?: boolean;
           widgetStatusVisible?: boolean;
+          widgetVisible?: boolean;
         },
         Name
       >;

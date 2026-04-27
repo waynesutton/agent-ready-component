@@ -65,6 +65,7 @@ export type AgentReadySettings = {
   fullTxtEnabled: boolean;
   permissiveMode: boolean;
   versioningEnabled: boolean;
+  widgetVisible?: boolean;
   widgetStatusVisible?: boolean;
   widgetShowFiles?: boolean;
   widgetShowAppName?: boolean;
@@ -126,6 +127,7 @@ export type AgentReadyStatus = {
   generationInProgress: boolean;
   hasDrafts: boolean;
   fullTxtEnabled: boolean;
+  widgetVisible: boolean;
   widgetStatusVisible: boolean;
   widgetShowFiles: boolean;
   widgetShowAppName: boolean;

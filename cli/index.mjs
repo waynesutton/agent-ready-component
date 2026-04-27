@@ -17,6 +17,7 @@ import { agentReady } from "./commands/agent-ready.mjs";
 import { scan } from "./commands/scan.mjs";
 import { importCmd } from "./commands/import.mjs";
 import { discover } from "./commands/discover.mjs";
+import { links } from "./commands/links.mjs";
 import { printCliBanner } from "./lib/banner.mjs";
 
 const COMMANDS = {
@@ -38,6 +39,7 @@ const COMMANDS = {
   scan,
   import: importCmd,
   discover,
+  links,
 };
 
 function printHelp() {
@@ -69,6 +71,7 @@ Commands:
   import [--from <path>] [--overwrite] [--dry-run]
                                   Import an existing llms.txt into agent-ready.config.json
   discover                        Print discovery report from local files
+  links [--url <url>]             Print copyable discovery and AI chat URLs
 `);
 }
 

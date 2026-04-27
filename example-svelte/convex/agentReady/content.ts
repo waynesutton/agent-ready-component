@@ -42,6 +42,7 @@ const cacheStatusValidator = v.object({
   generationInProgress: v.boolean(),
   hasDrafts: v.boolean(),
   fullTxtEnabled: v.boolean(),
+  widgetVisible: v.boolean(),
   widgetStatusVisible: v.boolean(),
   widgetShowFiles: v.boolean(),
   widgetShowAppName: v.boolean(),
