@@ -3,14 +3,16 @@
 [![npm version](https://img.shields.io/npm/v/@waynesutton/agent-ready.svg)](https://www.npmjs.com/package/@waynesutton/agent-ready)
 [![npm downloads](https://img.shields.io/npm/dm/@waynesutton/agent-ready.svg)](https://www.npmjs.com/package/@waynesutton/agent-ready)
 
-A [Convex component](https://docs.convex.dev/components) that auto-generates, caches, and serves `llms.txt`, `agents.md`, and `llms-full.txt` from your Convex backend. Register it with `app.use(agentReady)`, drop the widget into your React or Svelte frontend, and your app is discoverable by AI agents. No external hosting required.
+[![Convex Component](https://www.convex.dev/components/badge/waynesutton/agent-ready)](https://www.convex.dev/components/waynesutton/agent-ready)
+
+A [Convex component](https://www.convex.dev/components) that auto-generates, caches, and serves `llms.txt`, `agents.md`, and `llms-full.txt` from your Convex backend. Register it with `app.use(agentReady)`, drop the widget into your React or Svelte frontend, and your app is discoverable by AI agents. No external hosting required.
 
 Ships with React and Svelte widgets, dynamic cron scheduling via `@convex-dev/crons`, opt-in agent analytics, AI-assisted description generation, a CLI with an interactive setup wizard, and both demo apps fully hosted on Convex via `@convex-dev/static-hosting`.
 
 ## Widget preview
 
-| Human view | Machine view |
-|---|---|
+| Human view                                                                                                                                                                              | Machine view                                                                                                                                                                            |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | ![Human tab showing app name and Open in ChatGPT, Claude, Perplexity links](https://raw.githubusercontent.com/waynesutton/agent-ready-component/main/public/human-agent-ready-demo.png) | ![Machine tab showing llms.txt, agents.md, llms-full.txt, and status links](https://raw.githubusercontent.com/waynesutton/agent-ready-component/main/public/agent-agent-ready-demo.png) |
 
 ![Score tab showing 100/100 readiness with 11 passing checks](https://raw.githubusercontent.com/waynesutton/agent-ready-component/main/public/score-agent-ready-demo.png)
@@ -372,17 +374,17 @@ Not using React? The Convex wrapper functions work with any framework. Build you
 
 Control which tabs, content sections, and AI chat links the widget shows. Set these in `agent-ready.config.json` under `settings`, or pass them as props directly on the widget component. Props override config values.
 
-| Setting | Default | Effect |
-|---|---|---|
-| `widgetCleanMode` | `false` | Strips app name and description, keeps tabs and links functional |
-| `widgetShowHumanTab` | `true` | Show or hide the HUMAN tab |
-| `widgetShowMachineTab` | `true` | Show or hide the MACHINE tab |
-| `widgetShowScoreTab` | `false` | Show or hide the SCORE tab |
-| `widgetDesktopCollapse` | `true` | Show the Phosphor caret toggle and start collapsed on desktop. Set `false` to keep the widget always expanded on desktop. CLI `npx agent-ready setup` prompts for this with a `true` default |
-| `widgetShowChatLinks` | `true` | Show or hide all three AI chat links on the HUMAN tab |
-| `widgetShowChatGPT` | `true` | Show or hide the "Open in ChatGPT" link |
-| `widgetShowClaude` | `true` | Show or hide the "Open in Claude" link |
-| `widgetShowPerplexity` | `true` | Show or hide the "Open in Perplexity" link |
+| Setting                 | Default | Effect                                                                                                                                                                                       |
+| ----------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `widgetCleanMode`       | `false` | Strips app name and description, keeps tabs and links functional                                                                                                                             |
+| `widgetShowHumanTab`    | `true`  | Show or hide the HUMAN tab                                                                                                                                                                   |
+| `widgetShowMachineTab`  | `true`  | Show or hide the MACHINE tab                                                                                                                                                                 |
+| `widgetShowScoreTab`    | `false` | Show or hide the SCORE tab                                                                                                                                                                   |
+| `widgetDesktopCollapse` | `true`  | Show the Phosphor caret toggle and start collapsed on desktop. Set `false` to keep the widget always expanded on desktop. CLI `npx agent-ready setup` prompts for this with a `true` default |
+| `widgetShowChatLinks`   | `true`  | Show or hide all three AI chat links on the HUMAN tab                                                                                                                                        |
+| `widgetShowChatGPT`     | `true`  | Show or hide the "Open in ChatGPT" link                                                                                                                                                      |
+| `widgetShowClaude`      | `true`  | Show or hide the "Open in Claude" link                                                                                                                                                       |
+| `widgetShowPerplexity`  | `true`  | Show or hide the "Open in Perplexity" link                                                                                                                                                   |
 
 When all tabs are hidden, the widget renders nothing. When only one tab is visible, its tab button still renders so the label shows, but there is nothing to toggle.
 
@@ -390,12 +392,12 @@ When all tabs are hidden, the widget renders nothing. When only one tab is visib
 
 Below 480px the widget renders a compact tab strip with a Phosphor caret toggle and starts collapsed. Tapping HUMAN, MACHINE, or SCORE switches the active tab without expanding. Tapping the caret expands or collapses the active panel. All three behaviors are tunable per widget instance:
 
-| React prop | Svelte prop | Default | Notes |
-| --- | --- | --- | --- |
-| `mobileCollapse` | `mobileCollapse` | `true` | Set to `false` to keep the widget always expanded on mobile. |
-| `mobileBreakpoint` | `mobileBreakpoint` | `480` | Pixel width that triggers the mobile presentation. |
-| `defaultMobileCollapsed` | `defaultMobileCollapsed` | `true` | Initial collapsed state when the widget first enters the collapsed presentation. |
-| `desktopCollapse` | `desktopCollapse` | `true` | Show the Phosphor caret toggle on desktop too. Resolves from prop, then `widgetDesktopCollapse` in `agent-ready.config.json`, then `true`. Width and insets stay at desktop values; only the toggle and panel show/hide behavior is enabled. Pass `false` to keep the widget always expanded on desktop. |
+| React prop               | Svelte prop              | Default | Notes                                                                                                                                                                                                                                                                                                    |
+| ------------------------ | ------------------------ | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mobileCollapse`         | `mobileCollapse`         | `true`  | Set to `false` to keep the widget always expanded on mobile.                                                                                                                                                                                                                                             |
+| `mobileBreakpoint`       | `mobileBreakpoint`       | `480`   | Pixel width that triggers the mobile presentation.                                                                                                                                                                                                                                                       |
+| `defaultMobileCollapsed` | `defaultMobileCollapsed` | `true`  | Initial collapsed state when the widget first enters the collapsed presentation.                                                                                                                                                                                                                         |
+| `desktopCollapse`        | `desktopCollapse`        | `true`  | Show the Phosphor caret toggle on desktop too. Resolves from prop, then `widgetDesktopCollapse` in `agent-ready.config.json`, then `true`. Width and insets stay at desktop values; only the toggle and panel show/hide behavior is enabled. Pass `false` to keep the widget always expanded on desktop. |
 
 Example config for a minimal MACHINE-only widget with no chat links:
 
@@ -453,24 +455,24 @@ curl -i https://your-deployment.convex.site/llms.txt
 
 ## CLI reference
 
-| Command | What it does |
-|---|---|
-| `setup` | Interactive first-run wizard, writes `agent-ready.config.json`, calls `sync` |
-| `sync` | Reads `agent-ready.config.json` and applies it to the deployment |
-| `status` | Prints cache status, current versions, and test mode state |
-| `regenerate` | Builds fresh `llms.txt`, `agents.md`, and `llms-full.txt` |
-| `rollback --file <name>` | Swaps the active cache entry for the previous version |
-| `go-live` | Flips `testMode` off with a confirmation prompt |
-| `agent-ready` | Enables all readiness flags, syncs, and regenerates |
-| `scan --url <url>` | Audits deployment endpoints, exits non-zero below 80 |
-| `generate-descriptions` | Fills empty page descriptions when AI descriptions are enabled |
-| `publish-page --path <p>` | Sets page status to published |
-| `draft-page --path <p>` | Sets page status to draft |
-| `archive-page --path <p>` | Sets page status to archived |
-| `restore-page --path <p>` | Clears `deletedAt` on a soft-deleted page |
-| `analytics` | Prints agent request summary for the last 30 days |
-| `cleanup` | Trims expired analytics rows and orphan cache entries |
-| `versions --path <p>` | Lists version history for one page |
+| Command                   | What it does                                                                 |
+| ------------------------- | ---------------------------------------------------------------------------- |
+| `setup`                   | Interactive first-run wizard, writes `agent-ready.config.json`, calls `sync` |
+| `sync`                    | Reads `agent-ready.config.json` and applies it to the deployment             |
+| `status`                  | Prints cache status, current versions, and test mode state                   |
+| `regenerate`              | Builds fresh `llms.txt`, `agents.md`, and `llms-full.txt`                    |
+| `rollback --file <name>`  | Swaps the active cache entry for the previous version                        |
+| `go-live`                 | Flips `testMode` off with a confirmation prompt                              |
+| `agent-ready`             | Enables all readiness flags, syncs, and regenerates                          |
+| `scan --url <url>`        | Audits deployment endpoints, exits non-zero below 80                         |
+| `generate-descriptions`   | Fills empty page descriptions when AI descriptions are enabled               |
+| `publish-page --path <p>` | Sets page status to published                                                |
+| `draft-page --path <p>`   | Sets page status to draft                                                    |
+| `archive-page --path <p>` | Sets page status to archived                                                 |
+| `restore-page --path <p>` | Clears `deletedAt` on a soft-deleted page                                    |
+| `analytics`               | Prints agent request summary for the last 30 days                            |
+| `cleanup`                 | Trims expired analytics rows and orphan cache entries                        |
+| `versions --path <p>`     | Lists version history for one page                                           |
 
 Add `--prod` to any command to target your production deployment. For example: `npx agent-ready go-live --prod`, `npx agent-ready status --prod`, `npx agent-ready scan --url https://your-deployment.convex.site --prod`.
 
