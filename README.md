@@ -364,7 +364,7 @@ Not using React? The Convex wrapper functions work with any framework. Build you
 - Readiness self-score endpoint (`/llms-readiness`) with 11 checks across discoverability, content, bots, and protocol
 - `npx agent-ready agent-ready` enables all readiness flags in one command
 - `npx agent-ready scan` audits your deployment (CI-friendly, exits non-zero below 80)
-- Config-driven widget visibility: `widgetShowFiles`, `widgetShowAppName`, `widgetShowDescription`, `widgetShowMeta`, `widgetShowScoreTab`, `widgetStatusVisible`, `widgetCleanMode`, `widgetShowHumanTab`, `widgetShowMachineTab`, `widgetShowChatLinks`, `widgetShowChatGPT`, `widgetShowClaude`, and `widgetShowPerplexity` in `agent-ready.config.json` control the widget without code changes. Props still work as overrides
+- Config-driven widget visibility: `widgetShowFiles`, `widgetShowAppName`, `widgetShowDescription`, `widgetShowMeta`, `widgetShowScoreTab`, `widgetStatusVisible`, `widgetCleanMode`, `widgetDesktopCollapse`, `widgetShowHumanTab`, `widgetShowMachineTab`, `widgetShowChatLinks`, `widgetShowChatGPT`, `widgetShowClaude`, and `widgetShowPerplexity` in `agent-ready.config.json` control the widget without code changes. Props still work as overrides
 - CLI covering setup, sync, status, regenerate, rollback, go-live, agent-ready, scan, analytics, cleanup, versions, and per-page state transitions
 - Both demo apps hosted entirely on Convex via `@convex-dev/static-hosting`
 
@@ -378,6 +378,7 @@ Control which tabs, content sections, and AI chat links the widget shows. Set th
 | `widgetShowHumanTab` | `true` | Show or hide the HUMAN tab |
 | `widgetShowMachineTab` | `true` | Show or hide the MACHINE tab |
 | `widgetShowScoreTab` | `false` | Show or hide the SCORE tab |
+| `widgetDesktopCollapse` | `true` | Show the Phosphor caret toggle and start collapsed on desktop. Set `false` to keep the widget always expanded on desktop. CLI `npx agent-ready setup` prompts for this with a `true` default |
 | `widgetShowChatLinks` | `true` | Show or hide all three AI chat links on the HUMAN tab |
 | `widgetShowChatGPT` | `true` | Show or hide the "Open in ChatGPT" link |
 | `widgetShowClaude` | `true` | Show or hide the "Open in Claude" link |
@@ -391,9 +392,10 @@ Below 480px the widget renders a compact tab strip with a Phosphor caret toggle 
 
 | React prop | Svelte prop | Default | Notes |
 | --- | --- | --- | --- |
-| `mobileCollapse` | `mobileCollapse` | `true` | Set to `false` to keep the widget always expanded. |
+| `mobileCollapse` | `mobileCollapse` | `true` | Set to `false` to keep the widget always expanded on mobile. |
 | `mobileBreakpoint` | `mobileBreakpoint` | `480` | Pixel width that triggers the mobile presentation. |
-| `defaultMobileCollapsed` | `defaultMobileCollapsed` | `true` | Initial collapsed state when the widget first enters mobile. |
+| `defaultMobileCollapsed` | `defaultMobileCollapsed` | `true` | Initial collapsed state when the widget first enters the collapsed presentation. |
+| `desktopCollapse` | `desktopCollapse` | `true` | Show the Phosphor caret toggle on desktop too. Resolves from prop, then `widgetDesktopCollapse` in `agent-ready.config.json`, then `true`. Width and insets stay at desktop values; only the toggle and panel show/hide behavior is enabled. Pass `false` to keep the widget always expanded on desktop. |
 
 Example config for a minimal MACHINE-only widget with no chat links:
 

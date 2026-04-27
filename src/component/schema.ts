@@ -38,6 +38,7 @@ export default defineSchema({
     widgetShowDescription: v.optional(v.boolean()),
     widgetShowMeta: v.optional(v.boolean()),
     widgetShowScoreTab: v.optional(v.boolean()),
+    widgetDesktopCollapse: v.optional(v.boolean()),
     widgetCleanMode: v.optional(v.boolean()),
     widgetShowHumanTab: v.optional(v.boolean()),
     widgetShowMachineTab: v.optional(v.boolean()),

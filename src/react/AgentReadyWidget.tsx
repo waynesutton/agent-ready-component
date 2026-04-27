@@ -53,6 +53,13 @@ export type AgentReadyWidgetProps = {
    * Initial collapsed state on mobile. Default: true.
    */
   defaultMobileCollapsed?: boolean;
+  /**
+   * Enable the collapsed presentation on desktop too. When true, the widget shows
+   * the caret toggle on desktop viewports and starts collapsed by default.
+   * Width and insets remain at their full desktop values.
+   * Resolves from prop, then config (`widgetDesktopCollapse`), then `true`.
+   */
+  desktopCollapse?: boolean;
 };
 
 // Trim trailing slash so we never produce double-slash URLs.
@@ -170,9 +177,15 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
   const mobileBreakpoint = props.mobileBreakpoint ?? 480;
   const defaultMobileCollapsed = props.defaultMobileCollapsed ?? true;
   const isMobile = useIsMobile(mobileBreakpoint);
+  // mobileActive drives mobile-specific visuals (width clamp, edge insets, compact tabs).
   const mobileActive = isMobile && mobileCollapseEnabled;
+  // desktopCollapseActive drives the same toggle UX on desktop without changing widget dimensions.
+  const desktopCollapseEnabled = props.desktopCollapse ?? status?.widgetDesktopCollapse ?? true;
+  const desktopCollapseActive = !isMobile && desktopCollapseEnabled;
+  // collapseActive controls toggle button visibility and panel show/hide regardless of viewport.
+  const collapseActive = mobileActive || desktopCollapseActive;
   const [collapsed, setCollapsed] = useState<boolean>(defaultMobileCollapsed);
-  const showPanel = !mobileActive || !collapsed;
+  const showPanel = !collapseActive || !collapsed;
 
   useEffect(() => {
     if (status?.generatedFromVersion && initialVersion === null) {
@@ -292,7 +305,7 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
             label="HUMAN"
             active={tab === "HUMAN"}
             onClick={() => setTab("HUMAN")}
-            compact={mobileActive}
+            compact={collapseActive}
           />
         ) : null}
         {machineTabVisible ? (
@@ -300,7 +313,7 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
             label="MACHINE"
             active={tab === "MACHINE"}
             onClick={() => setTab("MACHINE")}
-            compact={mobileActive}
+            compact={collapseActive}
           />
         ) : null}
         {scoreTabVisible ? (
@@ -308,10 +321,10 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
             label="SCORE"
             active={tab === "SCORE"}
             onClick={() => setTab("SCORE")}
-            compact={mobileActive}
+            compact={collapseActive}
           />
         ) : null}
-        {mobileActive ? (
+        {collapseActive ? (
           <button
             type="button"
             onClick={() => setCollapsed((prev) => !prev)}

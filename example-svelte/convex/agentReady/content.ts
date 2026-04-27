@@ -48,6 +48,7 @@ const cacheStatusValidator = v.object({
   widgetShowDescription: v.boolean(),
   widgetShowMeta: v.boolean(),
   widgetShowScoreTab: v.boolean(),
+  widgetDesktopCollapse: v.boolean(),
   widgetCleanMode: v.boolean(),
   widgetShowHumanTab: v.boolean(),
   widgetShowMachineTab: v.boolean(),

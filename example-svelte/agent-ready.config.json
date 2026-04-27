@@ -10,6 +10,7 @@
     "widgetShowDescription": true,
     "widgetShowMeta": true,
     "widgetShowScoreTab": false,
+    "widgetDesktopCollapse": true,
     "widgetCleanMode": false,
     "widgetShowHumanTab": true,
     "widgetShowMachineTab": true,

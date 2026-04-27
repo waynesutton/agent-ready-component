@@ -68,6 +68,7 @@ export const applySyncConfig = internalMutation({
           agentSkillsEnabled: settings.agentSkillsEnabled,
           readinessEndpointEnabled: settings.readinessEndpointEnabled,
           widgetShowScoreTab: settings.widgetShowScoreTab,
+          widgetDesktopCollapse: settings.widgetDesktopCollapse,
           widgetCleanMode: settings.widgetCleanMode,
           widgetShowHumanTab: settings.widgetShowHumanTab,
           widgetShowMachineTab: settings.widgetShowMachineTab,

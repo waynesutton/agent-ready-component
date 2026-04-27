@@ -81,6 +81,7 @@ export type AgentReadySettings = {
   agentSkillsEnabled?: boolean;
   readinessEndpointEnabled?: boolean;
   widgetShowScoreTab?: boolean;
+  widgetDesktopCollapse?: boolean;
   widgetCleanMode?: boolean;
   widgetShowHumanTab?: boolean;
   widgetShowMachineTab?: boolean;
@@ -131,6 +132,7 @@ export type AgentReadyStatus = {
   widgetShowDescription: boolean;
   widgetShowMeta: boolean;
   widgetShowScoreTab: boolean;
+  widgetDesktopCollapse: boolean;
   widgetCleanMode: boolean;
   widgetShowHumanTab: boolean;
   widgetShowMachineTab: boolean;

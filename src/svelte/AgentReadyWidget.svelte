@@ -37,6 +37,8 @@
   export let mobileCollapse: boolean = true;
   export let mobileBreakpoint: number = 480;
   export let defaultMobileCollapsed: boolean = true;
+  // Desktop collapse opt-in. Resolves from prop, then status.widgetDesktopCollapse, then true.
+  export let desktopCollapse: boolean | undefined = undefined;
 
   type Tab = "HUMAN" | "MACHINE" | "SCORE";
   let tab: Tab = "HUMAN";
@@ -69,8 +71,14 @@
     }
   });
 
+  // mobileActive drives mobile-specific visuals (width clamp, edge insets, compact tabs).
   $: mobileActive = isMobile && mobileCollapse;
-  $: showPanel = !mobileActive || !collapsed;
+  // desktopCollapseEnabled resolves prop > config > false. Active only off-mobile.
+  $: desktopCollapseEnabled = desktopCollapse ?? currentStatus?.widgetDesktopCollapse ?? true;
+  $: desktopCollapseActive = !isMobile && desktopCollapseEnabled;
+  // collapseActive drives toggle button + panel visibility regardless of viewport.
+  $: collapseActive = mobileActive || desktopCollapseActive;
+  $: showPanel = !collapseActive || !collapsed;
 
   const status = createAgentReadyStatusStore({ appUrl, statusPath });
   let currentStatus: AgentReadyStatus | null = null;
@@ -241,7 +249,7 @@
 </script>
 
 {#if anyTabVisible}
-<div class="widget" class:mobile={mobileActive} data-theme={theme} style={widgetStyle}>
+<div class="widget" class:mobile={mobileActive} class:collapse-active={collapseActive} data-theme={theme} style={widgetStyle}>
   <div class="tabs">
     {#if resolvedHumanTab}
       <button class:active={tab === "HUMAN"} on:click={() => (tab = "HUMAN")}>HUMAN</button>
@@ -252,7 +260,7 @@
     {#if scoreTabVisible}
       <button class:active={tab === "SCORE"} on:click={() => (tab = "SCORE")}>SCORE</button>
     {/if}
-    {#if mobileActive}
+    {#if collapseActive}
       <button
         type="button"
         class="mobile-toggle"
@@ -417,8 +425,9 @@
     border-left: 1px solid var(--agent-ready-panel-border, #333333);
     color: var(--agent-ready-text-inactive, #888888);
   }
-  /* On mobile, let HUMAN/MACHINE/SCORE tabs shrink so the toggle still fits. */
-  .widget.mobile .tabs button {
+  /* When the caret toggle is shown (mobile collapse or desktop collapse), let the
+     HUMAN/MACHINE/SCORE tabs shrink so the toggle still fits inside 280px. */
+  .widget.collapse-active .tabs button {
     min-width: 0;
   }
   .panel {

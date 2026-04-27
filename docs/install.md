@@ -190,7 +190,8 @@ Use `appUrl` for the Convex endpoint URL (`*.convex.site`) and `publicAppUrl` fo
 | `showScoreTab` | `boolean` | config value |
 | `mobileCollapse` | `boolean` | `true`. Set to `false` to disable the mobile collapsed presentation. |
 | `mobileBreakpoint` | `number` | `480`. Viewport width below which the widget enters mobile mode. |
-| `defaultMobileCollapsed` | `boolean` | `true`. Initial collapsed state when the widget enters mobile mode. |
+| `defaultMobileCollapsed` | `boolean` | `true`. Initial collapsed state when the widget enters the collapsed presentation. |
+| `desktopCollapse` | `boolean` | `true`. Resolves from prop, then `widgetDesktopCollapse` in `agent-ready.config.json`, then `true`. When true the widget shows the Phosphor caret toggle on desktop and starts collapsed. Width and insets remain at desktop values. Pass `false` to keep the widget always expanded on desktop. |
 | `colors` | `Partial<WidgetColors>` | `{}` |
 
 All `show*` props are optional. When omitted, the widget reads the matching `widgetShow*` value from your `agent-ready.config.json` (via the `/llms-status` endpoint). Change the config, run `npx agent-ready sync`, and the widget updates without code changes. The SCORE tab defaults to hidden. Set `widgetShowScoreTab: true` in your config or pass `showScoreTab={true}` as a prop to enable it.
@@ -222,6 +223,7 @@ The wizard asks for:
 - AI description preference: `claude`, `openai`, or `off`
 - Test mode preference
 - Optional widget install guide: pick React or Svelte, pick mount location (root, footer, or header), then copy the printed snippet
+- Allow widget collapse on desktop (default `true`): renders the Phosphor caret toggle on desktop and starts collapsed. Pass `desktopCollapse={false}` on the widget or set `widgetDesktopCollapse: false` in `agent-ready.config.json` to opt out
 
 It writes `agent-ready.config.json` and syncs it to your Convex deployment.
 

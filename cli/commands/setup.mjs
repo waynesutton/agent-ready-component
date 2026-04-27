@@ -453,6 +453,13 @@ export async function setup(_args) {
     ? resolveWidgetPosition(widgetMountLocation)
     : existing.settings?.widgetPosition;
 
+  // Desktop collapse mirrors the mobile collapsed presentation on desktop viewports too.
+  // Default true for new installs; existing configs keep their saved value.
+  const widgetDesktopCollapse = await confirm(
+    "Allow widget collapse on desktop?",
+    existing.settings?.widgetDesktopCollapse ?? true,
+  );
+
   const nextConfig = {
     ...existing,
     settings: {
@@ -473,6 +480,7 @@ export async function setup(_args) {
       widgetShowDescription: existing.settings?.widgetShowDescription ?? true,
       widgetShowMeta: existing.settings?.widgetShowMeta ?? true,
       widgetShowScoreTab: existing.settings?.widgetShowScoreTab ?? false,
+      widgetDesktopCollapse,
       widgetCleanMode: existing.settings?.widgetCleanMode ?? false,
       widgetShowHumanTab: existing.settings?.widgetShowHumanTab ?? true,
       widgetShowMachineTab: existing.settings?.widgetShowMachineTab ?? true,

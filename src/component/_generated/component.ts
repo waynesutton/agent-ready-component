@@ -163,6 +163,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           sitemapEnabled: boolean;
           testMode: boolean;
           widgetCleanMode: boolean;
+          widgetDesktopCollapse: boolean;
           widgetShowAppName: boolean;
           widgetShowChatGPT: boolean;
           widgetShowChatLinks: boolean;
@@ -256,6 +257,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           theme: "light" | "dark" | "system";
           versioningEnabled: boolean;
           widgetCleanMode?: boolean;
+          widgetDesktopCollapse?: boolean;
           widgetColors?: {
             accent?: string;
             bg?: string;
@@ -407,6 +409,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               theme?: "light" | "dark" | "system";
               versioningEnabled?: boolean;
               widgetCleanMode?: boolean;
+              widgetDesktopCollapse?: boolean;
               widgetColors?: {
                 accent?: string;
                 bg?: string;
@@ -506,6 +509,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             theme?: "light" | "dark" | "system";
             versioningEnabled?: boolean;
             widgetCleanMode?: boolean;
+            widgetDesktopCollapse?: boolean;
             widgetColors?: {
               accent?: string;
               bg?: string;
@@ -569,6 +573,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           theme: "light" | "dark" | "system";
           versioningEnabled: boolean;
           widgetCleanMode?: boolean;
+          widgetDesktopCollapse?: boolean;
           widgetColors?: {
             accent?: string;
             bg?: string;

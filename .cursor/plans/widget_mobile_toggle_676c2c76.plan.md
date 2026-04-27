@@ -16,10 +16,10 @@ todos:
     status: completed
   - id: docs
     content: Update demo apps and docs only if the implementation adds public props, new usage guidance, or file descriptions that changed.
-    status: completed
+    status: pending
   - id: verify
     content: Run typecheck, build, and manual responsive checks for React and Svelte examples.
-    status: completed
+    status: pending
 isProject: false
 ---
 

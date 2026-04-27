@@ -37,6 +37,7 @@ Plain text map of every file in the `@waynesutton/agent-ready` repo. This is a C
 - `prds/setup-widget-prompt.md`: PRD for setup wizard widget install guidance, framework selection, mount location defaults, and verification
 - `prds/agent-ready-integration-feedback.md`: PRD documenting widget URL intent (endpoint vs public), expanded route ownership, thin content readiness checks, `import` and `discover` CLI commands, optional page sections, dynamic content sync wrappers, and verification steps
 - `prds/widget-mobile-collapse.md`: PRD documenting the mobile collapsed presentation for the widget: matchMedia breakpoint detection, collapsed-by-default behavior, inline Phosphor caret toggle, mobile-safe width clamp, edge insets, and the new `mobileCollapse`, `mobileBreakpoint`, and `defaultMobileCollapsed` props on both React and Svelte widgets
+- `prds/widget-desktop-collapse.md`: PRD for the desktop collapse opt-in: new `desktopCollapse` prop and `widgetDesktopCollapse` config setting, shared `collapseActive` flag that drives the Phosphor caret toggle and panel visibility on desktop without changing widget width or insets, demo `agent-ready.config.json` defaults, and the CLI setup wizard prompt
 - `mockup-react.html`: Standalone HTML mockup of the React demo's agent-readiness control panel. Shows the score ring, per-check grid, response headers, schema toggles, and the 3-tab widget with SCORE active
 - `mockup-svelte.html`: Standalone HTML mockup of the Svelte demo's analytics dashboard with agent-readiness signals layered in. Shows the 4-card metric grid (including markdown-negotiation count and readiness scans), agent and file breakdowns, signals panel, and 3-tab widget
 
@@ -71,7 +72,7 @@ Plain text map of every file in the `@waynesutton/agent-ready` repo. This is a C
 ## React widget — `src/react/`
 
 - `src/react/index.ts`: Barrel export for widget, hooks, and settings panel
-- `src/react/AgentReadyWidget.tsx`: HUMAN, MACHINE, SCORE toggle widget with terminal aesthetic. SCORE tab shows readiness score, color dot, and check list from `/llms-readiness`. Supports `cleanMode`, `showHumanTab`, `showMachineTab`, `showChatLinks`, `showChatGPT`, `showClaude`, `showPerplexity` props and config-driven equivalents. Renders a compact mobile presentation below `mobileBreakpoint` (default 480px) with an inline Phosphor caret toggle, controlled by `mobileCollapse` and `defaultMobileCollapsed`
+- `src/react/AgentReadyWidget.tsx`: HUMAN, MACHINE, SCORE toggle widget with terminal aesthetic. SCORE tab shows readiness score, color dot, and check list from `/llms-readiness`. Supports `cleanMode`, `showHumanTab`, `showMachineTab`, `showChatLinks`, `showChatGPT`, `showClaude`, `showPerplexity` props and config-driven equivalents. Renders a compact mobile presentation below `mobileBreakpoint` (default 480px) with an inline Phosphor caret toggle, controlled by `mobileCollapse` and `defaultMobileCollapsed`. New `desktopCollapse` prop (default `true`, falls back to `widgetDesktopCollapse` in config) renders the same caret toggle on desktop without changing widget width or insets, using a shared `collapseActive` flag
 - `src/react/useAgentReadyReadiness.ts`: Hook that polls `/llms-readiness` every 60 seconds and returns `ReadinessReport | null`
 - `src/react/AgentReadySettingsPanel.tsx`: Optional drop-in settings panel for managing pages, cache, and actions. Framework-agnostic design: consumers pass Convex query results and mutation callbacks as props. Ships with inline styles so it works without external CSS
 - `src/react/useAgentReadyStatus.ts`: Live subscription hook for cached file status and staleness detection
@@ -80,14 +81,14 @@ Plain text map of every file in the `@waynesutton/agent-ready` repo. This is a C
 ## Svelte widget — `src/svelte/`
 
 - `src/svelte/index.ts`: Barrel export
-- `src/svelte/AgentReadyWidget.svelte`: HUMAN, MACHINE, SCORE toggle widget matching the React widget. SCORE tab polls `/llms-readiness` every 60s, shows color-coded score and check list. Config-driven visibility, center positioning, custom color support, and widget display mode props (`cleanMode`, `showHumanTab`, `showMachineTab`, `showChatLinks`, `showChatGPT`, `showClaude`, `showPerplexity`). Mirrors the React mobile collapsed presentation via `mobileCollapse`, `mobileBreakpoint`, and `defaultMobileCollapsed`
+- `src/svelte/AgentReadyWidget.svelte`: HUMAN, MACHINE, SCORE toggle widget matching the React widget. SCORE tab polls `/llms-readiness` every 60s, shows color-coded score and check list. Config-driven visibility, center positioning, custom color support, and widget display mode props (`cleanMode`, `showHumanTab`, `showMachineTab`, `showChatLinks`, `showChatGPT`, `showClaude`, `showPerplexity`). Mirrors the React mobile collapsed presentation via `mobileCollapse`, `mobileBreakpoint`, and `defaultMobileCollapsed`, plus the new `desktopCollapse` prop (default `true`) that drives the caret toggle and panel show/hide on desktop via a shared `.widget.collapse-active` CSS class
 - `src/svelte/store.ts`: `createAgentReadyStatusStore()` Svelte store for live status subscription
 
 ## CLI — `cli/`
 
 - `cli/bin.mjs`: CLI entry, resolves subcommand
 - `cli/index.mjs`: CLI dispatcher and shared helpers
-- `cli/commands/setup.mjs`: Interactive first-run wizard. Writes `agent-ready.config.json`, scaffolds Convex wrapper files at `convex/agentReady/content.ts` and `convex/agentReady/analytics.ts`, detects existing `/sitemap.xml` and `/robots.txt` routes in `convex/http.ts` and `public/robots.txt` to avoid conflicts, syncs config to the deployment, prompts for optional React/Svelte widget install guidance with a clear destination file (`src/App.tsx` or `src/routes/+layout.svelte`) and AI agent prompt suggestion, and prints next steps including the `skipRoutes` snippet when conflicts are detected
+- `cli/commands/setup.mjs`: Interactive first-run wizard. Writes `agent-ready.config.json`, scaffolds Convex wrapper files at `convex/agentReady/content.ts` and `convex/agentReady/analytics.ts`, detects existing `/sitemap.xml` and `/robots.txt` routes in `convex/http.ts` and `public/robots.txt` to avoid conflicts, syncs config to the deployment, prompts for optional React/Svelte widget install guidance with a clear destination file (`src/App.tsx` or `src/routes/+layout.svelte`) and AI agent prompt suggestion, prompts for desktop collapse with a `true` default, and prints next steps including the `skipRoutes` snippet when conflicts are detected
 - `cli/commands/sync.mjs`: Reads `agent-ready.config.json`, applies to deployment
 - `cli/commands/status.mjs`: Prints cache and job state
 - `cli/commands/regenerate.mjs`: Queues a `regenerateAll` workpool job
