@@ -15,6 +15,8 @@ import { cleanup } from "./commands/cleanup.mjs";
 import { versions } from "./commands/versions.mjs";
 import { agentReady } from "./commands/agent-ready.mjs";
 import { scan } from "./commands/scan.mjs";
+import { importCmd } from "./commands/import.mjs";
+import { discover } from "./commands/discover.mjs";
 import { printCliBanner } from "./lib/banner.mjs";
 
 const COMMANDS = {
@@ -34,6 +36,8 @@ const COMMANDS = {
   versions,
   "agent-ready": agentReady,
   scan,
+  import: importCmd,
+  discover,
 };
 
 function printHelp() {
@@ -62,6 +66,9 @@ Commands:
   versions --path <path>        Show page version history
   agent-ready                     Enable all agent-readiness features
   scan [--url <url>]              Scan deployment for agent readiness score
+  import [--from <path>] [--overwrite] [--dry-run]
+                                  Import an existing llms.txt into agent-ready.config.json
+  discover                        Print discovery report from local files
 `);
 }
 

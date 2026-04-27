@@ -162,6 +162,9 @@ type PageLike = {
   fullContent?: string;
   isOptional?: boolean;
   order?: number;
+  // Optional grouping label. When set, the page renders under its own H2 in llms.txt.
+  // When unset, the page renders under the default `## Pages` heading.
+  section?: string;
 };
 
 type EndpointLike = {
@@ -178,13 +181,27 @@ function renderLlmsTxt(settings: SettingsLike, pages: ReadonlyArray<PageLike>): 
   lines.push(`# ${settings.appName}`);
   lines.push("");
   lines.push(`> ${settings.description}`);
+
+  // Group core pages by section. Pages without a section land under the default
+  // "Pages" heading. Section order follows first-appearance so apps can hand-tune
+  // ordering by reordering pages in their config.
   if (core.length > 0) {
-    lines.push("");
-    lines.push("## Pages");
+    const sections = new Map<string, Array<PageLike>>();
     for (const page of core) {
-      lines.push(`- [${page.title}](${settings.appUrl}${page.path}): ${page.description}`);
+      const key = page.section?.trim() || "Pages";
+      const bucket = sections.get(key) ?? [];
+      bucket.push(page);
+      sections.set(key, bucket);
+    }
+    for (const [section, group] of sections) {
+      lines.push("");
+      lines.push(`## ${section}`);
+      for (const page of group) {
+        lines.push(`- [${page.title}](${settings.appUrl}${page.path}): ${page.description}`);
+      }
     }
   }
+
   if (optional.length > 0) {
     lines.push("");
     lines.push("## Optional");

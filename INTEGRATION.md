@@ -70,7 +70,9 @@ registerRoutes(http, components.agentReady, {
   statusPath: "/llms-status",
 
   // Skip routes your app already owns. Prevents "Path already in use" errors.
-  // Valid values: "/robots.txt", "/sitemap.xml", "/.well-known/agent-skills"
+  // Valid values: "/robots.txt", "/sitemap.xml", "/.well-known/agent-skills",
+  // "/llms.txt", "/agents.md", "/llms-full.txt"
+  // Useful when a static host or your own router serves these files.
   skipRoutes: [],
 
   // Per-route handlers. Return null to run default handler. Return a Response to override.
@@ -94,6 +96,20 @@ registerRoutes(http, components.agentReady, {
 
 export default http;
 ```
+
+## SECTION: Route ownership and hosting setups
+
+The component installs HTTP routes on your Convex deployment. Some hosts also serve static files at the same paths, which causes route conflicts or duplicate content. Use `skipRoutes` to opt out of any route your host or your own code already serves.
+
+| Hosting setup | What you control | Recommended `skipRoutes` |
+|---|---|---|
+| Convex HTTP routes only (no static frontend) | Convex serves all discovery files | `[]` |
+| Convex static hosting (`@convex-dev/static-hosting`) | Convex serves both your SPA and discovery files | `[]` |
+| Vercel, Netlify, Cloudflare Pages frontend + Convex backend | Static host serves files in `public/` | Add any path your host serves, e.g. `["/robots.txt", "/sitemap.xml"]` |
+| Custom Express/Next.js router on your own domain | Your router serves discovery files | Add any path you handle yourself, e.g. `["/llms.txt", "/agents.md"]` |
+| Existing `public/llms.txt` you want to keep | Static host serves the legacy file | `["/llms.txt"]`, then run `npx agent-ready import --from public/llms.txt` to bring its content into the component |
+
+`npx agent-ready setup` detects existing `public/llms.txt`, `public/agents.md`, `public/llms-full.txt`, `public/robots.txt`, and `public/sitemap.xml` files and suggests a matching `skipRoutes` list. If you change frontends later, edit `convex/http.ts` directly.
 
 ## SECTION: typed client setup
 
@@ -122,6 +138,7 @@ export default function App() {
       {/* page content */}
       <AgentReadyWidget
         appUrl={import.meta.env.VITE_CONVEX_SITE_URL}
+        publicAppUrl={import.meta.env.VITE_SITE_URL}
         position="floating-bottom-right"
         theme="dark"
       />
@@ -130,11 +147,23 @@ export default function App() {
 }
 ```
 
+### URL handling
+
+The widget has two URL jobs:
+
+1. Endpoint base: where it fetches `/llms-status` and `/llms-readiness`. This is your Convex deployment, usually `*.convex.site`. Pass it as `appUrl`.
+2. Visible base: shown in copy links and AI chat prompts. Pass your production domain as `publicAppUrl` when it differs from the endpoint base.
+
+When `publicAppUrl` is omitted, the widget falls back to `status.appUrl` from your component config, then `window.location.origin`, then `appUrl`. This keeps existing apps working without changes.
+
+Vite tip: set `VITE_CONVEX_SITE_URL` to your Convex `.site` URL and `VITE_SITE_URL` to your production domain. Without `VITE_SITE_URL`, a dev `.convex.site` URL can leak into production bundles.
+
 ### Widget props
 
 | Prop | Type | Default | Notes |
 |---|---|---|---|
-| `appUrl` | `string` | required | Base URL of the Convex deployment |
+| `appUrl` | `string` | required | Endpoint base URL used to fetch `/llms-status` and `/llms-readiness`. Typically `*.convex.site` |
+| `publicAppUrl` | `string` | optional | Public app URL used for visible file links and AI chat prompts. Set when the production frontend lives on a different domain |
 | `position` | `"footer" \| "floating-bottom-right" \| "floating-bottom-left" \| "floating-center"` | `"floating-bottom-right"` | Layout mode. `floating-center` pins the widget to the bottom center of the viewport |
 | `theme` | `"light" \| "dark" \| "system"` | `"system"` | Color theme |
 | `showTestModeBadge` | `boolean` | `true` | Display the `testMode` badge |
@@ -187,10 +216,13 @@ Same widget for SvelteKit apps. Import from the `svelte` subpath export.
 <script lang="ts">
   import { AgentReadyWidget } from "@waynesutton/agent-ready/svelte";
   const appUrl = import.meta.env.VITE_CONVEX_SITE_URL;
+  const publicAppUrl = import.meta.env.VITE_SITE_URL;
 </script>
 
-<AgentReadyWidget {appUrl} position="floating-bottom-right" theme="dark" />
+<AgentReadyWidget {appUrl} {publicAppUrl} position="floating-bottom-right" theme="dark" />
 ```
+
+URL handling matches the React widget. Pass `appUrl` for the Convex endpoint base. Pass `publicAppUrl` for the public production domain shown in copy links and AI chat prompts.
 
 ### Svelte custom colors example
 
@@ -433,7 +465,133 @@ npx agent-ready restore-page --path /dashboard        # restore soft-deleted pag
 npx agent-ready analytics                             # print agent request summary
 npx agent-ready cleanup --older-than 7d               # prune old analytics rows
 npx agent-ready versions --path /dashboard            # show version history
+npx agent-ready import --from public/llms.txt         # migrate an existing llms.txt into config
+npx agent-ready import --from public/llms.txt --dry-run
+npx agent-ready discover                              # print discovery report from local files
+npx agent-ready scan --url https://your.site          # score a deployment for agent readiness
 ```
+
+## SECTION: dynamic content sync (blogs, wikis, content pipelines)
+
+`agent-ready.config.json` is the source of truth for static content. For dynamic apps that store posts, wiki entries, or product pages in Convex tables, sync that content into the component on publish.
+
+The component already exposes `upsertPage`, `deletePage`, and `archivePage` mutations. Wrap them in your own internal mutation so your existing publish action reuses them.
+
+```ts
+// convex/agentReady/sync.ts
+import { components } from "../_generated/api";
+import { internalMutation } from "../_generated/server";
+import { v } from "convex/values";
+
+// Mirrors a single content row into the agent-ready component.
+// Call this from your blog/wiki publish action whenever a post is published, edited, or unpublished.
+export const upsertContent = internalMutation({
+  args: {
+    path: v.string(),
+    title: v.string(),
+    description: v.string(),
+    fullContent: v.optional(v.string()),
+    section: v.optional(v.string()),
+    isOptional: v.optional(v.boolean()),
+    order: v.optional(v.number()),
+    status: v.optional(v.union(v.literal("draft"), v.literal("published"), v.literal("archived"))),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.runMutation(components.agentReady.content.upsertPage, args);
+    return null;
+  },
+});
+
+export const removeContent = internalMutation({
+  args: { path: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.runMutation(components.agentReady.content.deletePage, args);
+    return null;
+  },
+});
+```
+
+### Blog publish example
+
+```ts
+// convex/posts.ts
+import { mutation } from "./_generated/server";
+import { internal } from "./_generated/api";
+import { v } from "convex/values";
+
+export const publishPost = mutation({
+  args: { postId: v.id("posts") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const post = await ctx.db.get(args.postId);
+    if (!post) return null;
+    await ctx.db.patch(args.postId, { status: "published", publishedAt: Date.now() });
+
+    // Push the published post into agent-ready.
+    await ctx.runMutation(internal.agentReady.sync.upsertContent, {
+      path: `/blog/${post.slug}`,
+      title: post.title,
+      description: post.excerpt ?? "",
+      fullContent: post.markdown,
+      section: "Blog",
+      status: "published",
+      order: -post.publishedAt, // newer posts render first
+    });
+    return null;
+  },
+});
+```
+
+### Wiki and knowledge base example
+
+Use `section` to group related entries under their own H2 in `llms.txt`:
+
+```ts
+await ctx.runMutation(internal.agentReady.sync.upsertContent, {
+  path: `/wiki/${entry.slug}`,
+  title: entry.title,
+  description: entry.summary,
+  fullContent: entry.body,
+  section: entry.category, // for example: "Setup", "Troubleshooting", "Architecture"
+});
+```
+
+### Bulk content pipeline example
+
+For batch jobs (CMS imports, scheduled publishes, content migrations) call the component mutation in a loop. Use `Promise.all` for independent rows to avoid sequential write conflicts.
+
+```ts
+// convex/contentPipeline.ts
+import { internalAction } from "./_generated/server";
+import { internal, components } from "./_generated/api";
+import { v } from "convex/values";
+
+export const importBatch = internalAction({
+  args: { rows: v.array(v.object({ slug: v.string(), title: v.string(), body: v.string() })) },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await Promise.all(
+      args.rows.map((row) =>
+        ctx.runMutation(components.agentReady.content.upsertPage, {
+          path: `/docs/${row.slug}`,
+          title: row.title,
+          description: row.title,
+          fullContent: row.body,
+          section: "Docs",
+          status: "published",
+        }),
+      ),
+    );
+    return null;
+  },
+});
+```
+
+### When to regenerate
+
+Calls to `upsertPage` and `deletePage` mark the component as dirty. The next scheduled cron run regenerates files. To force an immediate refresh after a publish event, call the component's `regenerateAll` action from your publish action.
 
 ## SECTION: static-hosting integration (Convex demo apps)
 

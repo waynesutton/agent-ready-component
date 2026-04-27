@@ -18,6 +18,13 @@ export function estimateTokens(content: string): number {
   return Math.ceil(content.length / 4);
 }
 
+// Normalize a base URL by trimming any trailing slash. Centralized so widgets,
+// renderers, and CLI commands all produce identical link prefixes.
+export function normalizeBaseUrl(value: string | null | undefined): string {
+  if (!value) return "";
+  return value.replace(/\/+$/, "");
+}
+
 // Escape XML special characters for sitemap output.
 export function escapeXml(value: string): string {
   return value

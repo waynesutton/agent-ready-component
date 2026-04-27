@@ -98,6 +98,12 @@ export type AgentReadyPage = {
   status: ContentStatus;
   isOptional?: boolean;
   order?: number;
+  /**
+   * Optional grouping label rendered as an H2 in llms.txt. Use this to organize wikis,
+   * docs sets, or marketing content into named sections. Pages without a section render
+   * under the default "Pages" heading.
+   */
+  section?: string;
   descriptionGeneratedByAi?: boolean;
 };
 
@@ -174,7 +180,16 @@ export type ReadinessReport = {
   generatedAt: number;
 };
 
-export type SkippableRoute = "/robots.txt" | "/sitemap.xml" | "/.well-known/agent-skills";
+// Routes that registerRoutes() can skip when the host app already serves them.
+// Includes core discovery files for apps that already publish their own llms.txt,
+// agents.md, or llms-full.txt (for example via static hosting or a custom HTTP route).
+export type SkippableRoute =
+  | "/robots.txt"
+  | "/sitemap.xml"
+  | "/.well-known/agent-skills"
+  | "/llms.txt"
+  | "/agents.md"
+  | "/llms-full.txt";
 
 export type RegisterRoutesOptions = {
   llmsTxtPath?: string;

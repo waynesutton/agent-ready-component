@@ -142,11 +142,17 @@ import { AgentReadyWidget, UpdateBanner } from "@waynesutton/agent-ready/react";
 
 export default function App() {
   const appUrl = import.meta.env.VITE_CONVEX_SITE_URL as string;
+  const publicAppUrl = import.meta.env.VITE_SITE_URL as string | undefined;
 
   return (
     <>
       <UpdateBanner appUrl={appUrl} />
-      <AgentReadyWidget appUrl={appUrl} position="floating-bottom-right" theme="dark" />
+      <AgentReadyWidget
+        appUrl={appUrl}
+        publicAppUrl={publicAppUrl}
+        position="floating-bottom-right"
+        theme="dark"
+      />
     </>
   );
 }
@@ -159,15 +165,20 @@ Svelte:
   import { AgentReadyWidget } from "@waynesutton/agent-ready/svelte";
 
   const appUrl = import.meta.env.VITE_CONVEX_SITE_URL as string;
+  const publicAppUrl = import.meta.env.VITE_SITE_URL as string | undefined;
 </script>
 
-<AgentReadyWidget {appUrl} position="floating-bottom-right" theme="dark" />
+<AgentReadyWidget {appUrl} {publicAppUrl} position="floating-bottom-right" theme="dark" />
 ```
+
+Use `appUrl` for the Convex endpoint URL (`*.convex.site`) and `publicAppUrl` for your production domain. The widget shows `publicAppUrl` in copy links and AI chat prompts so users do not see your internal Convex deployment URL.
 
 ### Widget options
 
 | Prop | Type | Default |
 |---|---|---|
+| `appUrl` | `string` | required. Endpoint base used to fetch `/llms-status` and `/llms-readiness`. |
+| `publicAppUrl` | `string \| undefined` | optional. Visible base used for copy links and AI chat prompts. Falls back to `status.appUrl`, then `window.location.origin`, then `appUrl`. |
 | `position` | `"footer" \| "floating-bottom-right" \| "floating-bottom-left" \| "floating-center"` | `"floating-bottom-right"` |
 | `theme` | `"light" \| "dark" \| "system"` | `"system"` |
 | `showTestModeBadge` | `boolean` | `true` |

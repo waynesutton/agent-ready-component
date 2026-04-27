@@ -95,6 +95,7 @@ export const applySyncConfig = internalMutation({
             status: page.status ?? "published",
             isOptional: page.isOptional,
             order: page.order,
+            section: page.section,
           });
         } else {
           await ctx.db.patch(existing._id, page);

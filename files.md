@@ -35,6 +35,7 @@ Plain text map of every file in the `@waynesutton/agent-ready` repo. This is a C
 - `prds/docs-submission-readiness.md`: PRD documenting the final docs pass before Convex components directory submission
 - `prds/svelte-check-cleanup.md`: PRD documenting the Svelte demo typecheck cleanup for auth, settings, analytics, and generated Convex bindings
 - `prds/setup-widget-prompt.md`: PRD for setup wizard widget install guidance, framework selection, mount location defaults, and verification
+- `prds/agent-ready-integration-feedback.md`: PRD documenting widget URL intent (endpoint vs public), expanded route ownership, thin content readiness checks, `import` and `discover` CLI commands, optional page sections, dynamic content sync wrappers, and verification steps
 - `mockup-react.html`: Standalone HTML mockup of the React demo's agent-readiness control panel. Shows the score ring, per-check grid, response headers, schema toggles, and the 3-tab widget with SCORE active
 - `mockup-svelte.html`: Standalone HTML mockup of the Svelte demo's analytics dashboard with agent-readiness signals layered in. Shows the 4-card metric grid (including markdown-negotiation count and readiness scans), agent and file breakdowns, signals panel, and 3-tab widget
 
@@ -101,6 +102,8 @@ Plain text map of every file in the `@waynesutton/agent-ready` repo. This is a C
 - `cli/commands/versions.mjs`: Shows version history for a page
 - `cli/commands/agent-ready.mjs`: One-command flag flip that enables every agent-readiness feature, syncs config, and regenerates files
 - `cli/commands/scan.mjs`: Pure HTTP auditor that checks every agent-readiness endpoint and prints a pass/fail table. Exits non-zero when score drops below 80 for CI use
+- `cli/commands/import.mjs`: Migrates an existing `llms.txt` from `public/`, `static/`, or the project root into `agent-ready.config.json`. Parses H1, blockquote, H2 sections, and bullet links. Supports `--from`, `--overwrite`, and `--dry-run`
+- `cli/commands/discover.mjs`: Prints a local discovery report from `convex/http.ts`, `public/llms.txt`, `public/agents.md`, and `public/llms-full.txt`. Suggests `npx agent-ready import` next steps without writing config
 - `cli/lib/banner.mjs`: Reusable block-style ASCII banner printed by CLI setup and help output
 - `cli/lib/prompts.mjs`: Prompt helpers for the setup wizard
 - `cli/lib/convex.mjs`: Convex deployment helpers, auto-detects `agentReady:` prefix and converts to `--component agentReady` for the current Convex CLI

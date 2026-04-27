@@ -132,12 +132,21 @@ React:
 import { AgentReadyWidget, UpdateBanner } from "@waynesutton/agent-ready/react";
 
 export default function App() {
+  // Convex deployment URL. Used to fetch /llms-status and /llms-readiness.
   const appUrl = import.meta.env.VITE_CONVEX_SITE_URL as string;
+  // Public production domain. Used for visible file links and AI chat prompts.
+  // Optional. When omitted, the widget falls back to status.appUrl, then window.location.origin.
+  const publicAppUrl = import.meta.env.VITE_SITE_URL as string | undefined;
 
   return (
     <>
       <UpdateBanner appUrl={appUrl} />
-      <AgentReadyWidget appUrl={appUrl} position="floating-bottom-right" theme="dark" />
+      <AgentReadyWidget
+        appUrl={appUrl}
+        publicAppUrl={publicAppUrl}
+        position="floating-bottom-right"
+        theme="dark"
+      />
     </>
   );
 }
@@ -150,10 +159,13 @@ Svelte:
   import { AgentReadyWidget } from "@waynesutton/agent-ready/svelte";
 
   const appUrl = import.meta.env.VITE_CONVEX_SITE_URL as string;
+  const publicAppUrl = import.meta.env.VITE_SITE_URL as string | undefined;
 </script>
 
-<AgentReadyWidget {appUrl} position="floating-bottom-right" theme="dark" />
+<AgentReadyWidget {appUrl} {publicAppUrl} position="floating-bottom-right" theme="dark" />
 ```
+
+Vite tip: set `VITE_CONVEX_SITE_URL` to your `.convex.site` deployment URL and `VITE_SITE_URL` to your production domain. Without `VITE_SITE_URL`, a dev `.convex.site` URL can leak into your production bundle.
 
 ### 5. Run the setup wizard
 

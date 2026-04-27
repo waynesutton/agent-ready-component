@@ -87,7 +87,7 @@ export default http;`}</code></pre>
       <p>Drop the widget into Svelte and pass your Convex site URL.</p>
       <pre class="docs-code"><code>{`import { AgentReadyWidget } from "@waynesutton/agent-ready/svelte";
 
-<AgentReadyWidget appUrl={appUrl} position="floating-bottom-right" theme="dark" />`}</code></pre>
+<AgentReadyWidget appUrl={appUrl} publicAppUrl={publicAppUrl} position="floating-bottom-right" theme="dark" />`}</code></pre>
     </section>
   </div>
 </div>

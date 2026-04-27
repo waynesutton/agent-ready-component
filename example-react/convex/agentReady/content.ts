@@ -28,6 +28,7 @@ const pageValidator = v.object({
   status: pageStatusValidator,
   isOptional: v.optional(v.boolean()),
   order: v.optional(v.number()),
+  section: v.optional(v.string()),
   descriptionGeneratedByAi: v.optional(v.boolean()),
   deletedAt: v.optional(v.number()),
 });

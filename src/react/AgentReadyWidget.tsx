@@ -4,7 +4,18 @@ import { useAgentReadyStatus } from "./useAgentReadyStatus.js";
 import { useAgentReadyReadiness } from "./useAgentReadyReadiness.js";
 
 export type AgentReadyWidgetProps = {
+  /**
+   * Endpoint base URL used to fetch /llms-status and /llms-readiness.
+   * In Convex setups this is typically `*.convex.site`. Required.
+   */
   appUrl: string;
+  /**
+   * Optional public app URL used for visible file links and AI chat prompts.
+   * Set this when your production frontend lives on a different domain (custom domain,
+   * Vercel, Netlify, Cloudflare Pages) than the endpoint base. When omitted, the widget
+   * uses status.appUrl from the component, then window.location.origin, then appUrl.
+   */
+  publicAppUrl?: string;
   position?: WidgetPosition;
   theme?: WidgetTheme;
   showTestModeBadge?: boolean;
@@ -28,6 +39,21 @@ export type AgentReadyWidgetProps = {
   showClaude?: boolean;
   showPerplexity?: boolean;
 };
+
+// Trim trailing slash so we never produce double-slash URLs.
+function normalizeBase(value: string | null | undefined): string {
+  if (!value) return "";
+  return value.replace(/\/+$/, "");
+}
+
+// Compare two URLs by host. Returns true when both parse and have the same host.
+function sameHost(a: string, b: string): boolean {
+  try {
+    return new URL(a).host === new URL(b).host;
+  } catch {
+    return false;
+  }
+}
 
 type Tab = "HUMAN" | "MACHINE" | "SCORE";
 
@@ -96,15 +122,59 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
     !!initialVersion &&
     status.generatedFromVersion !== initialVersion;
 
-  const baseUrl = props.appUrl.replace(/\/$/, "");
+  // Endpoint base: where the widget fetches /llms-status and /llms-readiness.
+  // Falls back to the browser origin when the prop is missing.
+  const endpointBase = useMemo(() => {
+    const raw = props.appUrl ?? (typeof window !== "undefined" ? window.location.origin : "");
+    return normalizeBase(raw);
+  }, [props.appUrl]);
+
+  // Visible base: what humans and AI agents see in chat prompts and copy links.
+  // Precedence: publicAppUrl prop, status.appUrl from the component, window.location.origin,
+  // then the legacy appUrl prop. Apps that pass only appUrl keep working.
+  const visibleBase = useMemo(() => {
+    const fromProp = normalizeBase(props.publicAppUrl);
+    if (fromProp) return fromProp;
+    const fromStatus = normalizeBase(status?.appUrl ?? null);
+    if (fromStatus) return fromStatus;
+    if (typeof window !== "undefined") {
+      return normalizeBase(window.location.origin);
+    }
+    return endpointBase;
+  }, [props.publicAppUrl, status?.appUrl, endpointBase]);
+
+  // Dev-only warning when the visible URL clearly disagrees with the browser origin
+  // in a way that suggests a stale Convex `.site` URL leaked into a production bundle.
+  // Quiet in production builds.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const isProd =
+      typeof process !== "undefined" && process.env && process.env.NODE_ENV === "production";
+    if (isProd) return;
+    if (!visibleBase) return;
+    const origin = window.location.origin;
+    const isLocal = /(^http:\/\/localhost)|(^http:\/\/127\.0\.0\.1)|(^http:\/\/\[::1\])/.test(
+      origin,
+    );
+    if (isLocal) return;
+    if (sameHost(visibleBase, origin)) return;
+    if (visibleBase.includes(".convex.site") && !origin.includes(".convex.site")) {
+      console.warn(
+        "[agent-ready] Widget visible URL points to a Convex .site URL while the browser is on a custom domain. " +
+          "Set publicAppUrl on <AgentReadyWidget> or VITE_SITE_URL in your build to avoid leaking the dev URL.",
+      );
+    }
+  }, [visibleBase]);
+
   const urls = useMemo(
     () => ({
-      llmsTxt: `${baseUrl}${llmsTxtPath}`,
-      agentsMd: `${baseUrl}${agentsMdPath}`,
-      fullTxt: `${baseUrl}${fullTxtPath}`,
-      status: `${baseUrl}${statusPath}`,
+      llmsTxt: `${visibleBase}${llmsTxtPath}`,
+      agentsMd: `${visibleBase}${agentsMdPath}`,
+      fullTxt: `${visibleBase}${fullTxtPath}`,
+      // Status link still points at the endpoint base because that is where the JSON lives.
+      status: `${endpointBase}${statusPath}`,
     }),
-    [baseUrl, llmsTxtPath, agentsMdPath, fullTxtPath, statusPath],
+    [visibleBase, endpointBase, llmsTxtPath, agentsMdPath, fullTxtPath, statusPath],
   );
 
   // Build AI chat URLs from the raw llms.txt URL.

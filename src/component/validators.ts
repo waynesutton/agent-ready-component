@@ -149,6 +149,8 @@ export const pageDocValidator = v.object({
   status: contentStatusValidator,
   isOptional: v.optional(v.boolean()),
   order: v.optional(v.number()),
+  // Optional grouping label so apps with wikis or doc sets can render structured llms.txt.
+  section: v.optional(v.string()),
   descriptionGeneratedByAi: v.optional(v.boolean()),
   deletedAt: v.optional(v.number()),
 });
@@ -205,6 +207,7 @@ export const syncConfigValidator = v.object({
         status: v.optional(contentStatusValidator),
         isOptional: v.optional(v.boolean()),
         order: v.optional(v.number()),
+        section: v.optional(v.string()),
         descriptionGeneratedByAi: v.optional(v.boolean()),
       }),
     ),

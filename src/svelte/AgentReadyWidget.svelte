@@ -4,6 +4,12 @@
   import type { AgentReadyStatus, ReadinessReport, WidgetColors, WidgetPosition, WidgetTheme } from "../client/types.js";
 
   export let appUrl: string;
+  /**
+   * Optional public app URL used for visible file links and AI chat prompts.
+   * Set this when your production frontend lives on a different domain than the endpoint base.
+   * Falls back to status.appUrl from the component, then window.location.origin, then appUrl.
+   */
+  export let publicAppUrl: string | undefined = undefined;
   export let position: WidgetPosition = "floating-bottom-right";
   export let theme: WidgetTheme = "system";
   export let showTestModeBadge: boolean = true;
@@ -52,7 +58,8 @@
   let readiness: ReadinessReport | null = null;
   let readinessInterval: ReturnType<typeof setInterval> | null = null;
 
-  $: readinessUrl = `${appUrl.replace(/\/$/, "")}${readinessPath}`;
+  // Readiness endpoint always lives on the deployment that runs the component.
+  $: readinessUrl = `${(appUrl || "").replace(/\/+$/, "")}${readinessPath}`;
 
   async function fetchReadiness(): Promise<void> {
     try {
@@ -105,12 +112,56 @@
 
   $: anyTabVisible = resolvedHumanTab || resolvedMachineTab || scoreTabVisible;
 
-  $: base = appUrl.replace(/\/$/, "");
+  // Endpoint base: where the widget fetches /llms-status and /llms-readiness.
+  $: endpointBase = (appUrl || (typeof window !== "undefined" ? window.location.origin : "")).replace(
+    /\/+$/,
+    "",
+  );
+
+  // Visible base: shown to humans and AI agents in the file links and chat prompts.
+  // Precedence: publicAppUrl prop -> status.appUrl -> window.location.origin -> appUrl.
+  $: visibleBase = (() => {
+    if (publicAppUrl && publicAppUrl.length > 0) return publicAppUrl.replace(/\/+$/, "");
+    if (currentStatus?.appUrl) return currentStatus.appUrl.replace(/\/+$/, "");
+    if (typeof window !== "undefined") return window.location.origin.replace(/\/+$/, "");
+    return endpointBase;
+  })();
+
+  // Dev-only warning for the common Vite trap where a Convex .site URL leaks into prod.
+  $: {
+    if (typeof window !== "undefined" && visibleBase) {
+      const isProd =
+        typeof process !== "undefined" && process.env && process.env.NODE_ENV === "production";
+      const origin = window.location.origin;
+      const isLocal = /^(http:\/\/localhost|http:\/\/127\.0\.0\.1|http:\/\/\[::1\])/.test(origin);
+      if (
+        !isProd &&
+        !isLocal &&
+        visibleBase.includes(".convex.site") &&
+        !origin.includes(".convex.site")
+      ) {
+        try {
+          const sameHost = new URL(visibleBase).host === new URL(origin).host;
+          if (!sameHost) {
+            console.warn(
+              "[agent-ready] Widget visible URL points to a Convex .site URL while the browser is on a custom domain. " +
+                "Set publicAppUrl on <AgentReadyWidget> or VITE_SITE_URL in your build to avoid leaking the dev URL.",
+            );
+          }
+        } catch {
+          // ignore parse errors
+        }
+      }
+    }
+  }
+
+  $: base = visibleBase;
   $: urls = {
-    llmsTxt: `${base}${llmsTxtPath}`,
-    agentsMd: `${base}${agentsMdPath}`,
-    fullTxt: `${base}${fullTxtPath}`,
-    status: `${base}${statusPath}`,
+    llmsTxt: `${visibleBase}${llmsTxtPath}`,
+    agentsMd: `${visibleBase}${agentsMdPath}`,
+    fullTxt: `${visibleBase}${fullTxtPath}`,
+    // Status link still points at the endpoint base because that is where the JSON lives.
+    status: `${endpointBase}${statusPath}`,
   };
 
   $: encodedLlms = encodeURIComponent(urls.llmsTxt);

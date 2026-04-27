@@ -333,11 +333,14 @@ Create a file called `.env.production.local` in the `example-react` folder with 
 ```
 VITE_CONVEX_URL=https://quixotic-viper-800.convex.cloud
 VITE_CONVEX_SITE_URL=https://quixotic-viper-800.convex.site
+# Optional. Public production domain shown in widget copy links and AI chat prompts.
+# Leave unset to fall back to status.appUrl, then window.location.origin.
+# VITE_SITE_URL=https://yourdomain.com
 ```
 
 Replace `quixotic-viper-800` with the deployment name printed by `npx convex deploy` if yours is different. The `.convex.cloud` URL goes on the first line, the `.convex.site` URL goes on the second.
 
-These URLs tell your production build where to find your Convex backend. Without this file, the built app will not know which server to connect to.
+These URLs tell your production build where to find your Convex backend. Without this file, the built app will not know which server to connect to. If you serve the demo from a custom domain, also set `VITE_SITE_URL` to that domain so the widget shows the right URLs to humans and AI agents.
 
 Once the file exists, deploy everything with one command:
 
@@ -390,6 +393,8 @@ Create a file called `.env.production.local` in the `example-svelte` folder with
 ```
 VITE_CONVEX_URL=https://your-svelte-deployment.convex.cloud
 VITE_CONVEX_SITE_URL=https://your-svelte-deployment.convex.site
+# Optional. Public production domain shown in widget copy links and AI chat prompts.
+# VITE_SITE_URL=https://yourdomain.com
 ```
 
 Replace `your-svelte-deployment` with the deployment name printed by `npx convex deploy`.

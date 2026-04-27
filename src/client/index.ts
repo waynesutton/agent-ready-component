@@ -74,22 +74,30 @@ export function registerRoutes(
 
   const skip = new Set<SkippableRoute>(options.skipRoutes ?? []);
 
-  // Content file routes
-  http.route({
-    path: llmsTxtPath,
-    method: "GET",
-    handler: buildFileRoute(component, "llms.txt", "llms.txt", options),
-  });
-  http.route({
-    path: agentsMdPath,
-    method: "GET",
-    handler: buildFileRoute(component, "agents.md", "agents.md", options),
-  });
-  http.route({
-    path: fullTxtPath,
-    method: "GET",
-    handler: buildFileRoute(component, "llms-full.txt", "llms-full.txt", options),
-  });
+  // Content file routes. Each is skippable so apps that already publish their own
+  // llms.txt, agents.md, or llms-full.txt (static hosting or custom HTTP route)
+  // can opt out without breaking the rest of the integration.
+  if (!skip.has("/llms.txt")) {
+    http.route({
+      path: llmsTxtPath,
+      method: "GET",
+      handler: buildFileRoute(component, "llms.txt", "llms.txt", options),
+    });
+  }
+  if (!skip.has("/agents.md")) {
+    http.route({
+      path: agentsMdPath,
+      method: "GET",
+      handler: buildFileRoute(component, "agents.md", "agents.md", options),
+    });
+  }
+  if (!skip.has("/llms-full.txt")) {
+    http.route({
+      path: fullTxtPath,
+      method: "GET",
+      handler: buildFileRoute(component, "llms-full.txt", "llms-full.txt", options),
+    });
+  }
 
   // Agent readiness file routes (skippable for apps that own these paths)
   if (!skip.has("/robots.txt")) {
@@ -392,11 +400,20 @@ function buildReadinessRoute(
       (["llms.txt", "agents.md", "robots.txt", "sitemap.xml", "agent-skills.json"] as const).map(
         async (ft) => {
           const f = await ctx.runQuery(component.content.getCachedFile, { fileType: ft });
-          return { fileType: ft, exists: f !== null };
+          return { fileType: ft, exists: f !== null, length: f?.content?.length ?? 0 };
         },
       ),
     );
     const cached = new Map(allCached.map((c) => [c.fileType, c.exists]));
+    // Track content length so we can warn when llms.txt or agents.md is suspiciously thin.
+    // Thin content typically means the wizard finished but pages were never imported.
+    const cachedLength = new Map(allCached.map((c) => [c.fileType, c.length]));
+    const llmsTxtLength = cachedLength.get("llms.txt") ?? 0;
+    const agentsMdLength = cachedLength.get("agents.md") ?? 0;
+    // 400 chars is roughly "title + description + a single short link block." Anything below
+    // that is likely missing pages or a sections list. The threshold is intentionally low so
+    // small marketing sites are not flagged.
+    const isThin = (len: number) => len > 0 && len < 400;
 
     const checks: Array<ReadinessCheck> = [
       {
@@ -490,6 +507,38 @@ function buildReadinessRoute(
         detail: "Always on",
         points: 5,
         maxPoints: 5,
+      },
+      // Thin content warnings. Worth zero points so existing scores are unchanged, but the
+      // warn status is surfaced in CLI output and the widget so newcomers know to add pages.
+      {
+        id: "llms_txt_has_content",
+        label: "llms.txt includes pages",
+        category: "content",
+        status: isThin(llmsTxtLength)
+          ? "warn"
+          : llmsTxtLength > 0
+            ? "pass"
+            : "fail",
+        detail: isThin(llmsTxtLength)
+          ? `Only ${llmsTxtLength} bytes. Run npx agent-ready import or add pages to agent-ready.config.json.`
+          : undefined,
+        points: 0,
+        maxPoints: 0,
+      },
+      {
+        id: "agents_md_has_content",
+        label: "agents.md includes pages",
+        category: "content",
+        status: isThin(agentsMdLength)
+          ? "warn"
+          : agentsMdLength > 0
+            ? "pass"
+            : "fail",
+        detail: isThin(agentsMdLength)
+          ? `Only ${agentsMdLength} bytes. Run npx agent-ready import or add pages to agent-ready.config.json.`
+          : undefined,
+        points: 0,
+        maxPoints: 0,
       },
     ];
 

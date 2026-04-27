@@ -9,16 +9,43 @@ import { printCliBanner } from "../lib/banner.mjs";
 
 // Scan convex/http.ts for route paths that would conflict with agent-ready.
 async function detectExistingRoutes(httpTsPath) {
-  if (!existsSync(httpTsPath)) return { sitemap: false, robots: false };
+  const empty = {
+    sitemap: false,
+    robots: false,
+    llmsTxt: false,
+    agentsMd: false,
+    llmsFullTxt: false,
+    agentSkills: false,
+  };
+  if (!existsSync(httpTsPath)) return empty;
   try {
     const src = await readFile(httpTsPath, "utf8");
     return {
       sitemap: /["'`]\/sitemap\.xml["'`]/.test(src),
       robots: /["'`]\/robots\.txt["'`]/.test(src),
+      llmsTxt: /["'`]\/llms\.txt["'`]/.test(src),
+      agentsMd: /["'`]\/agents\.md["'`]/.test(src),
+      llmsFullTxt: /["'`]\/llms-full\.txt["'`]/.test(src),
+      agentSkills: /["'`]\/\.well-known\/agent-skills["'`]/.test(src),
     };
   } catch {
-    return { sitemap: false, robots: false };
+    return empty;
   }
+}
+
+// Detect local static discovery files. We only flag these as "local files detected"
+// because not every Convex app uses Convex static hosting. Many apps host their
+// frontend on Vercel, Netlify, or Cloudflare Pages. Static files in `public/` may
+// or may not be served at the same origin as the Convex HTTP routes.
+function detectStaticFiles() {
+  const cwd = process.cwd();
+  return {
+    llmsTxt: existsSync(path.join(cwd, "public", "llms.txt")),
+    agentsMd: existsSync(path.join(cwd, "public", "agents.md")),
+    llmsFullTxt: existsSync(path.join(cwd, "public", "llms-full.txt")),
+    robotsTxt: existsSync(path.join(cwd, "public", "robots.txt")),
+    sitemapXml: existsSync(path.join(cwd, "public", "sitemap.xml")),
+  };
 }
 
 // Convex wrapper that exposes component functions to browser clients.
@@ -48,6 +75,7 @@ const pageValidator = v.object({
   status: pageStatusValidator,
   isOptional: v.optional(v.boolean()),
   order: v.optional(v.number()),
+  section: v.optional(v.string()),
   descriptionGeneratedByAi: v.optional(v.boolean()),
   deletedAt: v.optional(v.number()),
 });
@@ -251,7 +279,38 @@ export async function setup(_args) {
   console.log("");
 
   const appName = await prompt("App name", "My App");
-  const appUrl = await prompt("App URL (no trailing slash)", "https://example.com");
+  let appUrl = await prompt("App URL (no trailing slash)", "https://example.com");
+  // Normalize: strip trailing slashes so generated links never get double-slashed.
+  appUrl = appUrl.replace(/\/+$/, "");
+
+  // If the entered URL looks like a Convex deployment URL, ask about a custom domain.
+  // The widget and generated files use this URL for visible links and AI chat prompts,
+  // so a `.convex.site` URL leaking into a production bundle is a real problem.
+  if (/\.convex\.site$/i.test(appUrl)) {
+    console.log("");
+    console.log("Detected a Convex `.convex.site` URL.");
+    console.log("This URL is fine for the endpoint base, but visible file links and AI chat prompts");
+    console.log("usually look better on your production domain.");
+    const useCustom = await confirm(
+      "Will users access this app through a custom production domain?",
+      false,
+    );
+    if (useCustom) {
+      const customDomain = await prompt(
+        "Production domain (e.g. https://yourdomain.com)",
+        "",
+      );
+      if (customDomain.trim()) {
+        appUrl = customDomain.trim().replace(/\/+$/, "");
+        console.log("");
+        console.log("Vite tip:");
+        console.log("  Set VITE_SITE_URL to your production domain in your build env.");
+        console.log("  Pass it to the widget as `publicAppUrl` and keep VITE_CONVEX_SITE_URL");
+        console.log("  as the endpoint base. This avoids leaking the dev .site URL into prod bundles.");
+      }
+    }
+  }
+
   const description = await prompt("One-line description for LLMs", "A useful app.");
   const analyticsEnabled = await confirm("Enable analytics?", false);
   const aiDescriptionsEnabled = await confirm("Enable AI description generation?", false);
@@ -262,7 +321,11 @@ export async function setup(_args) {
   // Detect existing routes in convex/http.ts to avoid registration conflicts.
   const httpTsPath = path.join(process.cwd(), "convex", "http.ts");
   const existingRoutes = await detectExistingRoutes(httpTsPath);
+  const staticFiles = detectStaticFiles();
 
+  // Track skipRoutes additions so we can show users the exact registerRoutes() snippet
+  // they need at the end of setup.
+  const skipRoutesList = [];
   let sitemapEnabled = true;
   let robotsTxtEnabled = true;
 
@@ -277,6 +340,7 @@ export async function setup(_args) {
     sitemapEnabled = sitemapChoice === "replace";
     if (sitemapChoice === "keep-mine") {
       console.log("  agent-ready will skip /sitemap.xml registration. Your existing route stays.");
+      skipRoutesList.push('"/sitemap.xml"');
     }
   }
 
@@ -291,20 +355,71 @@ export async function setup(_args) {
     robotsTxtEnabled = robotsChoice === "replace";
     if (robotsChoice === "keep-mine") {
       console.log("  agent-ready will skip /robots.txt registration. Your existing route stays.");
+      skipRoutesList.push('"/robots.txt"');
     }
   }
 
-  // Check for static robots.txt in public/ (e.g. from self-hosting)
-  const publicRobots = path.join(process.cwd(), "public", "robots.txt");
-  if (!existingRoutes.robots && existsSync(publicRobots)) {
+  // Core discovery file conflicts. Each is skippable so apps that already serve their own
+  // llms.txt, agents.md, or llms-full.txt can keep them. We label local public/ files as
+  // "local files detected" because not every Convex app uses Convex static hosting.
+  for (const probe of [
+    { route: "/llms.txt", routeFlag: existingRoutes.llmsTxt, staticFlag: staticFiles.llmsTxt, label: "llms.txt", staticPath: "public/llms.txt" },
+    { route: "/agents.md", routeFlag: existingRoutes.agentsMd, staticFlag: staticFiles.agentsMd, label: "agents.md", staticPath: "public/agents.md" },
+    { route: "/llms-full.txt", routeFlag: existingRoutes.llmsFullTxt, staticFlag: staticFiles.llmsFullTxt, label: "llms-full.txt", staticPath: "public/llms-full.txt" },
+  ]) {
+    if (probe.routeFlag) {
+      console.log("");
+      console.log(`Detected existing ${probe.route} route in convex/http.ts.`);
+      const choice = await choose(
+        `How do you want to handle ${probe.route}?`,
+        ["keep-mine", "replace"],
+        "keep-mine",
+      );
+      if (choice === "keep-mine") {
+        console.log(
+          `  agent-ready will skip ${probe.route} registration. Your existing route stays.`,
+        );
+        skipRoutesList.push(`"${probe.route}"`);
+      }
+    } else if (probe.staticFlag) {
+      console.log("");
+      console.log(`Local files detected: ${probe.staticPath}.`);
+      console.log(
+        "  This file lives in your `public/` folder. It is served by your frontend host",
+      );
+      console.log(
+        "  (Vercel, Netlify, Cloudflare Pages, Convex static hosting, etc.) at the same path.",
+      );
+      const choice = await choose(
+        `How do you want to handle ${probe.route}?`,
+        ["keep-mine", "let-agent-ready-serve"],
+        "keep-mine",
+      );
+      if (choice === "keep-mine") {
+        console.log(
+          `  agent-ready will skip ${probe.route} HTTP route. Your static file stays in charge.`,
+        );
+        console.log(
+          `  Tip: run \`npx agent-ready import --from ${probe.staticPath}\` to migrate content into config.`,
+        );
+        skipRoutesList.push(`"${probe.route}"`);
+      }
+    }
+  }
+
+  // Check for static robots.txt in public/ when no Convex route exists yet.
+  if (!existingRoutes.robots && staticFiles.robotsTxt) {
     console.log("");
-    console.log("Detected public/robots.txt (may conflict with static hosting).");
+    console.log("Local files detected: public/robots.txt.");
     const staticChoice = await choose(
       "How do you want to handle robots.txt?",
       ["keep-mine", "replace", "skip"],
       "keep-mine",
     );
     robotsTxtEnabled = staticChoice === "replace";
+    if (staticChoice === "keep-mine") {
+      skipRoutesList.push('"/robots.txt"');
+    }
   }
 
   // Default config filename. Legacy llms-txt.config.json is auto-migrated below.
@@ -367,7 +482,9 @@ export async function setup(_args) {
       widgetShowPerplexity: existing.settings?.widgetShowPerplexity ?? true,
       widgetColors: existing.settings?.widgetColors ?? {},
       theme: existing.settings?.theme ?? "system",
-      fullTxtEnabled: existing.settings?.fullTxtEnabled ?? false,
+      // New setups get the rich llms-full.txt enabled by default. Existing configs keep
+      // their current value to avoid surprising changes on rerun.
+      fullTxtEnabled: existing.settings?.fullTxtEnabled ?? true,
       permissiveMode: existing.settings?.permissiveMode ?? false,
       versioningEnabled: existing.settings?.versioningEnabled ?? false,
       sitemapEnabled: sitemapEnabled,
@@ -396,11 +513,12 @@ export async function setup(_args) {
   console.log("");
   console.log("Next steps:");
   console.log("  1. Add registerRoutes() to convex/http.ts (see INTEGRATION.md)");
-  if (!sitemapEnabled || !robotsTxtEnabled) {
-    const skipped = [];
-    if (!robotsTxtEnabled) skipped.push('"/robots.txt"');
-    if (!sitemapEnabled) skipped.push('"/sitemap.xml"');
-    console.log(`     Use skipRoutes to avoid conflicts: registerRoutes(http, components.agentReady, { skipRoutes: [${skipped.join(", ")}] })`);
+  // Deduplicate while preserving order; users want one canonical snippet to copy.
+  const skipRoutesUnique = Array.from(new Set(skipRoutesList));
+  if (skipRoutesUnique.length > 0) {
+    console.log(
+      `     Use skipRoutes to avoid conflicts: registerRoutes(http, components.agentReady, { skipRoutes: [${skipRoutesUnique.join(", ")}] })`,
+    );
   }
   console.log("  2. Add <AgentReadyWidget /> to your app layout");
   console.log("  3. (Optional) Add a settings page using <AgentReadySettingsPanel />");
@@ -410,6 +528,22 @@ export async function setup(_args) {
   console.log("Your files will be available at:");
   console.log("  https://<your-deployment>.convex.site/llms.txt");
   console.log("  https://<your-deployment>.convex.site/agents.md");
+
+  // Warn when the saved config has no pages or endpoints. Without content, llms.txt is
+  // basically a stub and agents will have nothing to discover. Point users at import/discover.
+  const pageCount = Array.isArray(nextConfig.pages) ? nextConfig.pages.length : 0;
+  const endpointCount = Array.isArray(nextConfig.endpoints) ? nextConfig.endpoints.length : 0;
+  if (pageCount === 0 && endpointCount === 0) {
+    console.log("");
+    console.log("Heads up: your config has no pages or endpoints yet.");
+    console.log("  Generated llms.txt will only include your title and description.");
+    console.log("  Add content with one of:");
+    if (staticFiles.llmsTxt) {
+      console.log("    npx agent-ready import --from public/llms.txt");
+    }
+    console.log("    npx agent-ready discover");
+    console.log("    Edit agent-ready.config.json directly, then run npx agent-ready sync");
+  }
   if (wrapperScaffolded) {
     console.log("");
     console.log("Wrapper files were created at convex/agentReady/.");

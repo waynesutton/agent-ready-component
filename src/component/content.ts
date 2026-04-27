@@ -118,6 +118,7 @@ export const upsertPage = mutation({
     status: v.optional(contentStatusValidator),
     isOptional: v.optional(v.boolean()),
     order: v.optional(v.number()),
+    section: v.optional(v.string()),
     descriptionGeneratedByAi: v.optional(v.boolean()),
   },
   returns: v.id("pages"),
@@ -152,6 +153,7 @@ export const upsertPage = mutation({
         status: args.status ?? "published",
         isOptional: args.isOptional,
         order: args.order,
+        section: args.section,
         descriptionGeneratedByAi: args.descriptionGeneratedByAi,
       });
     }
@@ -162,6 +164,7 @@ export const upsertPage = mutation({
       status: args.status ?? existing.status,
       isOptional: args.isOptional ?? existing.isOptional,
       order: args.order ?? existing.order,
+      section: args.section ?? existing.section,
       descriptionGeneratedByAi:
         args.descriptionGeneratedByAi ?? existing.descriptionGeneratedByAi,
       deletedAt: undefined,

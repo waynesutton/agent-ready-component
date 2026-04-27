@@ -96,6 +96,9 @@ export default defineSchema({
     status: contentStatus,
     isOptional: v.optional(v.boolean()),
     order: v.optional(v.number()),
+    // Optional grouping label for llms.txt rendering (e.g. "Wiki", "Docs", "Pages").
+    // Pages without a section are rendered under the default "Pages" heading.
+    section: v.optional(v.string()),
     descriptionGeneratedByAi: v.optional(v.boolean()),
     deletedAt: v.optional(v.number()),
   })

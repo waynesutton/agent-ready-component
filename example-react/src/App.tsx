@@ -10,6 +10,7 @@ import Analytics from "./Analytics.tsx";
 import { AuthGate, useAuth } from "./auth.tsx";
 
 const appUrl = import.meta.env.VITE_CONVEX_SITE_URL as string;
+const publicAppUrl = import.meta.env.VITE_SITE_URL as string | undefined;
 const installGuideUrl =
   "https://github.com/waynesutton/agent-ready-component#install";
 
@@ -65,7 +66,12 @@ export default function App() {
         <a href="https://docs.convex.dev/llms.txt" target="_blank" rel="noreferrer">docs.convex.dev/llms.txt</a>
       </div>
 
-      <AgentReadyWidget appUrl={appUrl} position="floating-bottom-right" theme="dark" />
+      <AgentReadyWidget
+        appUrl={appUrl}
+        publicAppUrl={publicAppUrl}
+        position="floating-bottom-right"
+        theme="dark"
+      />
     </div>
   );
 }
@@ -291,6 +297,7 @@ export default http;`}</code></pre>
 
 <AgentReadyWidget
   appUrl={import.meta.env.VITE_CONVEX_SITE_URL}
+  publicAppUrl={import.meta.env.VITE_SITE_URL}
   position="floating-bottom-right"
   theme="dark"
 />`}</code></pre>
