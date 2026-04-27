@@ -7,6 +7,20 @@ import { prompt, confirm, choose } from "../lib/prompts.mjs";
 import { convexRun, formatError } from "../lib/convex.mjs";
 import { printCliBanner } from "../lib/banner.mjs";
 
+// Scan convex/http.ts for route paths that would conflict with agent-ready.
+async function detectExistingRoutes(httpTsPath) {
+  if (!existsSync(httpTsPath)) return { sitemap: false, robots: false };
+  try {
+    const src = await readFile(httpTsPath, "utf8");
+    return {
+      sitemap: /["'`]\/sitemap\.xml["'`]/.test(src),
+      robots: /["'`]\/robots\.txt["'`]/.test(src),
+    };
+  } catch {
+    return { sitemap: false, robots: false };
+  }
+}
+
 // Convex wrapper that exposes component functions to browser clients.
 const CONTENT_WRAPPER = `import { action, mutation, query } from "../_generated/server";
 import { components } from "../_generated/api";
@@ -158,6 +172,10 @@ function formatMountLocation(mountLocation) {
   return mountLocation;
 }
 
+function rootLayoutFile(framework) {
+  return framework === "svelte" ? "src/routes/+layout.svelte" : "src/App.tsx";
+}
+
 function widgetInstallSnippet(framework, widgetPosition) {
   if (framework === "svelte") {
     return `<script lang="ts">
@@ -184,12 +202,16 @@ export default function App() {
 }
 
 function printWidgetInstallGuide({ framework, mountLocation, widgetPosition }) {
+  const rootFile = rootLayoutFile(framework);
   console.log("");
   console.log("Widget install:");
   console.log(`  Best default: root app layout. You picked: ${formatMountLocation(mountLocation)}.`);
   console.log("  Add it once so the widget follows every page without duplicating.");
   console.log("");
-  console.log("Copy and paste this into your app:");
+  console.log(`Open ${rootFile} in your editor and paste the snippet below.`);
+  console.log(`  Or copy this whole block (file path + snippet) into Cursor, Claude, or any AI agent and ask it to add the widget to your root layout at ${rootFile}.`);
+  console.log("");
+  console.log(`File: ${rootFile}`);
   console.log("");
   console.log(widgetInstallSnippet(framework, widgetPosition));
 }
@@ -237,6 +259,54 @@ export async function setup(_args) {
     ? await choose("AI provider", ["claude", "openai"], "claude")
     : "claude";
 
+  // Detect existing routes in convex/http.ts to avoid registration conflicts.
+  const httpTsPath = path.join(process.cwd(), "convex", "http.ts");
+  const existingRoutes = await detectExistingRoutes(httpTsPath);
+
+  let sitemapEnabled = true;
+  let robotsTxtEnabled = true;
+
+  if (existingRoutes.sitemap) {
+    console.log("");
+    console.log("Detected existing /sitemap.xml route in convex/http.ts.");
+    const sitemapChoice = await choose(
+      "How do you want to handle /sitemap.xml?",
+      ["keep-mine", "replace", "skip"],
+      "keep-mine",
+    );
+    sitemapEnabled = sitemapChoice === "replace";
+    if (sitemapChoice === "keep-mine") {
+      console.log("  agent-ready will skip /sitemap.xml registration. Your existing route stays.");
+    }
+  }
+
+  if (existingRoutes.robots) {
+    console.log("");
+    console.log("Detected existing /robots.txt route in convex/http.ts.");
+    const robotsChoice = await choose(
+      "How do you want to handle /robots.txt?",
+      ["keep-mine", "replace", "skip"],
+      "keep-mine",
+    );
+    robotsTxtEnabled = robotsChoice === "replace";
+    if (robotsChoice === "keep-mine") {
+      console.log("  agent-ready will skip /robots.txt registration. Your existing route stays.");
+    }
+  }
+
+  // Check for static robots.txt in public/ (e.g. from self-hosting)
+  const publicRobots = path.join(process.cwd(), "public", "robots.txt");
+  if (!existingRoutes.robots && existsSync(publicRobots)) {
+    console.log("");
+    console.log("Detected public/robots.txt (may conflict with static hosting).");
+    const staticChoice = await choose(
+      "How do you want to handle robots.txt?",
+      ["keep-mine", "replace", "skip"],
+      "keep-mine",
+    );
+    robotsTxtEnabled = staticChoice === "replace";
+  }
+
   // Default config filename. Legacy llms-txt.config.json is auto-migrated below.
   const configPath = path.join(process.cwd(), "agent-ready.config.json");
   const legacyConfigPath = path.join(process.cwd(), "llms-txt.config.json");
@@ -262,7 +332,7 @@ export async function setup(_args) {
     ? await choose("Widget framework", WIDGET_FRAMEWORKS, "react")
     : null;
   const widgetMountLocation = showWidgetInstallCode
-    ? await choose("Where will you add the widget?", WIDGET_MOUNT_LOCATIONS, "root")
+    ? await choose("Where will you add the widget? (root recommended)", WIDGET_MOUNT_LOCATIONS, "root")
     : null;
   const selectedWidgetPosition = widgetMountLocation
     ? resolveWidgetPosition(widgetMountLocation)
@@ -300,6 +370,8 @@ export async function setup(_args) {
       fullTxtEnabled: existing.settings?.fullTxtEnabled ?? false,
       permissiveMode: existing.settings?.permissiveMode ?? false,
       versioningEnabled: existing.settings?.versioningEnabled ?? false,
+      sitemapEnabled: sitemapEnabled,
+      robotsTxtEnabled: robotsTxtEnabled,
     },
     pages: existing.pages ?? [],
     endpoints: existing.endpoints ?? [],
@@ -324,6 +396,12 @@ export async function setup(_args) {
   console.log("");
   console.log("Next steps:");
   console.log("  1. Add registerRoutes() to convex/http.ts (see INTEGRATION.md)");
+  if (!sitemapEnabled || !robotsTxtEnabled) {
+    const skipped = [];
+    if (!robotsTxtEnabled) skipped.push('"/robots.txt"');
+    if (!sitemapEnabled) skipped.push('"/sitemap.xml"');
+    console.log(`     Use skipRoutes to avoid conflicts: registerRoutes(http, components.agentReady, { skipRoutes: [${skipped.join(", ")}] })`);
+  }
   console.log("  2. Add <AgentReadyWidget /> to your app layout");
   console.log("  3. (Optional) Add a settings page using <AgentReadySettingsPanel />");
   console.log("     See INTEGRATION.md for the full example.");

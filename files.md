@@ -46,8 +46,8 @@ Plain text map of every file in the `@waynesutton/agent-ready` repo. This is a C
 
 ## Component source — `src/`
 
-- `src/client/index.ts`: Public package entry, exports `registerRoutes`, `AgentReady` class client, `createTypedAgentReadyClient`, types, CORS handling, and all agent readiness routes (`/robots.txt`, `/sitemap.xml`, `/.well-known/agent-skills`, `/llms-readiness`)
-- `src/client/types.ts`: Shared type definitions for settings, pages, endpoints, cached files, route names, event payloads, `WidgetColors`, widget position, `ContentSignals`, `ReadinessReport`, `ReadinessCheck`, and `AgentReadyStatus` with readiness fields, `widgetShowScoreTab`, and 7 widget display mode fields
+- `src/client/index.ts`: Public package entry, exports `registerRoutes`, `AgentReady` class client, `createTypedAgentReadyClient`, types, CORS handling, and all agent readiness routes (`/robots.txt`, `/sitemap.xml`, `/.well-known/agent-skills`, `/llms-readiness`). Supports `skipRoutes` option to avoid conflicts with host app routes
+- `src/client/types.ts`: Shared type definitions for settings, pages, endpoints, cached files, route names, event payloads, `WidgetColors`, widget position, `ContentSignals`, `ReadinessReport`, `ReadinessCheck`, `AgentReadyStatus` with readiness fields, `widgetShowScoreTab`, 7 widget display mode fields, and `SkippableRoute` type for `skipRoutes`
 - `src/component/convex.config.ts`: Component declaration via `defineComponent("agentReady")`
 - `src/component/_generated/`: Generated Convex component bindings created by `npx convex codegen --component-dir ./src/component`
 - `src/component/schema.ts`: `settings`, `pages`, `apiEndpoints`, `cachedFiles`, `agentRequests`, `pageVersions` tables with indexes. Settings include 9 agent readiness fields, `widgetShowScoreTab`, and 7 widget display mode fields (`widgetCleanMode`, `widgetShowHumanTab`, `widgetShowMachineTab`, `widgetShowChatLinks`, `widgetShowChatGPT`, `widgetShowClaude`, `widgetShowPerplexity`)
@@ -85,7 +85,7 @@ Plain text map of every file in the `@waynesutton/agent-ready` repo. This is a C
 
 - `cli/bin.mjs`: CLI entry, resolves subcommand
 - `cli/index.mjs`: CLI dispatcher and shared helpers
-- `cli/commands/setup.mjs`: Interactive first-run wizard. Writes `agent-ready.config.json`, scaffolds Convex wrapper files at `convex/agentReady/content.ts` and `convex/agentReady/analytics.ts`, syncs config to the deployment, prompts for optional React/Svelte widget install guidance, and prints next steps including the optional settings panel
+- `cli/commands/setup.mjs`: Interactive first-run wizard. Writes `agent-ready.config.json`, scaffolds Convex wrapper files at `convex/agentReady/content.ts` and `convex/agentReady/analytics.ts`, detects existing `/sitemap.xml` and `/robots.txt` routes in `convex/http.ts` and `public/robots.txt` to avoid conflicts, syncs config to the deployment, prompts for optional React/Svelte widget install guidance with a clear destination file (`src/App.tsx` or `src/routes/+layout.svelte`) and AI agent prompt suggestion, and prints next steps including the `skipRoutes` snippet when conflicts are detected
 - `cli/commands/sync.mjs`: Reads `agent-ready.config.json`, applies to deployment
 - `cli/commands/status.mjs`: Prints cache and job state
 - `cli/commands/regenerate.mjs`: Queues a `regenerateAll` workpool job

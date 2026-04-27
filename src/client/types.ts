@@ -174,6 +174,8 @@ export type ReadinessReport = {
   generatedAt: number;
 };
 
+export type SkippableRoute = "/robots.txt" | "/sitemap.xml" | "/.well-known/agent-skills";
+
 export type RegisterRoutesOptions = {
   llmsTxtPath?: string;
   agentsMdPath?: string;
@@ -184,6 +186,8 @@ export type RegisterRoutesOptions = {
   sitemapPath?: string;
   agentSkillsPath?: string;
   readinessPath?: string;
+  /** Routes to skip registration for. Use when the host app already defines these paths. */
+  skipRoutes?: SkippableRoute[];
   routes?: Partial<Record<RouteName, RouteHandler>>;
   onEvent?: OnEventHandler;
   onGenerationComplete?: unknown;

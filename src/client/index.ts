@@ -10,6 +10,7 @@ import type {
   ReadinessCheck,
   RegisterRoutesOptions,
   RouteName,
+  SkippableRoute,
 } from "./types.js";
 
 export * from "./types.js";
@@ -71,6 +72,8 @@ export function registerRoutes(
   const agentSkillsPath = options.agentSkillsPath ?? DEFAULT_PATHS.agentSkills;
   const readinessPath = options.readinessPath ?? DEFAULT_PATHS.readiness;
 
+  const skip = new Set<SkippableRoute>(options.skipRoutes ?? []);
+
   // Content file routes
   http.route({
     path: llmsTxtPath,
@@ -88,22 +91,28 @@ export function registerRoutes(
     handler: buildFileRoute(component, "llms-full.txt", "llms-full.txt", options),
   });
 
-  // Agent readiness file routes
-  http.route({
-    path: robotsTxtPath,
-    method: "GET",
-    handler: buildFileRoute(component, "robots.txt", "robots.txt", options),
-  });
-  http.route({
-    path: sitemapPath,
-    method: "GET",
-    handler: buildFileRoute(component, "sitemap.xml", "sitemap.xml", options),
-  });
-  http.route({
-    path: agentSkillsPath,
-    method: "GET",
-    handler: buildFileRoute(component, "agent-skills", "agent-skills.json", options),
-  });
+  // Agent readiness file routes (skippable for apps that own these paths)
+  if (!skip.has("/robots.txt")) {
+    http.route({
+      path: robotsTxtPath,
+      method: "GET",
+      handler: buildFileRoute(component, "robots.txt", "robots.txt", options),
+    });
+  }
+  if (!skip.has("/sitemap.xml")) {
+    http.route({
+      path: sitemapPath,
+      method: "GET",
+      handler: buildFileRoute(component, "sitemap.xml", "sitemap.xml", options),
+    });
+  }
+  if (!skip.has("/.well-known/agent-skills")) {
+    http.route({
+      path: agentSkillsPath,
+      method: "GET",
+      handler: buildFileRoute(component, "agent-skills", "agent-skills.json", options),
+    });
+  }
 
   // Analytics route
   http.route({

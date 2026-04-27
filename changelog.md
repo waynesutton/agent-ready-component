@@ -4,6 +4,12 @@ All notable changes to `@waynesutton/agent-ready` (formerly `@convex-dev/llms-tx
 
 ## [Unreleased]
 
+### Added
+
+- `skipRoutes` option on `registerRoutes()` lets apps skip registration of `/robots.txt`, `/sitemap.xml`, or `/.well-known/agent-skills` when the host app already owns those paths. Prevents the fatal "Path already in use" error at deploy time
+- `SkippableRoute` type export from `@waynesutton/agent-ready` for type-safe `skipRoutes` arrays
+- CLI setup wizard route conflict detection. `npx agent-ready setup` now scans `convex/http.ts` for existing `/sitemap.xml` and `/robots.txt` routes and checks for `public/robots.txt` (common with `@convex-dev/self-hosting`). When conflicts are found, the wizard prompts: keep existing route (agent-ready skips it), replace with agent-ready's route, or skip for now. The chosen flags are written to `agent-ready.config.json` and the next steps output prints the matching `skipRoutes` snippet
+
 ### Changed
 
 - Made `README.md` the canonical app developer install guide. `docs/install.md` and `docs/install.html` now point readers back to the README install section. Added internal README-style `/docs` pages to both demo apps, pointed demo `Docs` links to those pages, and kept `https://diffs.com/docs` as a Diffs by Pierre reference resource
@@ -23,6 +29,7 @@ All notable changes to `@waynesutton/agent-ready` (formerly `@convex-dev/llms-tx
 
 - Block-style ASCII `agent-ready` logo for CLI setup and help output
 - Setup wizard widget install guidance. `npx agent-ready setup` now asks whether to show widget code, asks for React or Svelte, asks where the widget will be mounted with root layout as the recommended default, and prints copyable code for the selected framework
+- Clearer widget install output in `npx agent-ready setup`. Mount prompt now reads "Where will you add the widget? (root recommended)". The printed guide names the exact destination file per framework (`src/App.tsx` for React, `src/routes/+layout.svelte` for Svelte), shows a `File: <path>` header above the snippet, and suggests copying the whole block into Cursor, Claude, or any AI agent so it can wire the widget into the root layout automatically
 - Synced `README.md` and `docs/install.md` wizard prompt descriptions to mention the new optional widget install guide step
 - PRD: `prds/setup-widget-prompt.md`
 - PRD: `prds/svelte-check-cleanup.md`
