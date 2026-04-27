@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import { createAgentReadyStatusStore } from "./store.js";
   import type { AgentReadyStatus, ReadinessReport, WidgetColors, WidgetPosition, WidgetTheme } from "../client/types.js";
 
@@ -33,8 +33,44 @@
   export let statusPath: string = "/llms-status";
   export let readinessPath: string = "/llms-readiness";
 
+  // Mobile collapse controls. Defaults preserve existing desktop behavior.
+  export let mobileCollapse: boolean = true;
+  export let mobileBreakpoint: number = 480;
+  export let defaultMobileCollapsed: boolean = true;
+
   type Tab = "HUMAN" | "MACHINE" | "SCORE";
   let tab: Tab = "HUMAN";
+
+  // Mobile viewport detection via matchMedia. SSR safe: stays false on the server.
+  let isMobile: boolean = false;
+  let collapsed: boolean = defaultMobileCollapsed;
+  let mql: MediaQueryList | null = null;
+  function handleMediaChange(event: MediaQueryListEvent): void {
+    isMobile = event.matches;
+  }
+
+  onMount(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    mql = window.matchMedia(`(max-width: ${mobileBreakpoint}px)`);
+    isMobile = mql.matches;
+    if (mql.addEventListener) {
+      mql.addEventListener("change", handleMediaChange);
+    } else {
+      mql.addListener(handleMediaChange);
+    }
+  });
+
+  onDestroy(() => {
+    if (!mql) return;
+    if (mql.removeEventListener) {
+      mql.removeEventListener("change", handleMediaChange);
+    } else {
+      mql.removeListener(handleMediaChange);
+    }
+  });
+
+  $: mobileActive = isMobile && mobileCollapse;
+  $: showPanel = !mobileActive || !collapsed;
 
   const status = createAgentReadyStatusStore({ appUrl, statusPath });
   let currentStatus: AgentReadyStatus | null = null;
@@ -171,11 +207,13 @@
     perplexity: `https://www.perplexity.ai/?q=Read+this+URL+${encodedLlms}+and+summarize+the+app`,
   };
 
-  function positionStyles(pos: WidgetPosition): string {
+  function positionStyles(pos: WidgetPosition, mobile: boolean): string {
+    // Tighter insets on mobile so the widget never collides with safe-area edges.
+    const edge = mobile ? 12 : 24;
     if (pos === "footer") return "position: relative; margin: 24px auto;";
-    if (pos === "floating-bottom-left") return "position: fixed; bottom: 24px; left: 24px; z-index: 9999;";
-    if (pos === "floating-center") return "position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 9999;";
-    return "position: fixed; bottom: 24px; right: 24px; z-index: 9999;";
+    if (pos === "floating-bottom-left") return `position: fixed; bottom: ${edge}px; left: ${edge}px; z-index: 9999;`;
+    if (pos === "floating-center") return `position: fixed; bottom: ${edge}px; left: 50%; transform: translateX(-50%); z-index: 9999;`;
+    return `position: fixed; bottom: ${edge}px; right: ${edge}px; z-index: 9999;`;
   }
 
   $: colorVarStyle = [
@@ -187,7 +225,11 @@
     colors.accent ? `--agent-ready-accent: ${colors.accent}` : "",
   ].filter(Boolean).join("; ");
 
-  $: widgetStyle = `${positionStyles(position)}; ${colorVarStyle}`;
+  $: widgetWidthStyle = mobileActive
+    ? "width: min(280px, calc(100vw - 24px)); max-width: calc(100vw - 24px);"
+    : "width: 280px;";
+
+  $: widgetStyle = `${positionStyles(position, mobileActive)}; ${widgetWidthStyle}; ${colorVarStyle}`;
 
   async function copy(url: string): Promise<void> {
     try {
@@ -199,7 +241,7 @@
 </script>
 
 {#if anyTabVisible}
-<div class="widget" data-theme={theme} style={widgetStyle}>
+<div class="widget" class:mobile={mobileActive} data-theme={theme} style={widgetStyle}>
   <div class="tabs">
     {#if resolvedHumanTab}
       <button class:active={tab === "HUMAN"} on:click={() => (tab = "HUMAN")}>HUMAN</button>
@@ -210,9 +252,26 @@
     {#if scoreTabVisible}
       <button class:active={tab === "SCORE"} on:click={() => (tab = "SCORE")}>SCORE</button>
     {/if}
+    {#if mobileActive}
+      <button
+        type="button"
+        class="mobile-toggle"
+        aria-expanded={!collapsed}
+        aria-label={collapsed ? "Expand widget" : "Collapse widget"}
+        on:click={() => (collapsed = !collapsed)}
+      >
+        {#if collapsed}
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="currentColor"><path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"/></svg>
+        {:else}
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="currentColor"><path d="M213.66,165.66a8,8,0,0,1-11.32,0L128,91.31,53.66,165.66a8,8,0,0,1-11.32-11.32l80-80a8,8,0,0,1,11.32,0l80,80A8,8,0,0,1,213.66,165.66Z"/></svg>
+        {/if}
+      </button>
+    {/if}
   </div>
 
-  {#if tab === "SCORE"}
+  {#if !showPanel}
+    <!-- collapsed on mobile -->
+  {:else if tab === "SCORE"}
     <div class="panel">
       {#if !readiness}
         <p class="meta" style="margin: 0;">Loading readiness...</p>
@@ -346,6 +405,21 @@
     background: var(--agent-ready-tab-active-bg, #2a2a2a);
     color: var(--agent-ready-text-active, #e5e5e5);
     font-weight: 600;
+  }
+  .tabs button.mobile-toggle {
+    flex: 0 0 auto;
+    width: 40px;
+    min-width: 0;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-left: 1px solid var(--agent-ready-panel-border, #333333);
+    color: var(--agent-ready-text-inactive, #888888);
+  }
+  /* On mobile, let HUMAN/MACHINE/SCORE tabs shrink so the toggle still fits. */
+  .widget.mobile .tabs button {
+    min-width: 0;
   }
   .panel {
     padding: 12px;

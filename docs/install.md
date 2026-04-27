@@ -188,6 +188,9 @@ Use `appUrl` for the Convex endpoint URL (`*.convex.site`) and `publicAppUrl` fo
 | `showDescription` | `boolean` | config value |
 | `showMeta` | `boolean` | config value |
 | `showScoreTab` | `boolean` | config value |
+| `mobileCollapse` | `boolean` | `true`. Set to `false` to disable the mobile collapsed presentation. |
+| `mobileBreakpoint` | `number` | `480`. Viewport width below which the widget enters mobile mode. |
+| `defaultMobileCollapsed` | `boolean` | `true`. Initial collapsed state when the widget enters mobile mode. |
 | `colors` | `Partial<WidgetColors>` | `{}` |
 
 All `show*` props are optional. When omitted, the widget reads the matching `widgetShow*` value from your `agent-ready.config.json` (via the `/llms-status` endpoint). Change the config, run `npx agent-ready sync`, and the widget updates without code changes. The SCORE tab defaults to hidden. Set `widgetShowScoreTab: true` in your config or pass `showScoreTab={true}` as a prop to enable it.

@@ -42,11 +42,53 @@ You need:
 npm install @waynesutton/agent-ready @convex-dev/crons @convex-dev/workpool
 ```
 
+If you only need the Agent Ready package:
+
+```bash
+npm install @waynesutton/agent-ready
+```
+
+To upgrade Agent Ready to the latest published npm version:
+
+```bash
+npm install @waynesutton/agent-ready@latest
+```
+
 If Convex will host your frontend too, install static hosting:
 
 ```bash
 npm install @convex-dev/static-hosting
 ```
+
+### Uninstall the package
+
+Remove only Agent Ready:
+
+```bash
+npm uninstall @waynesutton/agent-ready
+```
+
+If you installed the full set from this guide and no other code uses those packages, remove them together:
+
+```bash
+npm uninstall @waynesutton/agent-ready @convex-dev/crons @convex-dev/workpool
+```
+
+If you installed Convex static hosting only for this integration, remove it too:
+
+```bash
+npm uninstall @convex-dev/static-hosting
+```
+
+Then remove the related code from your app:
+
+- Delete `app.use(agentReady)` from `convex/convex.config.ts`
+- Delete `registerRoutes(http, components.agentReady)` from `convex/http.ts`
+- Remove `AgentReadyWidget`, `UpdateBanner`, and any `@waynesutton/agent-ready` imports from your frontend
+- Remove generated wrapper files under `convex/agentReady/` if you are no longer using them
+- Delete `agent-ready.config.json` if you do not plan to reinstall
+
+For more context on removing or changing component wiring, see the Convex docs for [Using Components](https://docs.convex.dev/components/using) and [Understanding Components](https://docs.convex.dev/components/understanding).
 
 ### 2. Register the Convex component
 
@@ -342,6 +384,16 @@ Control which tabs, content sections, and AI chat links the widget shows. Set th
 | `widgetShowPerplexity` | `true` | Show or hide the "Open in Perplexity" link |
 
 When all tabs are hidden, the widget renders nothing. When only one tab is visible, its tab button still renders so the label shows, but there is nothing to toggle.
+
+### Mobile collapse
+
+Below 480px the widget renders a compact tab strip with a Phosphor caret toggle and starts collapsed. Tapping HUMAN, MACHINE, or SCORE switches the active tab without expanding. Tapping the caret expands or collapses the active panel. All three behaviors are tunable per widget instance:
+
+| React prop | Svelte prop | Default | Notes |
+| --- | --- | --- | --- |
+| `mobileCollapse` | `mobileCollapse` | `true` | Set to `false` to keep the widget always expanded. |
+| `mobileBreakpoint` | `mobileBreakpoint` | `480` | Pixel width that triggers the mobile presentation. |
+| `defaultMobileCollapsed` | `defaultMobileCollapsed` | `true` | Initial collapsed state when the widget first enters mobile. |
 
 Example config for a minimal MACHINE-only widget with no chat links:
 
