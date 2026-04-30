@@ -24,6 +24,7 @@ export const runGeneration = internalAction({
     const agentSkills = settings.agentSkillsEnabled
       ? renderAgentSkills(settings, pages, endpoints)
       : null;
+    const rssFeed = settings.rssEnabled ? renderRssFeed(settings, pages) : null;
 
     type FileEntry = { fileType: string; content: string };
     const files: Array<FileEntry> = [
@@ -34,6 +35,7 @@ export const runGeneration = internalAction({
     if (robotsTxt) files.push({ fileType: "robots.txt", content: robotsTxt });
     if (sitemapXml) files.push({ fileType: "sitemap.xml", content: sitemapXml });
     if (agentSkills) files.push({ fileType: "agent-skills.json", content: agentSkills });
+    if (rssFeed) files.push({ fileType: "rss.xml", content: rssFeed });
 
     const versions = await Promise.all(
       files.map((f) =>
@@ -42,7 +44,7 @@ export const runGeneration = internalAction({
     );
 
     const results = files.map((f, i) => ({
-      fileType: f.fileType as "llms.txt" | "agents.md" | "llms-full.txt" | "robots.txt" | "sitemap.xml" | "agent-skills.json",
+      fileType: f.fileType as "llms.txt" | "agents.md" | "llms-full.txt" | "robots.txt" | "sitemap.xml" | "agent-skills.json" | "rss.xml",
       content: f.content,
       version: versions[i]!,
     }));
@@ -68,7 +70,7 @@ export const runGeneration = internalAction({
 });
 
 type CachedResult = {
-  fileType: "llms.txt" | "agents.md" | "llms-full.txt" | "robots.txt" | "sitemap.xml" | "agent-skills.json";
+  fileType: "llms.txt" | "agents.md" | "llms-full.txt" | "robots.txt" | "sitemap.xml" | "agent-skills.json" | "rss.xml";
   content: string;
   version: string;
 };
@@ -85,6 +87,7 @@ export const writeGenerationResult = internalMutation({
           v.literal("robots.txt"),
           v.literal("sitemap.xml"),
           v.literal("agent-skills.json"),
+          v.literal("rss.xml"),
         ),
         content: v.string(),
         version: v.string(),
@@ -152,6 +155,7 @@ type SettingsLike = {
   robotsTxtAllowAiBots?: boolean;
   robotsTxtDisallowPaths?: string[];
   sitemapEnabled?: boolean;
+  rssEnabled?: boolean;
   agentSkillsEnabled?: boolean;
 };
 
@@ -302,6 +306,31 @@ function renderSitemap(settings: SettingsLike, pages: ReadonlyArray<PageLike>): 
     lines.push("  </url>");
   }
   lines.push("</urlset>");
+  lines.push("");
+  return lines.join("\n");
+}
+
+function renderRssFeed(settings: SettingsLike, pages: ReadonlyArray<PageLike>): string {
+  const base = settings.appUrl.replace(/\/$/, "");
+  const lines: Array<string> = [];
+  lines.push('<?xml version="1.0" encoding="UTF-8"?>');
+  lines.push('<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">');
+  lines.push("  <channel>");
+  lines.push(`    <title>${escapeXml(settings.appName)}</title>`);
+  lines.push(`    <link>${escapeXml(base)}</link>`);
+  lines.push(`    <description>${escapeXml(settings.description)}</description>`);
+  lines.push(`    <atom:link href="${escapeXml(base)}/feed.xml" rel="self" type="application/rss+xml" />`);
+  for (const page of pages) {
+    const url = `${base}${page.path}`;
+    lines.push("    <item>");
+    lines.push(`      <title>${escapeXml(page.title)}</title>`);
+    lines.push(`      <link>${escapeXml(url)}</link>`);
+    lines.push(`      <description>${escapeXml(page.description)}</description>`);
+    lines.push(`      <guid isPermaLink="true">${escapeXml(url)}</guid>`);
+    lines.push("    </item>");
+  }
+  lines.push("  </channel>");
+  lines.push("</rss>");
   lines.push("");
   return lines.join("\n");
 }

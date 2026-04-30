@@ -13,6 +13,7 @@ export const fileTypeValidator = v.union(
   v.literal("robots.txt"),
   v.literal("sitemap.xml"),
   v.literal("agent-skills.json"),
+  v.literal("rss.xml"),
 );
 
 export const contentSignalsValidator = v.object({
@@ -87,6 +88,7 @@ export const settingsPatchValidator = v.object({
   robotsTxtAllowAiBots: v.optional(v.boolean()),
   robotsTxtDisallowPaths: v.optional(v.array(v.string())),
   sitemapEnabled: v.optional(v.boolean()),
+  rssEnabled: v.optional(v.boolean()),
   agentSkillsEnabled: v.optional(v.boolean()),
   readinessEndpointEnabled: v.optional(v.boolean()),
   onGenerationComplete: v.optional(v.string()),
@@ -137,6 +139,7 @@ export const settingsDocValidator = v.object({
   robotsTxtAllowAiBots: v.optional(v.boolean()),
   robotsTxtDisallowPaths: v.optional(v.array(v.string())),
   sitemapEnabled: v.optional(v.boolean()),
+  rssEnabled: v.optional(v.boolean()),
   agentSkillsEnabled: v.optional(v.boolean()),
   readinessEndpointEnabled: v.optional(v.boolean()),
   onGenerationComplete: v.optional(v.string()),

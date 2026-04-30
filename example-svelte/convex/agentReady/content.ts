@@ -10,6 +10,7 @@ const fileTypeValidator = v.union(
   v.literal("robots.txt"),
   v.literal("sitemap.xml"),
   v.literal("agent-skills.json"),
+  v.literal("rss.xml"),
 );
 
 const pageStatusValidator = v.union(
@@ -60,6 +61,7 @@ const cacheStatusValidator = v.object({
   readinessEndpointEnabled: v.boolean(),
   robotsTxtEnabled: v.boolean(),
   sitemapEnabled: v.boolean(),
+  rssEnabled: v.boolean(),
   agentSkillsEnabled: v.boolean(),
   discoveryHeaders: v.boolean(),
   markdownNegotiation: v.boolean(),

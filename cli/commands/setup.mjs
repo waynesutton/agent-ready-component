@@ -107,6 +107,7 @@ const cacheStatusValidator = v.object({
   readinessEndpointEnabled: v.boolean(),
   robotsTxtEnabled: v.boolean(),
   sitemapEnabled: v.boolean(),
+  rssEnabled: v.boolean(),
   agentSkillsEnabled: v.boolean(),
   discoveryHeaders: v.boolean(),
   markdownNegotiation: v.boolean(),
@@ -349,6 +350,7 @@ export async function setup(_args) {
   const skipRoutesList = [];
   let sitemapEnabled = true;
   let robotsTxtEnabled = true;
+  let rssEnabled = false;
 
   if (existingRoutes.sitemap) {
     console.log("");
@@ -463,6 +465,8 @@ export async function setup(_args) {
     }
   }
 
+  rssEnabled = await confirm("Enable RSS feed at /feed.xml?", existing.settings?.rssEnabled ?? false);
+
   const widgetVisibility = await choose(
     "Widget display",
     ["visible", "hidden"],
@@ -528,6 +532,7 @@ export async function setup(_args) {
       permissiveMode: existing.settings?.permissiveMode ?? false,
       versioningEnabled: existing.settings?.versioningEnabled ?? false,
       sitemapEnabled: sitemapEnabled,
+      rssEnabled: rssEnabled,
       robotsTxtEnabled: robotsTxtEnabled,
     },
     pages: existing.pages ?? [],

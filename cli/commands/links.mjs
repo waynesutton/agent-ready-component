@@ -10,6 +10,7 @@ const ROUTES = [
   { label: "robots.txt", path: "/robots.txt", setting: "robotsTxtEnabled" },
   { label: "sitemap.xml", path: "/sitemap.xml", setting: "sitemapEnabled" },
   { label: "agent skills", path: "/.well-known/agent-skills", setting: "agentSkillsEnabled" },
+  { label: "RSS feed", path: "/feed.xml", setting: "rssEnabled" },
   { label: "readiness", path: "/llms-readiness", setting: "readinessEndpointEnabled" },
   { label: "status", path: "/llms-status", setting: null },
 ];

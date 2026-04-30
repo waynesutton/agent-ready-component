@@ -477,7 +477,7 @@ Repeat the same flow against the Svelte demo URL.
 - Hidden widget mode verified by setting `widgetVisible: false`, running `npx agent-ready sync --prod`, and confirming generated routes still return `200 OK`
 - `testMode` is off on both demo deployments
 - `/llms.txt`, `/agents.md`, and `/llms-status` return `200 OK`
-- `/robots.txt`, `/sitemap.xml`, `/.well-known/agent-skills`, and `/llms-readiness` return `200 OK` when readiness flags are enabled
+- `/robots.txt`, `/sitemap.xml`, `/feed.xml`, `/.well-known/agent-skills`, and `/llms-readiness` return `200 OK` when readiness flags are enabled
 - `npx agent-ready scan --url <url>` returns score of 80 or higher
 - `npx agent-ready links --url <url>` prints copyable discovery and AI chat URLs
 - ETag returns `304 Not Modified` on unchanged content

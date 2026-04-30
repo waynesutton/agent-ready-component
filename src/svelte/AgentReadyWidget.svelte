@@ -34,6 +34,7 @@
   export let fullTxtPath: string = "/llms-full.txt";
   export let statusPath: string = "/llms-status";
   export let readinessPath: string = "/llms-readiness";
+  export let rssFeedPath: string = "/feed.xml";
 
   // Mobile collapse controls. Defaults preserve existing desktop behavior.
   export let mobileCollapse: boolean = true;
@@ -207,6 +208,7 @@
     llmsTxt: `${visibleBase}${llmsTxtPath}`,
     agentsMd: `${visibleBase}${agentsMdPath}`,
     fullTxt: `${visibleBase}${fullTxtPath}`,
+    rssFeed: `${visibleBase}${rssFeedPath}`,
     // Status link still points at the endpoint base because that is where the JSON lives.
     status: `${endpointBase}${statusPath}`,
   };
@@ -327,6 +329,9 @@
         {#if currentStatus?.fullTxtEnabled}
           <div class="row"><a href={urls.fullTxt} target="_blank" rel="noreferrer">llms-full.txt</a><button on:click={() => copy(urls.fullTxt)}>copy</button></div>
         {/if}
+        {#if currentStatus?.rssEnabled}
+          <div class="row"><a href={urls.rssFeed} target="_blank" rel="noreferrer">feed.xml</a><button on:click={() => copy(urls.rssFeed)}>copy</button></div>
+        {/if}
       {/if}
       {#if resolvedChatLinks}
         {#if effectiveShowAppName || effectiveShowDescription || resolvedShowFiles}
@@ -364,6 +369,9 @@
       <div class="row"><a href={urls.agentsMd} target="_blank" rel="noreferrer">agents.md</a><a class="icon-link" href={urls.agentsMd} target="_blank" rel="noreferrer" title="Open agents.md"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="#888888"><path d="M224,104a8,8,0,0,1-16,0V59.31l-66.34,66.35a8,8,0,0,1-11.32-11.32L196.69,48H152a8,8,0,0,1,0-16h64a8,8,0,0,1,8,8Zm-40,24a8,8,0,0,0-8,8v72H48V80h72a8,8,0,0,0,0-16H48A16,16,0,0,0,32,80V208a16,16,0,0,0,16,16H176a16,16,0,0,0,16-16V136A8,8,0,0,0,184,128Z"/></svg></a></div>
       {#if currentStatus?.fullTxtEnabled}
         <div class="row"><a href={urls.fullTxt} target="_blank" rel="noreferrer">llms-full.txt</a><a class="icon-link" href={urls.fullTxt} target="_blank" rel="noreferrer" title="Open llms-full.txt"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="#888888"><path d="M224,104a8,8,0,0,1-16,0V59.31l-66.34,66.35a8,8,0,0,1-11.32-11.32L196.69,48H152a8,8,0,0,1,0-16h64a8,8,0,0,1,8,8Zm-40,24a8,8,0,0,0-8,8v72H48V80h72a8,8,0,0,0,0-16H48A16,16,0,0,0,32,80V208a16,16,0,0,0,16,16H176a16,16,0,0,0,16-16V136A8,8,0,0,0,184,128Z"/></svg></a></div>
+      {/if}
+      {#if currentStatus?.rssEnabled}
+        <div class="row"><a href={urls.rssFeed} target="_blank" rel="noreferrer">feed.xml</a><a class="icon-link" href={urls.rssFeed} target="_blank" rel="noreferrer" title="Open RSS feed"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="#888888"><path d="M224,104a8,8,0,0,1-16,0V59.31l-66.34,66.35a8,8,0,0,1-11.32-11.32L196.69,48H152a8,8,0,0,1,0-16h64a8,8,0,0,1,8,8Zm-40,24a8,8,0,0,0-8,8v72H48V80h72a8,8,0,0,0,0-16H48A16,16,0,0,0,32,80V208a16,16,0,0,0,16,16H176a16,16,0,0,0,16-16V136A8,8,0,0,0,184,128Z"/></svg></a></div>
       {/if}
       {#if resolvedShowStatus}
         <div class="row"><a href={urls.status} target="_blank" rel="noreferrer">status</a><a class="icon-link" href={urls.status} target="_blank" rel="noreferrer" title="Open status"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="#888888"><path d="M224,104a8,8,0,0,1-16,0V59.31l-66.34,66.35a8,8,0,0,1-11.32-11.32L196.69,48H152a8,8,0,0,1,0-16h64a8,8,0,0,1,8,8Zm-40,24a8,8,0,0,0-8,8v72H48V80h72a8,8,0,0,0,0-16H48A16,16,0,0,0,32,80V208a16,16,0,0,0,16,16H176a16,16,0,0,0,16-16V136A8,8,0,0,0,184,128Z"/></svg></a></div>

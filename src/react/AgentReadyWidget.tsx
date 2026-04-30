@@ -35,6 +35,7 @@ export type AgentReadyWidgetProps = {
   fullTxtPath?: string;
   statusPath?: string;
   readinessPath?: string;
+  rssFeedPath?: string;
   showScoreTab?: boolean;
   cleanMode?: boolean;
   showHumanTab?: boolean;
@@ -148,6 +149,7 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
   const fullTxtPath = props.fullTxtPath ?? "/llms-full.txt";
   const statusPath = props.statusPath ?? "/llms-status";
   const readinessPath = props.readinessPath ?? "/llms-readiness";
+  const rssFeedPath = props.rssFeedPath ?? "/feed.xml";
 
   const status = useAgentReadyStatus({ appUrl: props.appUrl, statusPath });
   const readiness = useAgentReadyReadiness({ appUrl: props.appUrl, readinessPath });
@@ -253,10 +255,11 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
       llmsTxt: `${visibleBase}${llmsTxtPath}`,
       agentsMd: `${visibleBase}${agentsMdPath}`,
       fullTxt: `${visibleBase}${fullTxtPath}`,
+      rssFeed: `${visibleBase}${rssFeedPath}`,
       // Status link still points at the endpoint base because that is where the JSON lives.
       status: `${endpointBase}${statusPath}`,
     }),
-    [visibleBase, endpointBase, llmsTxtPath, agentsMdPath, fullTxtPath, statusPath],
+    [visibleBase, endpointBase, llmsTxtPath, agentsMdPath, fullTxtPath, rssFeedPath, statusPath],
   );
 
   // Build AI chat URLs from the raw llms.txt URL.
@@ -391,6 +394,7 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
           <FileRow label="llms.txt" url={urls.llmsTxt} />
           <FileRow label="agents.md" url={urls.agentsMd} />
           {status?.fullTxtEnabled ? <FileRow label="llms-full.txt" url={urls.fullTxt} /> : null}
+          {status?.rssEnabled ? <FileRow label="feed.xml" url={urls.rssFeed} /> : null}
           {showStatus ? <FileRow label="status" url={urls.status} /> : null}
           {showMeta ? (
             <>

@@ -44,6 +44,7 @@
     "robotsTxtEnabled": true,
     "robotsTxtAllowAiBots": true,
     "sitemapEnabled": true,
+    "rssEnabled": true,
     "agentSkillsEnabled": true,
     "readinessEndpointEnabled": true
   },

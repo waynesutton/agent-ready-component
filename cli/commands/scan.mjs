@@ -29,6 +29,7 @@ export async function scan(args) {
     { name: "robots.txt", path: "/robots.txt", checkHeaders: false },
     { name: "sitemap.xml", path: "/sitemap.xml", checkHeaders: false },
     { name: "agent-skills", path: "/.well-known/agent-skills", checkHeaders: false },
+    { name: "feed.xml (RSS)", path: "/feed.xml", checkHeaders: false },
     { name: "llms-readiness", path: "/llms-readiness", checkHeaders: false },
     { name: "llms-status", path: "/llms-status", checkHeaders: false },
   ];

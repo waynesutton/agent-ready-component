@@ -145,6 +145,7 @@ This serves the generated files and status routes:
 - `https://your-deployment.convex.site/robots.txt` when enabled
 - `https://your-deployment.convex.site/sitemap.xml` when enabled
 - `https://your-deployment.convex.site/.well-known/agent-skills` when enabled
+- `https://your-deployment.convex.site/feed.xml` RSS feed when enabled
 - `https://your-deployment.convex.site/llms-readiness` when enabled
 
 You can add callbacks later:
@@ -161,7 +162,7 @@ If your app already defines `/sitemap.xml` or `/robots.txt`, skip those routes t
 
 ```ts
 registerRoutes(http, components.agentReady, {
-  skipRoutes: ["/sitemap.xml", "/robots.txt"],
+  skipRoutes: ["/sitemap.xml", "/robots.txt", "/feed.xml"],
 });
 ```
 
@@ -217,7 +218,7 @@ Vite tip: set `VITE_CONVEX_SITE_URL` to your `.convex.site` deployment URL and `
 npx agent-ready setup
 ```
 
-The wizard asks for your app name, URL, description, cron interval, analytics preference, AI description preference, test mode preference, and widget display preference. Choose `hidden` when you want files like `llms.txt`, `agents.md`, `llms-full.txt`, `robots.txt`, and `sitemap.xml` to keep generating without showing the widget. If you choose `visible`, the wizard can print React or Svelte install code for your root layout. It writes `agent-ready.config.json`, scaffolds Convex wrapper files at `convex/agentReady/`, syncs the config to your deployment, and schedules the cron.
+The wizard asks for your app name, URL, description, cron interval, analytics preference, AI description preference, test mode preference, RSS feed preference, and widget display preference. Choose `hidden` when you want files like `llms.txt`, `agents.md`, `llms-full.txt`, `robots.txt`, `sitemap.xml`, and `feed.xml` to keep generating without showing the widget. If you choose `visible`, the wizard can print React or Svelte install code for your root layout. It writes `agent-ready.config.json`, scaffolds Convex wrapper files at `convex/agentReady/`, syncs the config to your deployment, and schedules the cron.
 
 ### 6. Verify locally
 
@@ -304,7 +305,7 @@ Make your app pass the [isitagentready.com](https://isitagentready.com/) scan wi
 npx agent-ready agent-ready
 ```
 
-This enables all Cloudflare agent readiness features: `Content-Signal` headers, `x-markdown-tokens`, discovery `Link` headers, `robots.txt` with AI bot rules, `sitemap.xml`, `/.well-known/agent-skills`, the `/llms-readiness` self-score endpoint, and markdown content negotiation.
+This enables all Cloudflare agent readiness features: `Content-Signal` headers, `x-markdown-tokens`, discovery `Link` headers, `robots.txt` with AI bot rules, `sitemap.xml`, RSS feed at `/feed.xml`, `/.well-known/agent-skills`, the `/llms-readiness` self-score endpoint, and markdown content negotiation.
 
 Scan your deployment to verify:
 
@@ -363,7 +364,7 @@ Not using React? The Convex wrapper functions work with any framework. Build you
 - Drop-in React and Svelte widgets with HUMAN, MACHINE, and SCORE tabs. Live staleness detection, `useAgentReadyStatus()` hook, config-driven visibility
 - SCORE tab shows readiness score with color-coded checks from `/llms-readiness`
 - `Content-Signal`, `x-markdown-tokens`, `Link` discovery headers on every content response
-- Auto-generated `robots.txt` with AI bot directives, `sitemap.xml`, and `/.well-known/agent-skills`
+- Auto-generated `robots.txt` with AI bot directives, `sitemap.xml`, RSS feed at `/feed.xml`, and `/.well-known/agent-skills`
 - Readiness self-score endpoint (`/llms-readiness`) with 11 checks across discoverability, content, bots, and protocol
 - `npx agent-ready agent-ready` enables all readiness flags in one command
 - `npx agent-ready scan` audits your deployment (CI-friendly, exits non-zero below 80)

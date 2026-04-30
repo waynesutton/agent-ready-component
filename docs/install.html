@@ -443,7 +443,7 @@ export default http;</code></pre>
             <code>/llms-full.txt</code>, <code>/llms-status</code>, and
             <code>/llms-analytics</code>. With readiness flags enabled, it also serves
             <code>/robots.txt</code>, <code>/sitemap.xml</code>,
-            <code>/.well-known/agent-skills</code>, and <code>/llms-readiness</code>.
+            <code>/feed.xml</code> (RSS), <code>/.well-known/agent-skills</code>, and <code>/llms-readiness</code>.
           </p>
         </section>
 
@@ -534,7 +534,7 @@ curl -i https://your-deployment.convex.site/llms-status</code></pre>
           <h2>Agent readiness</h2>
           <p>Enable all Cloudflare agent readiness features with one command:</p>
           <pre><code>npx agent-ready agent-ready</code></pre>
-          <p>This turns on <code>Content-Signal</code> headers, <code>robots.txt</code>, <code>sitemap.xml</code>, <code>/.well-known/agent-skills</code>, the <code>/llms-readiness</code> self-score endpoint, and markdown content negotiation.</p>
+          <p>This turns on <code>Content-Signal</code> headers, <code>robots.txt</code>, <code>sitemap.xml</code>, RSS feed at <code>/feed.xml</code>, <code>/.well-known/agent-skills</code>, the <code>/llms-readiness</code> self-score endpoint, and markdown content negotiation.</p>
           <p>Audit your deployment:</p>
           <pre><code>npx agent-ready scan --url https://your-deployment.convex.site</code></pre>
           <p>The SCORE tab in the widget shows your readiness score. Control its visibility with <code>widgetShowScoreTab</code> in your config or the <code>showScoreTab</code> prop.</p>

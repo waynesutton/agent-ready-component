@@ -25,6 +25,7 @@ export async function agentReady(args) {
     robotsTxtEnabled: true,
     robotsTxtAllowAiBots: true,
     sitemapEnabled: true,
+    rssEnabled: true,
     agentSkillsEnabled: true,
     readinessEndpointEnabled: true,
   };

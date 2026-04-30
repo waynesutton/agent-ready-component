@@ -16,6 +16,7 @@ const fileType = v.union(
   v.literal("robots.txt"),
   v.literal("sitemap.xml"),
   v.literal("agent-skills.json"),
+  v.literal("rss.xml"),
 );
 
 export default defineSchema({
@@ -83,6 +84,7 @@ export default defineSchema({
     robotsTxtAllowAiBots: v.optional(v.boolean()),
     robotsTxtDisallowPaths: v.optional(v.array(v.string())),
     sitemapEnabled: v.optional(v.boolean()),
+    rssEnabled: v.optional(v.boolean()),
     agentSkillsEnabled: v.optional(v.boolean()),
     readinessEndpointEnabled: v.optional(v.boolean()),
     // Stored function handles for event callbacks. Populated by registerRoutes options.

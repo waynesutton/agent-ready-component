@@ -65,6 +65,7 @@ export const applySyncConfig = internalMutation({
           robotsTxtAllowAiBots: settings.robotsTxtAllowAiBots,
           robotsTxtDisallowPaths: settings.robotsTxtDisallowPaths,
           sitemapEnabled: settings.sitemapEnabled,
+          rssEnabled: settings.rssEnabled,
           agentSkillsEnabled: settings.agentSkillsEnabled,
           readinessEndpointEnabled: settings.readinessEndpointEnabled,
           widgetVisible: settings.widgetVisible,

@@ -6,7 +6,8 @@ export type AgentReadyFileType =
   | "llms-full.txt"
   | "robots.txt"
   | "sitemap.xml"
-  | "agent-skills.json";
+  | "agent-skills.json"
+  | "rss.xml";
 
 export type RouteName =
   | "llms.txt"
@@ -17,6 +18,7 @@ export type RouteName =
   | "robots.txt"
   | "sitemap.xml"
   | "agent-skills"
+  | "rss.xml"
   | "llms-readiness";
 
 export type WidgetPosition =
@@ -79,6 +81,7 @@ export type AgentReadySettings = {
   robotsTxtAllowAiBots?: boolean;
   robotsTxtDisallowPaths?: string[];
   sitemapEnabled?: boolean;
+  rssEnabled?: boolean;
   agentSkillsEnabled?: boolean;
   readinessEndpointEnabled?: boolean;
   widgetShowScoreTab?: boolean;
@@ -145,6 +148,7 @@ export type AgentReadyStatus = {
   readinessEndpointEnabled: boolean;
   robotsTxtEnabled: boolean;
   sitemapEnabled: boolean;
+  rssEnabled: boolean;
   agentSkillsEnabled: boolean;
   discoveryHeaders: boolean;
   markdownNegotiation: boolean;
@@ -193,7 +197,8 @@ export type SkippableRoute =
   | "/.well-known/agent-skills"
   | "/llms.txt"
   | "/agents.md"
-  | "/llms-full.txt";
+  | "/llms-full.txt"
+  | "/feed.xml";
 
 export type RegisterRoutesOptions = {
   llmsTxtPath?: string;
@@ -205,6 +210,7 @@ export type RegisterRoutesOptions = {
   sitemapPath?: string;
   agentSkillsPath?: string;
   readinessPath?: string;
+  rssFeedPath?: string;
   /** Routes to skip registration for. Use when the host app already defines these paths. */
   skipRoutes?: SkippableRoute[];
   routes?: Partial<Record<RouteName, RouteHandler>>;

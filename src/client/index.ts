@@ -24,6 +24,7 @@ const DEFAULT_PATHS = {
   robotsTxt: "/robots.txt",
   sitemap: "/sitemap.xml",
   agentSkills: "/.well-known/agent-skills",
+  rssFeed: "/feed.xml",
   readiness: "/llms-readiness",
 } as const;
 
@@ -70,6 +71,7 @@ export function registerRoutes(
   const robotsTxtPath = options.robotsTxtPath ?? DEFAULT_PATHS.robotsTxt;
   const sitemapPath = options.sitemapPath ?? DEFAULT_PATHS.sitemap;
   const agentSkillsPath = options.agentSkillsPath ?? DEFAULT_PATHS.agentSkills;
+  const rssFeedPath = options.rssFeedPath ?? DEFAULT_PATHS.rssFeed;
   const readinessPath = options.readinessPath ?? DEFAULT_PATHS.readiness;
 
   const skip = new Set<SkippableRoute>(options.skipRoutes ?? []);
@@ -121,6 +123,13 @@ export function registerRoutes(
       handler: buildFileRoute(component, "agent-skills", "agent-skills.json", options),
     });
   }
+  if (!skip.has("/feed.xml")) {
+    http.route({
+      path: rssFeedPath,
+      method: "GET",
+      handler: buildFileRoute(component, "rss.xml", "rss.xml", options),
+    });
+  }
 
   // Analytics route
   http.route({
@@ -161,6 +170,8 @@ function contentTypeForFile(fileType: AgentReadyFileType): string {
       return "text/markdown; charset=utf-8";
     case "sitemap.xml":
       return "application/xml; charset=utf-8";
+    case "rss.xml":
+      return "application/rss+xml; charset=utf-8";
     case "agent-skills.json":
       return "application/json; charset=utf-8";
     default:
@@ -179,6 +190,8 @@ function isFileEnabled(fileType: AgentReadyFileType, settings: AgentReadySetting
       return !!settings.sitemapEnabled;
     case "agent-skills.json":
       return !!settings.agentSkillsEnabled;
+    case "rss.xml":
+      return !!settings.rssEnabled;
     default:
       return true;
   }
@@ -213,6 +226,9 @@ function buildAgentHeaders(
     ];
     if (settings.sitemapEnabled) {
       parts.push(`<${base}/sitemap.xml>; rel="sitemap"; type="application/xml"`);
+    }
+    if (settings.rssEnabled) {
+      parts.push(`<${base}/feed.xml>; rel="alternate"; type="application/rss+xml"`);
     }
     headers["Link"] = parts.join(", ");
   }
@@ -397,7 +413,7 @@ function buildReadinessRoute(
 
     const files = await ctx.runQuery(component.content.getCacheStatus, {});
     const allCached = await Promise.all(
-      (["llms.txt", "agents.md", "robots.txt", "sitemap.xml", "agent-skills.json"] as const).map(
+      (["llms.txt", "agents.md", "robots.txt", "sitemap.xml", "agent-skills.json", "rss.xml"] as const).map(
         async (ft) => {
           const f = await ctx.runQuery(component.content.getCachedFile, { fileType: ft });
           return { fileType: ft, exists: f !== null, length: f?.content?.length ?? 0 };
@@ -540,6 +556,16 @@ function buildReadinessRoute(
         points: 0,
         maxPoints: 0,
       },
+      // Bonus check: RSS feed. Worth 0 points so existing scores are unchanged.
+      {
+        id: "rss_feed_present",
+        label: "RSS feed served",
+        category: "discoverability",
+        status: settings.rssEnabled && cached.get("rss.xml") ? "pass" : settings.rssEnabled ? "warn" : "fail",
+        detail: !settings.rssEnabled ? "Enable rssEnabled in config" : undefined,
+        points: 0,
+        maxPoints: 0,
+      },
     ];
 
     const score = checks.reduce((sum, c) => sum + c.points, 0);
@@ -629,6 +655,7 @@ export class AgentReady {
       "robots.txt": "robots.txt",
       "sitemap.xml": "sitemap.xml",
       "agent-skills.json": "agent-skills",
+      "rss.xml": "rss.xml",
     };
     const route = fileTypeToRoute[type];
     return buildFileRoute(this.component, route, type, {});

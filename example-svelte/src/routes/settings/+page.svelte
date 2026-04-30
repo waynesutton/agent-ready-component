@@ -20,7 +20,8 @@
     | "llms-full.txt"
     | "robots.txt"
     | "sitemap.xml"
-    | "agent-skills.json";
+    | "agent-skills.json"
+    | "rss.xml";
 
   async function regenerate() {
     busy = true;

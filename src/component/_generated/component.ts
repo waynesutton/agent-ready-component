@@ -67,7 +67,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             | "llms-full.txt"
             | "robots.txt"
             | "sitemap.xml"
-            | "agent-skills.json";
+            | "agent-skills.json"
+            | "rss.xml";
           requestedAt: number;
           userAgent: string;
         },
@@ -121,7 +122,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             | "llms-full.txt"
             | "robots.txt"
             | "sitemap.xml"
-            | "agent-skills.json";
+            | "agent-skills.json"
+            | "rss.xml";
         },
         null | {
           _creationTime: number;
@@ -133,7 +135,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             | "llms-full.txt"
             | "robots.txt"
             | "sitemap.xml"
-            | "agent-skills.json";
+            | "agent-skills.json"
+            | "rss.xml";
           generatedAt: number;
           generatedFromVersion: string;
           lastJobId?: string;
@@ -160,6 +163,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           markdownNegotiation: boolean;
           readinessEndpointEnabled: boolean;
           robotsTxtEnabled: boolean;
+          rssEnabled: boolean;
           sitemapEnabled: boolean;
           testMode: boolean;
           widgetCleanMode: boolean;
@@ -192,7 +196,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               | "llms-full.txt"
               | "robots.txt"
               | "sitemap.xml"
-              | "agent-skills.json";
+              | "agent-skills.json"
+              | "rss.xml";
             generatedAt: number;
             status: "current" | "generating" | "failed";
             version: string;
@@ -253,6 +258,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           robotsTxtAllowAiBots?: boolean;
           robotsTxtDisallowPaths?: Array<string>;
           robotsTxtEnabled?: boolean;
+          rssEnabled?: boolean;
           sitemapEnabled?: boolean;
           testMode: boolean;
           theme: "light" | "dark" | "system";
@@ -350,7 +356,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             | "llms-full.txt"
             | "robots.txt"
             | "sitemap.xml"
-            | "agent-skills.json";
+            | "agent-skills.json"
+            | "rss.xml";
         },
         null,
         Name
@@ -408,6 +415,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               robotsTxtAllowAiBots?: boolean;
               robotsTxtDisallowPaths?: Array<string>;
               robotsTxtEnabled?: boolean;
+              rssEnabled?: boolean;
               sitemapEnabled?: boolean;
               testMode?: boolean;
               theme?: "light" | "dark" | "system";
@@ -510,6 +518,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             robotsTxtAllowAiBots?: boolean;
             robotsTxtDisallowPaths?: Array<string>;
             robotsTxtEnabled?: boolean;
+            rssEnabled?: boolean;
             sitemapEnabled?: boolean;
             testMode?: boolean;
             theme?: "light" | "dark" | "system";
@@ -575,6 +584,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           robotsTxtAllowAiBots?: boolean;
           robotsTxtDisallowPaths?: Array<string>;
           robotsTxtEnabled?: boolean;
+          rssEnabled?: boolean;
           sitemapEnabled?: boolean;
           testMode: boolean;
           theme: "light" | "dark" | "system";

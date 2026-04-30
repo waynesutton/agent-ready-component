@@ -71,7 +71,7 @@ registerRoutes(http, components.agentReady, {
 
   // Skip routes your app already owns. Prevents "Path already in use" errors.
   // Valid values: "/robots.txt", "/sitemap.xml", "/.well-known/agent-skills",
-  // "/llms.txt", "/agents.md", "/llms-full.txt"
+  // "/llms.txt", "/agents.md", "/llms-full.txt", "/feed.xml"
   // Useful when a static host or your own router serves these files.
   skipRoutes: [],
 
@@ -105,11 +105,11 @@ The component installs HTTP routes on your Convex deployment. Some hosts also se
 |---|---|---|
 | Convex HTTP routes only (no static frontend) | Convex serves all discovery files | `[]` |
 | Convex static hosting (`@convex-dev/static-hosting`) | Convex serves both your SPA and discovery files | `[]` |
-| Vercel, Netlify, Cloudflare Pages frontend + Convex backend | Static host serves files in `public/` | Add any path your host serves, e.g. `["/robots.txt", "/sitemap.xml"]` |
+| Vercel, Netlify, Cloudflare Pages frontend + Convex backend | Static host serves files in `public/` | Add any path your host serves, e.g. `["/robots.txt", "/sitemap.xml", "/feed.xml"]` |
 | Custom Express/Next.js router on your own domain | Your router serves discovery files | Add any path you handle yourself, e.g. `["/llms.txt", "/agents.md"]` |
 | Existing `public/llms.txt` you want to keep | Static host serves the legacy file | `["/llms.txt"]`, then run `npx agent-ready import --from public/llms.txt` to bring its content into the component |
 
-`npx agent-ready setup` detects existing `public/llms.txt`, `public/agents.md`, `public/llms-full.txt`, `public/robots.txt`, and `public/sitemap.xml` files and suggests a matching `skipRoutes` list. If you change frontends later, edit `convex/http.ts` directly.
+`npx agent-ready setup` detects existing `public/llms.txt`, `public/agents.md`, `public/llms-full.txt`, `public/robots.txt`, `public/sitemap.xml`, and `public/feed.xml` files and suggests a matching `skipRoutes` list. If you change frontends later, edit `convex/http.ts` directly.
 
 ## SECTION: typed client setup
 
@@ -177,7 +177,7 @@ Vite tip: set `VITE_CONVEX_SITE_URL` to your Convex `.site` URL and `VITE_SITE_U
 
 `visible` and all `show*` props follow a three-tier resolution: explicit prop > config value from `/llms-status` > `true`. Change them in `agent-ready.config.json` and run `npx agent-ready sync` to apply without touching code.
 
-Set `widgetVisible: false` when you want the app to keep generating `llms.txt`, `agents.md`, `llms-full.txt`, `robots.txt`, and `sitemap.xml` without rendering the widget. Use `npx agent-ready links` to print the URLs for copying.
+Set `widgetVisible: false` when you want the app to keep generating `llms.txt`, `agents.md`, `llms-full.txt`, `robots.txt`, `sitemap.xml`, and `feed.xml` without rendering the widget. Use `npx agent-ready links` to print the URLs for copying.
 
 ### Custom colors example
 
@@ -656,6 +656,7 @@ This sets all readiness flags in `agent-ready.config.json`, syncs to your deploy
 | Link discovery headers | All content routes | `discoveryHeaders` |
 | robots.txt with AI bot rules | `/robots.txt` | `robotsTxtEnabled` |
 | sitemap.xml | `/sitemap.xml` | `sitemapEnabled` |
+| RSS feed | `/feed.xml` | `rssEnabled` |
 | Agent skills endpoint | `/.well-known/agent-skills` | `agentSkillsEnabled` |
 | Readiness self-score | `/llms-readiness` | `readinessEndpointEnabled` |
 | Markdown negotiation | Vary header | `markdownNegotiation` |

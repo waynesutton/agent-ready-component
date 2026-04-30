@@ -39,6 +39,7 @@ Plain text map of every file in the `@waynesutton/agent-ready` repo. This is a C
 - `prds/widget-mobile-collapse.md`: PRD documenting the mobile collapsed presentation for the widget: matchMedia breakpoint detection, collapsed-by-default behavior, inline Phosphor caret toggle, mobile-safe width clamp, edge insets, and the new `mobileCollapse`, `mobileBreakpoint`, and `defaultMobileCollapsed` props on both React and Svelte widgets
 - `prds/widget-desktop-collapse.md`: PRD for the desktop collapse opt-in: new `desktopCollapse` prop and `widgetDesktopCollapse` config setting, shared `collapseActive` flag that drives the Phosphor caret toggle and panel visibility on desktop without changing widget width or insets, demo `agent-ready.config.json` defaults, and the CLI setup wizard prompt
 - `prds/widget-hidden-links-cli.md`: PRD for hiding the widget while keeping generated files live, adding the setup wizard visibility choice, and adding the `npx agent-ready links` command
+- `prds/rss-feed.md`: PRD for opt-in RSS 2.0 feed at `/feed.xml` generated from pages table, integrated with CLI setup, widgets, and readiness checks
 - `mockup-react.html`: Standalone HTML mockup of the React demo's agent-readiness control panel. Shows the score ring, per-check grid, response headers, schema toggles, and the 3-tab widget with SCORE active
 - `mockup-svelte.html`: Standalone HTML mockup of the Svelte demo's analytics dashboard with agent-readiness signals layered in. Shows the 4-card metric grid (including markdown-negotiation count and readiness scans), agent and file breakdowns, signals panel, and 3-tab widget
 
@@ -50,15 +51,15 @@ Plain text map of every file in the `@waynesutton/agent-ready` repo. This is a C
 
 ## Component source — `src/`
 
-- `src/client/index.ts`: Public package entry, exports `registerRoutes`, `AgentReady` class client, `createTypedAgentReadyClient`, types, CORS handling, and all agent readiness routes (`/robots.txt`, `/sitemap.xml`, `/.well-known/agent-skills`, `/llms-readiness`). Supports `skipRoutes` option to avoid conflicts with host app routes
-- `src/client/types.ts`: Shared type definitions for settings, pages, endpoints, cached files, route names, event payloads, `WidgetColors`, widget position, `ContentSignals`, `ReadinessReport`, `ReadinessCheck`, `AgentReadyStatus` with readiness fields, `widgetVisible`, `widgetShowScoreTab`, widget display mode fields, and `SkippableRoute` type for `skipRoutes`
+- `src/client/index.ts`: Public package entry, exports `registerRoutes`, `AgentReady` class client, `createTypedAgentReadyClient`, types, CORS handling, and all agent readiness routes (`/robots.txt`, `/sitemap.xml`, `/feed.xml`, `/.well-known/agent-skills`, `/llms-readiness`). Supports `skipRoutes` option to avoid conflicts with host app routes
+- `src/client/types.ts`: Shared type definitions for settings, pages, endpoints, cached files, route names, event payloads, `WidgetColors`, widget position, `ContentSignals`, `ReadinessReport`, `ReadinessCheck`, `AgentReadyStatus` with readiness fields including `rssEnabled`, `widgetVisible`, `widgetShowScoreTab`, widget display mode fields, and `SkippableRoute` type for `skipRoutes` (includes `/feed.xml`)
 - `src/component/convex.config.ts`: Component declaration via `defineComponent("agentReady")`
 - `src/component/_generated/`: Generated Convex component bindings created by `npx convex codegen --component-dir ./src/component`
-- `src/component/schema.ts`: `settings`, `pages`, `apiEndpoints`, `cachedFiles`, `agentRequests`, `pageVersions` tables with indexes. Settings include 9 agent readiness fields, `widgetVisible`, `widgetShowScoreTab`, and widget display mode fields (`widgetCleanMode`, `widgetShowHumanTab`, `widgetShowMachineTab`, `widgetShowChatLinks`, `widgetShowChatGPT`, `widgetShowClaude`, `widgetShowPerplexity`)
+- `src/component/schema.ts`: `settings`, `pages`, `apiEndpoints`, `cachedFiles`, `agentRequests`, `pageVersions` tables with indexes. Settings include 10 agent readiness fields (including `rssEnabled`), `widgetVisible`, `widgetShowScoreTab`, and widget display mode fields. File type union covers 7 values: `llms.txt`, `agents.md`, `llms-full.txt`, `robots.txt`, `sitemap.xml`, `agent-skills.json`, `rss.xml`
 - `src/component/content.ts`: Public settings, page, endpoint, cache, and version functions. `getCacheStatus` returns top-level widget visibility, widget display flags, and readiness feature flags
 - `src/component/contentInternal.ts`: Internal action support for settings reads, page reads, sync application (handles readiness fields), cache invalidation, and generation scheduling
 - `src/component/analytics.ts`: `recordRequest` public mutation (called across the boundary from `registerRoutes`), `getSummary`, `getTimeSeries`, `cleanupOldRequests`, `cleanupOrphanedCacheEntries`, plus `internalCleanupOldRequests` internalMutation for server-to-server use by the cron worker. All `.collect()` calls bounded with `.take()`
-- `src/component/generation.ts`: Workpool-backed generation of `llms.txt`, `agents.md`, `llms-full.txt`, `robots.txt`, `sitemap.xml`, `agent-skills.json`
+- `src/component/generation.ts`: Workpool-backed generation of `llms.txt`, `agents.md`, `llms-full.txt`, `robots.txt`, `sitemap.xml`, `agent-skills.json`, `rss.xml`
 - `src/component/cronWorker.ts`: Dynamic cron worker that refreshes content and trims analytics via `internal.analytics.internalCleanupOldRequests`
 - `src/component/lib.ts`: Shared helpers: SHA-256 hashing, user-agent classification, origin check, config diffing, `escapeXml`, `sanitizePath`, `estimateTokens`, `buildContentSignalHeader`, `buildDiscoveryLinkHeader`, `KNOWN_AI_BOTS`
 - `src/component/validators.ts`: Shared Convex validators for component documents, sync config payloads, content signals, and typed action/query return values
@@ -103,11 +104,11 @@ Plain text map of every file in the `@waynesutton/agent-ready` repo. This is a C
 - `cli/commands/analytics.mjs`: Prints agent request summary
 - `cli/commands/cleanup.mjs`: Runs analytics and cache cleanup
 - `cli/commands/versions.mjs`: Shows version history for a page
-- `cli/commands/agent-ready.mjs`: One-command flag flip that enables every agent-readiness feature, syncs config, and regenerates files
-- `cli/commands/scan.mjs`: Pure HTTP auditor that checks every agent-readiness endpoint and prints a pass/fail table. Exits non-zero when score drops below 80 for CI use
+- `cli/commands/agent-ready.mjs`: One-command flag flip that enables every agent-readiness feature (including `rssEnabled`), syncs config, and regenerates files
+- `cli/commands/scan.mjs`: Pure HTTP auditor that checks every agent-readiness endpoint (including `/feed.xml`) and prints a pass/fail table. Exits non-zero when score drops below 80 for CI use
 - `cli/commands/import.mjs`: Migrates an existing `llms.txt` from `public/`, `static/`, or the project root into `agent-ready.config.json`. Parses H1, blockquote, H2 sections, and bullet links. Supports `--from`, `--overwrite`, and `--dry-run`
 - `cli/commands/discover.mjs`: Prints a local discovery report from `convex/http.ts`, `public/llms.txt`, `public/agents.md`, and `public/llms-full.txt`. Suggests `npx agent-ready import` next steps without writing config
-- `cli/commands/links.mjs`: Prints copyable generated file URLs and AI chat URLs from `agent-ready.config.json` or `--url`, independent of whether the widget is visible
+- `cli/commands/links.mjs`: Prints copyable generated file URLs (including `/feed.xml` when enabled) and AI chat URLs from `agent-ready.config.json` or `--url`, independent of whether the widget is visible
 - `cli/lib/banner.mjs`: Reusable block-style ASCII banner printed by CLI setup and help output
 - `cli/lib/prompts.mjs`: Prompt helpers for the setup wizard
 - `cli/lib/convex.mjs`: Convex deployment helpers, auto-detects `agentReady:` prefix and converts to `--component agentReady` for the current Convex CLI
@@ -121,7 +122,7 @@ A Convex app (React + Vite) that shows the component and React widget in action.
 - `example-react/tsconfig.json`: TS config for the demo
 - `example-react/index.html`: Vite entry HTML
 - `example-react/setup.mjs`: Idempotent seed script that runs before dev, uses `--component agentReady` for Convex CLI
-- `example-react/agent-ready.config.json`: Starter config consumed by `sync`, appUrl set to the production deployment. Includes `widgetVisible`, all widget visibility flags, `widgetShowScoreTab`, widget display mode flags (`widgetCleanMode`, `widgetShowHumanTab`, `widgetShowMachineTab`, `widgetShowChatLinks`, `widgetShowChatGPT`, `widgetShowClaude`, `widgetShowPerplexity`), `widgetColors` defaults, and agent readiness flags
+- `example-react/agent-ready.config.json`: Starter config consumed by `sync`, appUrl set to the production deployment. Includes `widgetVisible`, all widget visibility flags, `widgetShowScoreTab`, widget display mode flags, `widgetColors` defaults, agent readiness flags, and `rssEnabled`
 - `example-react/.env.production.local`: Production Convex URLs for Vite build (git-ignored)
 - `example-react/convex/convex.config.ts`: Uses `auth`, `crons`, `workpool`, `agentReady`, `staticHosting`
 - `example-react/convex/schema.ts`: Host app schema (empty tables allowed, auth tables isolated in the auth component)
@@ -157,7 +158,7 @@ A Convex app (SvelteKit) that shows the component and Svelte widget in action.
 - `example-svelte/vite.config.ts`: Vite config
 - `example-svelte/tsconfig.json`: TS config
 - `example-svelte/setup.mjs`: Idempotent seed script, uses `--component agentReady` for Convex CLI
-- `example-svelte/agent-ready.config.json`: Starter config with `widgetVisible`, all widget visibility flags, `widgetShowScoreTab`, widget display mode flags (`widgetCleanMode`, `widgetShowHumanTab`, `widgetShowMachineTab`, `widgetShowChatLinks`, `widgetShowChatGPT`, `widgetShowClaude`, `widgetShowPerplexity`), `widgetColors` defaults, and agent readiness flags enabled
+- `example-svelte/agent-ready.config.json`: Starter config with `widgetVisible`, all widget visibility flags, `widgetShowScoreTab`, widget display mode flags, `widgetColors` defaults, agent readiness flags, and `rssEnabled` enabled
 - `example-svelte/convex/convex.config.ts`: Component wiring
 - `example-svelte/convex/schema.ts`: Host app schema
 - `example-svelte/convex/_generated/`: Generated Convex app bindings for the Svelte demo
