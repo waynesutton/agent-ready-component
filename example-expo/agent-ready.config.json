@@ -1,0 +1,51 @@
+{
+  "settings": {
+    "appName": "agent-ready Expo demo",
+    "appUrl": "https://your-deployment.convex.site",
+    "description": "Expo demo app showing the @waynesutton/agent-ready React Native widget backed by Convex HTTP routes.",
+    "widgetVisible": true,
+    "widgetShowHumanTab": true,
+    "widgetShowMachineTab": true,
+    "widgetShowMarkdownTab": true,
+    "publish": "live",
+    "cronEnabled": true,
+    "cronIntervalHours": 24,
+    "analyticsEnabled": true,
+    "analyticsRequestRetentionDays": 90,
+    "aiDescriptionsEnabled": false,
+    "fullTxtEnabled": true,
+    "permissiveMode": false,
+    "versioningEnabled": true,
+    "contentSignals": { "aiTrain": true, "search": true, "aiInput": true },
+    "markdownNegotiation": true,
+    "markdownSiteEnabled": true,
+    "discoveryHeaders": true,
+    "robotsTxtEnabled": true,
+    "robotsTxtAllowAiBots": true,
+    "sitemapEnabled": true,
+    "rssEnabled": true,
+    "agentSkillsEnabled": true,
+    "readinessEndpointEnabled": true
+  },
+  "pages": [
+    {
+      "title": "Expo overview",
+      "path": "/expo",
+      "description": "Mobile demo for the Agent Ready Expo widget.",
+      "fullContent": "The Expo demo shows how a React Native app can link to agent-readable Convex routes. The mobile widget opens llms.txt, agents.md, llms-full.txt, status, and the markdown site.",
+      "status": "published",
+      "order": 10,
+      "section": "Mobile"
+    },
+    {
+      "title": "Markdown viewer",
+      "path": "/expo/markdown",
+      "description": "Markdown site viewer designed for humans and agents.",
+      "fullContent": "The MARKDOWN tab reads /llms-markdown-index from the Convex site URL and opens /markdown pages. Humans get HTML. Agents can send Accept: text/markdown to get raw markdown.",
+      "status": "published",
+      "order": 20,
+      "section": "Mobile"
+    }
+  ],
+  "endpoints": []
+}

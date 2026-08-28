@@ -4,6 +4,7 @@ import { writeFile, readFile, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { prompt, confirm, choose } from "../lib/prompts.mjs";
+import { checkWrapperFreshness, printWrapperWarning } from "../lib/wrappers.mjs";
 import { convexRun, formatError } from "../lib/convex.mjs";
 import { printCliBanner } from "../lib/banner.mjs";
 
@@ -33,6 +34,53 @@ async function detectExistingRoutes(httpTsPath) {
   }
 }
 
+// Inspect convex/convex.config.ts for static hosting and the httpPrefix trap.
+// static-hosting 0.2 suggests defineApp({ httpPrefix: "/api" }), which moves
+// every app HTTP route (including /llms.txt) under /api where scanners never look.
+async function detectConvexConfig() {
+  const result = { hasStaticHosting: false, hasHttpPrefix: false };
+  const candidates = [
+    path.join(process.cwd(), "convex", "convex.config.ts"),
+    path.join(process.cwd(), "convex", "convex.config.js"),
+  ];
+  for (const configFile of candidates) {
+    if (!existsSync(configFile)) continue;
+    try {
+      const src = await readFile(configFile, "utf8");
+      if (/@convex-dev\/static-hosting/.test(src)) result.hasStaticHosting = true;
+      if (/httpPrefix/.test(src)) result.hasHttpPrefix = true;
+    } catch {
+      // unreadable config, skip detection
+    }
+  }
+  return result;
+}
+
+function printStaticHostingGuidance({ hasStaticHosting, hasHttpPrefix }) {
+  if (!hasStaticHosting && !hasHttpPrefix) return;
+  console.log("");
+  if (hasHttpPrefix) {
+    console.log("WARNING: convex.config.ts sets httpPrefix.");
+    console.log("  httpPrefix moves every convex/http.ts route (including /llms.txt and");
+    console.log("  /robots.txt) under that prefix. Agent scanners only look at root paths,");
+    console.log("  so discovery files become invisible. Remove httpPrefix and use app-owned");
+    console.log("  root routing instead:");
+  } else {
+    console.log("Detected @convex-dev/static-hosting. Required pairing with agent-ready:");
+    console.log("  app-owned root routing, no httpPrefix. Register agent-ready routes first,");
+    console.log("  then the static catch-all:");
+  }
+  console.log("");
+  console.log("    // convex/convex.config.ts: no httpPrefix");
+  console.log("    // convex/http.ts mount order:");
+  console.log("    registerRoutes(http, components.agentReady);");
+  console.log("    registerMarkdownRoutes(http, components.agentReady);");
+  console.log("    registerStaticRoutes(http, components.staticHosting, { spaFallback: true });");
+  console.log("");
+  console.log("  Exact paths with extensions (/llms.txt, /robots.txt) win over the SPA");
+  console.log("  fallback, so client routing keeps working.");
+}
+
 // Detect local static discovery files. We only flag these as "local files detected"
 // because not every Convex app uses Convex static hosting. Many apps host their
 // frontend on Vercel, Netlify, or Cloudflare Pages. Static files in `public/` may
@@ -52,6 +100,9 @@ function detectStaticFiles() {
 const CONTENT_WRAPPER = `import { action, mutation, query } from "../_generated/server";
 import { components } from "../_generated/api";
 import { v } from "convex/values";
+// Shared return validator for getCacheStatus. Imported from the package so
+// it stays in sync with the component when upgrades add fields.
+import { cacheStatusValidator } from "@waynesutton/agent-ready";
 
 const fileTypeValidator = v.union(
   v.literal("llms.txt"),
@@ -78,39 +129,6 @@ const pageValidator = v.object({
   section: v.optional(v.string()),
   descriptionGeneratedByAi: v.optional(v.boolean()),
   deletedAt: v.optional(v.number()),
-});
-
-const cacheStatusValidator = v.object({
-  testMode: v.boolean(),
-  appName: v.union(v.string(), v.null()),
-  appUrl: v.union(v.string(), v.null()),
-  lastGeneratedAt: v.union(v.number(), v.null()),
-  generatedFromVersion: v.union(v.string(), v.null()),
-  generationInProgress: v.boolean(),
-  hasDrafts: v.boolean(),
-  fullTxtEnabled: v.boolean(),
-  widgetVisible: v.boolean(),
-  widgetStatusVisible: v.boolean(),
-  widgetShowFiles: v.boolean(),
-  widgetShowAppName: v.boolean(),
-  widgetShowDescription: v.boolean(),
-  widgetShowMeta: v.boolean(),
-  widgetShowScoreTab: v.boolean(),
-  widgetDesktopCollapse: v.boolean(),
-  widgetCleanMode: v.boolean(),
-  widgetShowHumanTab: v.boolean(),
-  widgetShowMachineTab: v.boolean(),
-  widgetShowChatLinks: v.boolean(),
-  widgetShowChatGPT: v.boolean(),
-  widgetShowClaude: v.boolean(),
-  widgetShowPerplexity: v.boolean(),
-  readinessEndpointEnabled: v.boolean(),
-  robotsTxtEnabled: v.boolean(),
-  sitemapEnabled: v.boolean(),
-  rssEnabled: v.boolean(),
-  agentSkillsEnabled: v.boolean(),
-  discoveryHeaders: v.boolean(),
-  markdownNegotiation: v.boolean(),
 });
 
 export const getCacheStatus = query({
@@ -273,6 +291,10 @@ async function scaffoldWrappers() {
 
   if (existsSync(contentPath) && existsSync(analyticsPath)) {
     console.log("[setup] Convex wrappers already exist at convex/agentReady/. Skipping scaffold.");
+    // Wrappers scaffolded by an older version can have a stale inline
+    // getCacheStatus validator that throws after upgrading. Warn with the fix.
+    const staleness = await checkWrapperFreshness();
+    if (staleness) printWrapperWarning(staleness);
     return false;
   }
 
@@ -344,6 +366,10 @@ export async function setup(_args) {
   const httpTsPath = path.join(process.cwd(), "convex", "http.ts");
   const existingRoutes = await detectExistingRoutes(httpTsPath);
   const staticFiles = detectStaticFiles();
+
+  // Static hosting pairing guidance and the httpPrefix trap warning.
+  const convexConfig = await detectConvexConfig();
+  printStaticHostingGuidance(convexConfig);
 
   // Track skipRoutes additions so we can show users the exact registerRoutes() snippet
   // they need at the end of setup.
@@ -465,7 +491,21 @@ export async function setup(_args) {
     }
   }
 
+  // Live by default. Draft is the opt-in for review-before-publish workflows.
+  // Existing configs keep their saved state (publish wins, then legacy testMode).
+  const existingPublish =
+    existing.settings?.publish ?? (existing.settings?.testMode === true ? "draft" : "live");
+  const publishLive = await confirm(
+    "Publish files live now? (draft returns 404 until go-live)",
+    existingPublish !== "draft",
+  );
+  const publish = publishLive ? "live" : "draft";
+
   rssEnabled = await confirm("Enable RSS feed at /feed.xml?", existing.settings?.rssEnabled ?? false);
+  const markdownSiteEnabled = await confirm(
+    "Enable markdown site at /markdown?",
+    existing.settings?.markdownSiteEnabled ?? existing.settings?.markdownNegotiation ?? true,
+  );
 
   const widgetVisibility = await choose(
     "Widget display",
@@ -494,6 +534,13 @@ export async function setup(_args) {
         existing.settings?.widgetDesktopCollapse ?? true,
       )
     : existing.settings?.widgetDesktopCollapse ?? true;
+  const widgetShowMarkdownTab =
+    markdownSiteEnabled && widgetVisible
+      ? await confirm(
+          "Show MARKDOWN tab in the widget?",
+          existing.settings?.widgetShowMarkdownTab ?? true,
+        )
+      : false;
 
   const nextConfig = {
     ...existing,
@@ -505,7 +552,9 @@ export async function setup(_args) {
       analyticsEnabled,
       aiDescriptionsEnabled,
       aiProvider,
-      testMode: existing.settings?.testMode ?? true,
+      publish,
+      // Deprecated alias kept in sync so older component versions still gate correctly.
+      testMode: publish === "draft",
       cronEnabled: existing.settings?.cronEnabled ?? true,
       cronIntervalHours: existing.settings?.cronIntervalHours ?? 24,
       widgetPosition: selectedWidgetPosition ?? existing.settings?.widgetPosition ?? "floating-bottom-right",
@@ -526,11 +575,14 @@ export async function setup(_args) {
       widgetShowPerplexity: existing.settings?.widgetShowPerplexity ?? true,
       widgetColors: existing.settings?.widgetColors ?? {},
       theme: existing.settings?.theme ?? "system",
-      // New setups get the rich llms-full.txt enabled by default. Existing configs keep
-      // their current value to avoid surprising changes on rerun.
-      fullTxtEnabled: existing.settings?.fullTxtEnabled ?? true,
+      // Simple-mode-first: llms-full.txt is an advanced opt-in for new installs.
+      // Existing configs keep their current value to avoid surprising changes on rerun.
+      fullTxtEnabled: existing.settings?.fullTxtEnabled ?? false,
       permissiveMode: existing.settings?.permissiveMode ?? false,
       versioningEnabled: existing.settings?.versioningEnabled ?? false,
+      markdownNegotiation: markdownSiteEnabled,
+      markdownSiteEnabled,
+      widgetShowMarkdownTab,
       sitemapEnabled: sitemapEnabled,
       rssEnabled: rssEnabled,
       robotsTxtEnabled: robotsTxtEnabled,
@@ -558,6 +610,9 @@ export async function setup(_args) {
   console.log("");
   console.log("Next steps:");
   console.log("  1. Add registerRoutes() to convex/http.ts (see INTEGRATION.md)");
+  if (markdownSiteEnabled) {
+    console.log("     Add registerMarkdownRoutes() before any SPA/static fallback.");
+  }
   // Deduplicate while preserving order; users want one canonical snippet to copy.
   const skipRoutesUnique = Array.from(new Set(skipRoutesList));
   if (skipRoutesUnique.length > 0) {
@@ -567,12 +622,19 @@ export async function setup(_args) {
   }
   if (widgetVisible) {
     console.log("  2. Add <AgentReadyWidget /> to your app layout");
+    if (markdownSiteEnabled && !widgetShowMarkdownTab) {
+      console.log("     MARKDOWN tab is hidden, but /markdown pages are still live.");
+    }
   } else {
     console.log("  2. Widget is hidden. Run `npx agent-ready links` to copy file URLs.");
   }
   console.log("  3. (Optional) Add a settings page using <AgentReadySettingsPanel />");
   console.log("     See INTEGRATION.md for the full example.");
-  console.log("  4. Run: npx agent-ready go-live   (when ready for production)");
+  if (publish === "draft") {
+    console.log("  4. Run: npx agent-ready go-live   (files return 404 until you go live)");
+  } else {
+    console.log("  4. Files are live by default. Review first next time? Set publish: \"draft\".");
+  }
   console.log("");
   console.log("Your files will be available at:");
   console.log("  https://<your-deployment>.convex.site/llms.txt");

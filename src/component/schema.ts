@@ -17,6 +17,8 @@ const fileType = v.union(
   v.literal("sitemap.xml"),
   v.literal("agent-skills.json"),
   v.literal("rss.xml"),
+  v.literal("markdown-site.html"),
+  v.literal("site.md"),
 );
 
 export default defineSchema({
@@ -59,7 +61,13 @@ export default defineSchema({
       }),
     ),
     theme: v.union(v.literal("light"), v.literal("dark"), v.literal("system")),
+    // Publish state. "live" (default) serves publicly right away; "draft" blocks
+    // public routes with 404 until flipped. testMode is the deprecated alias.
+    publish: v.optional(v.union(v.literal("live"), v.literal("draft"))),
+    // Deprecated: use `publish` instead. testMode: true maps to publish: "draft".
     testMode: v.boolean(),
+    // Timestamp of the one-time console nudge printed after first codegen.
+    nudgePrintedAt: v.optional(v.number()),
     cronEnabled: v.boolean(),
     cronIntervalHours: v.number(),
     analyticsEnabled: v.boolean(),
@@ -87,6 +95,13 @@ export default defineSchema({
     rssEnabled: v.optional(v.boolean()),
     agentSkillsEnabled: v.optional(v.boolean()),
     readinessEndpointEnabled: v.optional(v.boolean()),
+    markdownSiteEnabled: v.optional(v.boolean()),
+    widgetShowMarkdownTab: v.optional(v.boolean()),
+    // Agent readiness v2 (advanced, off by default).
+    // apiCatalogEnabled serves RFC 9727 /.well-known/api-catalog from apiEndpoints.
+    // notFoundPageEnabled serves a recovery /404.md linked from llms.txt.
+    apiCatalogEnabled: v.optional(v.boolean()),
+    notFoundPageEnabled: v.optional(v.boolean()),
     // Stored function handles for event callbacks. Populated by registerRoutes options.
     onGenerationComplete: v.optional(v.string()),
     onAnalyticsThreshold: v.optional(v.string()),
@@ -149,6 +164,19 @@ export default defineSchema({
   })
     .index("by_requested_at", ["requestedAt"])
     .index("by_agent_name_time", ["agentName", "requestedAt"]),
+
+  // Per-page markdown twins for the markdown site viewer and content negotiation.
+  pageTwins: defineTable({
+    path: v.string(),
+    slug: v.string(),
+    title: v.string(),
+    description: v.string(),
+    section: v.optional(v.string()),
+    markdown: v.string(),
+    html: v.string(),
+    generatedFromVersion: v.string(),
+    generatedAt: v.number(),
+  }).index("by_path", ["path"]).index("by_slug", ["slug"]),
 
   // Opt-in version history. Only written when settings.versioningEnabled is true.
   pageVersions: defineTable({

@@ -21,6 +21,8 @@ export async function agentReady(args) {
     ...config.settings,
     contentSignals: { aiTrain: true, search: true, aiInput: true },
     markdownNegotiation: true,
+    markdownSiteEnabled: true,
+    widgetShowMarkdownTab: config.settings?.widgetShowMarkdownTab ?? true,
     discoveryHeaders: true,
     robotsTxtEnabled: true,
     robotsTxtAllowAiBots: true,
@@ -28,6 +30,8 @@ export async function agentReady(args) {
     rssEnabled: true,
     agentSkillsEnabled: true,
     readinessEndpointEnabled: true,
+    apiCatalogEnabled: true,
+    notFoundPageEnabled: true,
   };
 
   writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n");

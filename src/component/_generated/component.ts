@@ -68,7 +68,9 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             | "robots.txt"
             | "sitemap.xml"
             | "agent-skills.json"
-            | "rss.xml";
+            | "rss.xml"
+            | "markdown-site.html"
+            | "site.md";
           requestedAt: number;
           userAgent: string;
         },
@@ -123,7 +125,9 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             | "robots.txt"
             | "sitemap.xml"
             | "agent-skills.json"
-            | "rss.xml";
+            | "rss.xml"
+            | "markdown-site.html"
+            | "site.md";
         },
         null | {
           _creationTime: number;
@@ -136,7 +140,9 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             | "robots.txt"
             | "sitemap.xml"
             | "agent-skills.json"
-            | "rss.xml";
+            | "rss.xml"
+            | "markdown-site.html"
+            | "site.md";
           generatedAt: number;
           generatedFromVersion: string;
           lastJobId?: string;
@@ -161,9 +167,12 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           hasDrafts: boolean;
           lastGeneratedAt: number | null;
           markdownNegotiation: boolean;
+          markdownSiteEnabled: boolean;
+          publish: "live" | "draft";
           readinessEndpointEnabled: boolean;
           robotsTxtEnabled: boolean;
           rssEnabled: boolean;
+          siteSlug: string | null;
           sitemapEnabled: boolean;
           testMode: boolean;
           widgetCleanMode: boolean;
@@ -176,6 +185,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           widgetShowFiles: boolean;
           widgetShowHumanTab: boolean;
           widgetShowMachineTab: boolean;
+          widgetShowMarkdownTab: boolean;
           widgetShowMeta: boolean;
           widgetShowPerplexity: boolean;
           widgetShowScoreTab: boolean;
@@ -197,13 +207,53 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               | "robots.txt"
               | "sitemap.xml"
               | "agent-skills.json"
-              | "rss.xml";
+              | "rss.xml"
+              | "markdown-site.html"
+              | "site.md";
             generatedAt: number;
             status: "current" | "generating" | "failed";
             version: string;
           }>;
           jobId: string;
           state: "unknown" | "failed" | "running" | "complete";
+        },
+        Name
+      >;
+      getPageTwinByPath: FunctionReference<
+        "query",
+        "internal",
+        { path: string },
+        null | {
+          _creationTime: number;
+          _id: string;
+          description: string;
+          generatedAt: number;
+          generatedFromVersion: string;
+          html: string;
+          markdown: string;
+          path: string;
+          section?: string;
+          slug: string;
+          title: string;
+        },
+        Name
+      >;
+      getPageTwinBySlug: FunctionReference<
+        "query",
+        "internal",
+        { slug: string },
+        null | {
+          _creationTime: number;
+          _id: string;
+          description: string;
+          generatedAt: number;
+          generatedFromVersion: string;
+          html: string;
+          markdown: string;
+          path: string;
+          section?: string;
+          slug: string;
+          title: string;
         },
         Name
       >;
@@ -237,6 +287,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           analyticsEnabled: boolean;
           analyticsRequestRetentionDays: number;
           analyticsThreshold?: number;
+          apiCatalogEnabled?: boolean;
           appName: string;
           appUrl: string;
           contactEmail?: string;
@@ -251,9 +302,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           discoveryHeaders?: boolean;
           fullTxtEnabled: boolean;
           markdownNegotiation?: boolean;
+          markdownSiteEnabled?: boolean;
+          notFoundPageEnabled?: boolean;
+          nudgePrintedAt?: number;
           onAnalyticsThreshold?: string;
           onGenerationComplete?: string;
           permissiveMode: boolean;
+          publish?: "live" | "draft";
           readinessEndpointEnabled?: boolean;
           robotsTxtAllowAiBots?: boolean;
           robotsTxtDisallowPaths?: Array<string>;
@@ -286,6 +341,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           widgetShowFiles?: boolean;
           widgetShowHumanTab?: boolean;
           widgetShowMachineTab?: boolean;
+          widgetShowMarkdownTab?: boolean;
           widgetShowMeta?: boolean;
           widgetShowPerplexity?: boolean;
           widgetShowScoreTab?: boolean;
@@ -308,6 +364,21 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           method: string;
           path: string;
           status: "draft" | "published" | "archived";
+        }>,
+        Name
+      >;
+      listMarkdownPages: FunctionReference<
+        "query",
+        "internal",
+        {},
+        Array<{
+          description: string;
+          htmlUrl: string;
+          markdownUrl: string;
+          path: string;
+          section?: string;
+          slug: string;
+          title: string;
         }>,
         Name
       >;
@@ -357,7 +428,9 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             | "robots.txt"
             | "sitemap.xml"
             | "agent-skills.json"
-            | "rss.xml";
+            | "rss.xml"
+            | "markdown-site.html"
+            | "site.md";
         },
         null,
         Name
@@ -394,6 +467,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               analyticsEnabled?: boolean;
               analyticsRequestRetentionDays?: number;
               analyticsThreshold?: number;
+              apiCatalogEnabled?: boolean;
               appName?: string;
               appUrl?: string;
               contactEmail?: string;
@@ -408,9 +482,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               discoveryHeaders?: boolean;
               fullTxtEnabled?: boolean;
               markdownNegotiation?: boolean;
+              markdownSiteEnabled?: boolean;
+              notFoundPageEnabled?: boolean;
+              nudgePrintedAt?: number;
               onAnalyticsThreshold?: string;
               onGenerationComplete?: string;
               permissiveMode?: boolean;
+              publish?: "live" | "draft";
               readinessEndpointEnabled?: boolean;
               robotsTxtAllowAiBots?: boolean;
               robotsTxtDisallowPaths?: Array<string>;
@@ -443,6 +521,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               widgetShowFiles?: boolean;
               widgetShowHumanTab?: boolean;
               widgetShowMachineTab?: boolean;
+              widgetShowMarkdownTab?: boolean;
               widgetShowMeta?: boolean;
               widgetShowPerplexity?: boolean;
               widgetShowScoreTab?: boolean;
@@ -497,6 +576,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             analyticsEnabled?: boolean;
             analyticsRequestRetentionDays?: number;
             analyticsThreshold?: number;
+            apiCatalogEnabled?: boolean;
             appName?: string;
             appUrl?: string;
             contactEmail?: string;
@@ -511,9 +591,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             discoveryHeaders?: boolean;
             fullTxtEnabled?: boolean;
             markdownNegotiation?: boolean;
+            markdownSiteEnabled?: boolean;
+            notFoundPageEnabled?: boolean;
+            nudgePrintedAt?: number;
             onAnalyticsThreshold?: string;
             onGenerationComplete?: string;
             permissiveMode?: boolean;
+            publish?: "live" | "draft";
             readinessEndpointEnabled?: boolean;
             robotsTxtAllowAiBots?: boolean;
             robotsTxtDisallowPaths?: Array<string>;
@@ -546,6 +630,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             widgetShowFiles?: boolean;
             widgetShowHumanTab?: boolean;
             widgetShowMachineTab?: boolean;
+            widgetShowMarkdownTab?: boolean;
             widgetShowMeta?: boolean;
             widgetShowPerplexity?: boolean;
             widgetShowScoreTab?: boolean;
@@ -563,6 +648,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           analyticsEnabled: boolean;
           analyticsRequestRetentionDays: number;
           analyticsThreshold?: number;
+          apiCatalogEnabled?: boolean;
           appName: string;
           appUrl: string;
           contactEmail?: string;
@@ -577,9 +663,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           discoveryHeaders?: boolean;
           fullTxtEnabled: boolean;
           markdownNegotiation?: boolean;
+          markdownSiteEnabled?: boolean;
+          notFoundPageEnabled?: boolean;
+          nudgePrintedAt?: number;
           onAnalyticsThreshold?: string;
           onGenerationComplete?: string;
           permissiveMode: boolean;
+          publish?: "live" | "draft";
           readinessEndpointEnabled?: boolean;
           robotsTxtAllowAiBots?: boolean;
           robotsTxtDisallowPaths?: Array<string>;
@@ -612,6 +702,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           widgetShowFiles?: boolean;
           widgetShowHumanTab?: boolean;
           widgetShowMachineTab?: boolean;
+          widgetShowMarkdownTab?: boolean;
           widgetShowMeta?: boolean;
           widgetShowPerplexity?: boolean;
           widgetShowScoreTab?: boolean;

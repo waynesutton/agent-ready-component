@@ -243,10 +243,10 @@ npx convex dev
 npm run dev
 ```
 
-Or run both from one command:
+Or run Convex and a frontend command from one terminal:
 
 ```bash
-npx convex dev --start 'npm run dev'
+npx convex dev --run-sh 'vite'
 ```
 
 Verify the component:
@@ -284,7 +284,7 @@ npx agent-ready regenerate --prod
 
 ## 8. Go live
 
-`testMode` blocks public access until you are ready. When you are ready to make your files publicly accessible, run go-live against production:
+Files are live by default. If you opted into `publish: "draft"` (or still have the deprecated `testMode: true`), public routes return `404` until you run go-live against production:
 
 ```bash
 npx agent-ready go-live --prod
@@ -312,10 +312,10 @@ npx agent-ready status --prod
 |---|---|
 | `setup` | Interactive first-run wizard, writes `agent-ready.config.json`, calls `sync` |
 | `sync` | Reads `agent-ready.config.json` and applies it to the deployment |
-| `status` | Prints cache status, current versions, and test mode state |
+| `status` | Prints cache status, current versions, and publish state |
 | `regenerate` | Builds fresh `llms.txt`, `agents.md`, and `llms-full.txt` |
 | `rollback --file <name>` | Swaps the active cache entry for the previous version |
-| `go-live` | Flips `testMode` off with a confirmation prompt |
+| `go-live` | Sets `publish: "live"` with a confirmation prompt (draft installs) |
 | `agent-ready` | Enables all readiness flags, syncs, and regenerates |
 | `scan --url <url>` | Audits deployment endpoints, exits non-zero below 80 |
 | `generate-descriptions` | Fills empty page descriptions when AI descriptions are enabled |
@@ -333,7 +333,7 @@ Add `--prod` to any command to target your production deployment instead of your
 
 | Symptom | Fix |
 |---|---|
-| `/llms.txt` returns `403` | You are still in test mode. Run `npx agent-ready go-live`. |
+| `/llms.txt` returns `404` with a short body | The install is in `publish: "draft"`. Run `npx agent-ready go-live`. |
 | `/llms.txt` returns `503 "not configured"` | No settings row exists. Run `npx agent-ready setup` or `npx agent-ready sync`. |
 | `/llms.txt` returns `503 "not generated yet"` | No cached content exists. Run `npx agent-ready regenerate`. |
 | ETag never changes after edits | Run `npx agent-ready sync`, then `npx agent-ready regenerate`. |

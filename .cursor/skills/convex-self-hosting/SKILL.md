@@ -14,7 +14,7 @@ Run this check before making any code changes or giving setup advice.
 Preferred command:
 
 ```bash
-bash skills/convex-self-hosting/scripts/check-upstream.sh
+bash .agents/skills/convex-self-hosting/scripts/check-upstream.sh
 ```
 
 1. Read latest integration guide:

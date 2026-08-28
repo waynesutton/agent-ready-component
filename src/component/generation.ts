@@ -1,7 +1,25 @@
 import { internalAction, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
-import { buildVersionInput, sha256Hex, escapeXml, sanitizePath, KNOWN_AI_BOTS } from "./lib.js";
+import {
+  buildVersionInput,
+  sha256Hex,
+  escapeXml,
+  sanitizePath,
+  KNOWN_AI_BOTS,
+  buildMarkdownTwinBody,
+  buildMarkdownIndexHtml,
+  buildMarkdownPageHtml,
+  markdownToHtml,
+  stripYamlFrontmatter,
+  pagePathToMarkdownSlug,
+  normalizeBaseUrl,
+  appNameToSlug,
+  resolveContentSignals,
+  resolveRobotsTxtEnabled,
+  resolveSitemapEnabled,
+  type ContentSignals,
+} from "./lib.js";
 
 // Workpool entry point. Called by content.regenerateAll.
 // Fetches settings, pages, endpoints, builds each file, diffs hashes, writes cachedFiles rows.
@@ -18,24 +36,56 @@ export const runGeneration = internalAction({
 
     const llmsTxt = renderLlmsTxt(settings, pages);
     const agentsMd = renderAgentsMd(settings, endpoints);
+    const siteMd = renderSiteMd(settings, pages, endpoints);
     const fullTxt = settings.fullTxtEnabled ? renderFullTxt(settings, pages) : null;
-    const robotsTxt = settings.robotsTxtEnabled ? renderRobotsTxt(settings, pages) : null;
-    const sitemapXml = settings.sitemapEnabled ? renderSitemap(settings, pages) : null;
+    // Default on (agent readiness v2): generate unless explicitly disabled.
+    const robotsTxt = resolveRobotsTxtEnabled(settings) ? renderRobotsTxt(settings, pages) : null;
+    const sitemapXml = resolveSitemapEnabled(settings) ? renderSitemap(settings, pages) : null;
     const agentSkills = settings.agentSkillsEnabled
       ? renderAgentSkills(settings, pages, endpoints)
       : null;
     const rssFeed = settings.rssEnabled ? renderRssFeed(settings, pages) : null;
+    const markdownSiteEnabled =
+      settings.markdownSiteEnabled !== false && settings.markdownNegotiation !== false;
 
     type FileEntry = { fileType: string; content: string };
     const files: Array<FileEntry> = [
       { fileType: "llms.txt", content: llmsTxt },
       { fileType: "agents.md", content: agentsMd },
+      { fileType: "site.md", content: siteMd },
     ];
     if (fullTxt) files.push({ fileType: "llms-full.txt", content: fullTxt });
     if (robotsTxt) files.push({ fileType: "robots.txt", content: robotsTxt });
     if (sitemapXml) files.push({ fileType: "sitemap.xml", content: sitemapXml });
     if (agentSkills) files.push({ fileType: "agent-skills.json", content: agentSkills });
     if (rssFeed) files.push({ fileType: "rss.xml", content: rssFeed });
+
+    let pageTwinPayload: Array<PageTwinWrite> = [];
+    if (markdownSiteEnabled) {
+      const built = buildPageTwins(settings, pages);
+      pageTwinPayload = await Promise.all(
+        built.map(async (t): Promise<PageTwinWrite> => {
+          const { versionSeed, ...rest } = t;
+          return {
+            ...rest,
+            generatedFromVersion: await sha256Hex(versionSeed),
+          };
+        }),
+      );
+      const indexHtml = buildMarkdownIndexHtml({
+        appName: settings.appName,
+        description: settings.description,
+        siteUrl: settings.appUrl,
+        pages: pageTwinPayload.map((t) => ({
+          title: t.title,
+          path: t.path,
+          description: t.description,
+          section: t.section,
+          slug: t.slug,
+        })),
+      });
+      files.push({ fileType: "markdown-site.html", content: indexHtml });
+    }
 
     const versions = await Promise.all(
       files.map((f) =>
@@ -44,7 +94,16 @@ export const runGeneration = internalAction({
     );
 
     const results = files.map((f, i) => ({
-      fileType: f.fileType as "llms.txt" | "agents.md" | "llms-full.txt" | "robots.txt" | "sitemap.xml" | "agent-skills.json" | "rss.xml",
+      fileType: f.fileType as
+        | "llms.txt"
+        | "agents.md"
+        | "llms-full.txt"
+        | "robots.txt"
+        | "sitemap.xml"
+        | "agent-skills.json"
+        | "rss.xml"
+        | "markdown-site.html"
+        | "site.md",
       content: f.content,
       version: versions[i]!,
     }));
@@ -53,6 +112,13 @@ export const runGeneration = internalAction({
       jobId: args.jobId,
       results,
     });
+
+    if (markdownSiteEnabled) {
+      await ctx.runMutation(internal.generation.writePageTwins, {
+        jobId: args.jobId,
+        twins: pageTwinPayload,
+      });
+    }
 
     if (settings.onGenerationComplete) {
       try {
@@ -65,15 +131,104 @@ export const runGeneration = internalAction({
       }
     }
 
+    // One-time console nudge after the first codegen (dev deployments only).
+    if (!settings.nudgePrintedAt && process.env.NODE_ENV !== "production") {
+      const slug = appNameToSlug(settings.appName);
+      console.log(
+        `[agent-ready] Simple mode active. Serving /llms.txt and /${slug}.md (live).`,
+      );
+      console.log(
+        `[agent-ready] Add <link rel="alternate" type="text/markdown" href="/${slug}.md"> to your root layout for full discoverability.`,
+      );
+      console.log(
+        '[agent-ready] Review before publishing? Set publish: "draft". Advanced features: https://github.com/waynesutton/agent-ready-component#advanced',
+      );
+      await ctx.runMutation(internal.generation.markNudgePrinted, {});
+    }
+
+    return null;
+  },
+});
+
+// Records that the one-time console nudge was printed so it never repeats.
+export const markNudgePrinted = internalMutation({
+  args: {},
+  returns: v.null(),
+  handler: async (ctx) => {
+    const settings = await ctx.db.query("settings").unique();
+    if (!settings || settings.nudgePrintedAt) return null;
+    await ctx.db.patch(settings._id, { nudgePrintedAt: Date.now() });
     return null;
   },
 });
 
 type CachedResult = {
-  fileType: "llms.txt" | "agents.md" | "llms-full.txt" | "robots.txt" | "sitemap.xml" | "agent-skills.json" | "rss.xml";
+  fileType:
+    | "llms.txt"
+    | "agents.md"
+    | "llms-full.txt"
+    | "robots.txt"
+    | "sitemap.xml"
+    | "agent-skills.json"
+    | "rss.xml"
+    | "markdown-site.html"
+    | "site.md";
   content: string;
   version: string;
 };
+
+type PageTwinDraft = {
+  path: string;
+  slug: string;
+  title: string;
+  description: string;
+  section?: string;
+  markdown: string;
+  html: string;
+  versionSeed: string;
+};
+
+type PageTwinWrite = Omit<PageTwinDraft, "versionSeed"> & {
+  generatedFromVersion: string;
+};
+
+export const writePageTwins = internalMutation({
+  args: {
+    jobId: v.string(),
+    twins: v.array(
+      v.object({
+        path: v.string(),
+        slug: v.string(),
+        title: v.string(),
+        description: v.string(),
+        section: v.optional(v.string()),
+        markdown: v.string(),
+        html: v.string(),
+        generatedFromVersion: v.string(),
+      }),
+    ),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const existing = await ctx.db.query("pageTwins").take(1000);
+    await Promise.all(existing.map((row) => ctx.db.delete(row._id)));
+    for (const twin of args.twins) {
+      await ctx.db.insert("pageTwins", {
+        path: twin.path,
+        slug: twin.slug,
+        title: twin.title,
+        description: twin.description,
+        section: twin.section,
+        markdown: twin.markdown,
+        html: twin.html,
+        generatedFromVersion: twin.generatedFromVersion,
+        generatedAt: now,
+      });
+    }
+    return null;
+  },
+});
 
 export const writeGenerationResult = internalMutation({
   args: {
@@ -88,6 +243,8 @@ export const writeGenerationResult = internalMutation({
           v.literal("sitemap.xml"),
           v.literal("agent-skills.json"),
           v.literal("rss.xml"),
+          v.literal("markdown-site.html"),
+          v.literal("site.md"),
         ),
         content: v.string(),
         version: v.string(),
@@ -102,8 +259,15 @@ export const writeGenerationResult = internalMutation({
         .query("cachedFiles")
         .withIndex("by_file_type", (q) => q.eq("fileType", result.fileType))
         .unique();
-      // Idempotent skip. Hash match means nothing to write.
-      if (existing && existing.generatedFromVersion === result.version) continue;
+      // Idempotent skip. Hash match means no content to write, but reset the
+      // status so rows marked "generating" by invalidateCache return to
+      // "current" instead of leaving generationInProgress stuck true.
+      if (existing && existing.generatedFromVersion === result.version) {
+        if (existing.status !== "current") {
+          await ctx.db.patch(existing._id, { status: "current", lastJobId: args.jobId });
+        }
+        continue;
+      }
 
       if (!existing) {
         await ctx.db.insert("cachedFiles", {
@@ -151,12 +315,16 @@ type SettingsLike = {
   agentInstructions?: string;
   fullTxtEnabled: boolean;
   onGenerationComplete?: string;
+  contentSignals?: ContentSignals;
   robotsTxtEnabled?: boolean;
   robotsTxtAllowAiBots?: boolean;
   robotsTxtDisallowPaths?: string[];
   sitemapEnabled?: boolean;
   rssEnabled?: boolean;
   agentSkillsEnabled?: boolean;
+  markdownNegotiation?: boolean;
+  markdownSiteEnabled?: boolean;
+  notFoundPageEnabled?: boolean;
 };
 
 type PageLike = {
@@ -181,10 +349,20 @@ type EndpointLike = {
 function renderLlmsTxt(settings: SettingsLike, pages: ReadonlyArray<PageLike>): string {
   const core = pages.filter((p) => !p.isOptional);
   const optional = pages.filter((p) => p.isOptional);
+  const base = normalizeBaseUrl(settings.appUrl);
+  const markdownSiteEnabled =
+    settings.markdownSiteEnabled !== false && settings.markdownNegotiation !== false;
   const lines: Array<string> = [];
   lines.push(`# ${settings.appName}`);
   lines.push("");
   lines.push(`> ${settings.description}`);
+  if (markdownSiteEnabled) {
+    lines.push("");
+    lines.push("## Markdown site");
+    lines.push(
+      `- [Markdown site](${base}/markdown): Human-readable HTML pages with markdown available via \`Accept: text/markdown\` for agents.`,
+    );
+  }
 
   // Group core pages by section. Pages without a section land under the default
   // "Pages" heading. Section order follows first-appearance so apps can hand-tune
@@ -212,6 +390,77 @@ function renderLlmsTxt(settings: SettingsLike, pages: ReadonlyArray<PageLike>): 
     for (const page of optional) {
       lines.push(`- [${page.title}](${settings.appUrl}${page.path}): ${page.description}`);
     }
+  }
+
+  // Recovery pointer for agents that land on missing pages (advanced, opt in).
+  if (settings.notFoundPageEnabled === true) {
+    lines.push("");
+    lines.push("## Errors");
+    lines.push(
+      `- [404 guide](${base}/404.md): Where to go when a page is missing.`,
+    );
+  }
+  lines.push("");
+  return lines.join("\n");
+}
+
+// Per-site markdown summary served at /{slug}.md. A richer, human-and-agent
+// readable overview than llms.txt: description, instructions, pages, endpoints,
+// and pointers to the other discovery files.
+function renderSiteMd(
+  settings: SettingsLike,
+  pages: ReadonlyArray<PageLike>,
+  endpoints: ReadonlyArray<EndpointLike>,
+): string {
+  const base = normalizeBaseUrl(settings.appUrl);
+  const markdownSiteEnabled =
+    settings.markdownSiteEnabled !== false && settings.markdownNegotiation !== false;
+  const lines: Array<string> = [];
+  lines.push(`# ${settings.appName}`);
+  lines.push("");
+  if (settings.description.trim()) {
+    lines.push(`> ${settings.description.trim()}`);
+    lines.push("");
+  }
+  if (settings.agentInstructions?.trim()) {
+    lines.push("## Agent instructions");
+    lines.push("");
+    lines.push(settings.agentInstructions.trim());
+    lines.push("");
+  }
+  if (pages.length > 0) {
+    const sections = new Map<string, Array<PageLike>>();
+    for (const page of pages) {
+      const key = page.section?.trim() || "Pages";
+      const bucket = sections.get(key) ?? [];
+      bucket.push(page);
+      sections.set(key, bucket);
+    }
+    for (const [section, group] of sections) {
+      lines.push(`## ${section}`);
+      lines.push("");
+      for (const page of group) {
+        lines.push(`- [${page.title}](${base}${page.path}): ${page.description}`);
+      }
+      lines.push("");
+    }
+  }
+  if (endpoints.length > 0) {
+    lines.push("## API endpoints");
+    lines.push("");
+    for (const endpoint of endpoints) {
+      lines.push(`- \`${endpoint.method} ${endpoint.path}\`: ${endpoint.description}`);
+    }
+    lines.push("");
+  }
+  lines.push("## Agent resources");
+  lines.push("");
+  lines.push(`- [llms.txt](${base}/llms.txt): Machine-readable site index`);
+  lines.push(`- [agents.md](${base}/agents.md): Agent instructions and API endpoints`);
+  if (markdownSiteEnabled) {
+    lines.push(
+      `- [Markdown site](${base}/markdown): Per-page markdown via \`Accept: text/markdown\``,
+    );
   }
   lines.push("");
   return lines.join("\n");
@@ -267,10 +516,20 @@ function renderFullTxt(settings: SettingsLike, pages: ReadonlyArray<PageLike>): 
 }
 
 function renderRobotsTxt(settings: SettingsLike, pages: ReadonlyArray<PageLike>): string {
-  const base = settings.appUrl.replace(/\/$/, "");
+  const base = normalizeBaseUrl(settings.appUrl);
+  const markdownSiteEnabled =
+    settings.markdownSiteEnabled !== false && settings.markdownNegotiation !== false;
+  const signals = resolveContentSignals(settings.contentSignals);
+  const signalValue = `ai-train=${signals.aiTrain ? "yes" : "no"}, search=${signals.search ? "yes" : "no"}, ai-input=${signals.aiInput ? "yes" : "no"}`;
   const lines: Array<string> = [];
 
+  // Content Signals policy (contentsignals.org). Emitted in robots.txt so
+  // crawlers that never read HTTP headers still see the usage preferences.
+  lines.push("# Content-Signal directives express how this content may be used.");
+  lines.push("# See https://contentsignals.org for the policy definition.");
+  lines.push("");
   lines.push("User-agent: *");
+  lines.push(`Content-Signal: ${signalValue}`);
   if (settings.robotsTxtDisallowPaths) {
     for (const p of settings.robotsTxtDisallowPaths) {
       lines.push(`Disallow: ${sanitizePath(p)}`);
@@ -287,23 +546,39 @@ function renderRobotsTxt(settings: SettingsLike, pages: ReadonlyArray<PageLike>)
   }
 
   lines.push(`Sitemap: ${base}/llms.txt`);
-  if (settings.sitemapEnabled) {
+  if (resolveSitemapEnabled(settings)) {
     lines.push(`Sitemap: ${base}/sitemap.xml`);
+  }
+  if (markdownSiteEnabled) {
+    lines.push(`# Markdown site: ${base}/markdown`);
   }
   lines.push("");
   return lines.join("\n");
 }
 
 function renderSitemap(settings: SettingsLike, pages: ReadonlyArray<PageLike>): string {
-  const base = settings.appUrl.replace(/\/$/, "");
+  const base = normalizeBaseUrl(settings.appUrl);
+  const markdownSiteEnabled =
+    settings.markdownSiteEnabled !== false && settings.markdownNegotiation !== false;
   const lines: Array<string> = [];
   lines.push('<?xml version="1.0" encoding="UTF-8"?>');
   lines.push('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">');
+  if (markdownSiteEnabled) {
+    lines.push("  <url>");
+    lines.push(`    <loc>${escapeXml(`${base}/markdown`)}</loc>`);
+    lines.push("  </url>");
+  }
   for (const page of pages) {
     const loc = escapeXml(`${base}${page.path}`);
     lines.push("  <url>");
     lines.push(`    <loc>${loc}</loc>`);
     lines.push("  </url>");
+    if (markdownSiteEnabled) {
+      const markdownLoc = escapeXml(`${base}/markdown/${encodeURIComponent(pagePathToMarkdownSlug(page.path))}`);
+      lines.push("  <url>");
+      lines.push(`    <loc>${markdownLoc}</loc>`);
+      lines.push("  </url>");
+    }
   }
   lines.push("</urlset>");
   lines.push("");
@@ -340,8 +615,19 @@ function renderAgentSkills(
   pages: ReadonlyArray<PageLike>,
   endpoints: ReadonlyArray<EndpointLike>,
 ): string {
-  const base = settings.appUrl.replace(/\/$/, "");
+  const base = normalizeBaseUrl(settings.appUrl);
+  const markdownSiteEnabled =
+    settings.markdownSiteEnabled !== false && settings.markdownNegotiation !== false;
   const skills: Array<Record<string, string>> = [];
+
+  if (markdownSiteEnabled) {
+    skills.push({
+      name: "Markdown site",
+      description: "Human-readable page index with markdown responses for agents.",
+      type: "markdown-index",
+      url: `${base}/markdown`,
+    });
+  }
 
   for (const page of pages) {
     skills.push({
@@ -349,6 +635,9 @@ function renderAgentSkills(
       description: page.description,
       type: "page",
       url: `${base}${page.path}`,
+      ...(markdownSiteEnabled
+        ? { markdownUrl: `${base}/markdown/${encodeURIComponent(pagePathToMarkdownSlug(page.path))}` }
+        : {}),
     });
   }
 
@@ -371,4 +660,45 @@ function renderAgentSkills(
     null,
     2,
   );
+}
+
+function buildPageTwins(
+  settings: SettingsLike,
+  pages: ReadonlyArray<PageLike>,
+): Array<PageTwinDraft> {
+  const base = normalizeBaseUrl(settings.appUrl);
+  const twins: Array<PageTwinDraft> = [];
+
+  for (const page of pages) {
+    const slug = pagePathToMarkdownSlug(page.path);
+    const markdown = buildMarkdownTwinBody(page);
+    // Frontmatter stays in the markdown twin but never renders in the HTML twin.
+    const bodyHtml = markdownToHtml(stripYamlFrontmatter(markdown));
+    const pageUrl = `${base}/markdown/${encodeURIComponent(slug)}`;
+    const html = buildMarkdownPageHtml({
+      appName: settings.appName,
+      title: page.title,
+      description: page.description,
+      bodyHtml,
+      canonicalUrl: `${base}${page.path}`,
+      markdownUrl: pageUrl,
+      siteIndexUrl: `${base}/markdown`,
+    });
+    const versionSeed = buildVersionInput(settings.appName, settings.appUrl, page.path, [
+      markdown,
+      html,
+    ]);
+    twins.push({
+      path: page.path,
+      slug,
+      title: page.title,
+      description: page.description,
+      section: page.section,
+      markdown,
+      html,
+      versionSeed,
+    });
+  }
+
+  return twins;
 }

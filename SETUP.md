@@ -16,6 +16,81 @@ Related reading:
 - [https://docs.convex.dev/components/using](https://docs.convex.dev/components/using)
 - [https://docs.convex.dev/components/understanding](https://docs.convex.dev/components/understanding)
 
+## Quick release with folder checks
+
+Fast path for shipping a release when the repo is already set up. Every step starts with a `cd` to the exact folder, so you can run any step from anywhere. The repo root in these examples is `/Users/waynesutton/Documents/sites/agent-ready-component`. Adjust to your checkout path.
+
+For a first-time release or a full walkthrough with all verification detail, use the numbered sections below instead.
+
+### Step 1: Final check and commit (repo root)
+
+```bash
+cd /Users/waynesutton/Documents/sites/agent-ready-component
+pwd   # should print /Users/waynesutton/Documents/sites/agent-ready-component
+npm run typecheck && npm run build
+git status
+git add -A
+git commit -m "Release 0.3.0: simple-mode-first, publish live by default, per-site markdown route, always-on describedby Link header, AgentLinks"
+git push origin main
+```
+
+Optional tag:
+
+```bash
+git tag v0.3.0 && git push origin v0.3.0
+```
+
+### Step 2: Publish to npm (repo root)
+
+```bash
+cd /Users/waynesutton/Documents/sites/agent-ready-component
+npm publish --access public
+npm view @waynesutton/agent-ready version   # should print 0.3.0
+```
+
+The build script copies both `.svelte` files into `dist`. Before publishing, run the export and tarball checks from sections 5 and 9: `cacheStatusValidator` must be in `dist/client`, and `docs/upgrading.md` plus `cli/lib/wrappers.mjs` must be in the pack list.
+
+### Step 3: Redeploy the React demo to production (example-react folder)
+
+```bash
+cd /Users/waynesutton/Documents/sites/agent-ready-component/example-react
+pwd   # should end in /example-react
+npm run deploy:full
+```
+
+That one script chains everything: `npx convex deploy`, `npx agent-ready sync --prod`, `npx agent-ready regenerate --prod`, then the static hosting push. If you prefer running them one at a time:
+
+```bash
+cd /Users/waynesutton/Documents/sites/agent-ready-component/example-react
+npx convex deploy
+npx agent-ready sync --prod
+npx agent-ready regenerate --prod
+npm run deploy
+```
+
+### Step 4: Redeploy the Svelte demo to production (example-svelte folder)
+
+```bash
+cd /Users/waynesutton/Documents/sites/agent-ready-component/example-svelte
+pwd   # should end in /example-svelte
+npx convex deploy
+npx agent-ready sync --prod
+npx agent-ready regenerate --prod
+npm run deploy:static   # builds and uploads to static hosting with --prod
+```
+
+### Step 5: Verify production (any folder, curl only)
+
+```bash
+BASE=https://quixotic-viper-800.convex.site   # React demo public site
+curl -sI $BASE/llms.txt | grep -i "link\|etag"
+curl -sI $BASE/agent-ready-react-demo.md
+curl -sI -H "Accept: text/markdown" $BASE/markdown | grep -i "content-type\|vary"
+curl -s $BASE/llms-status | grep -o '"publish":"[^"]*"'
+```
+
+Expected: 200s, a `Link:` header containing `rel="describedby"` on every response, `content-type: text/markdown` with `vary: Accept` on the negotiated `/markdown` request, and `"publish":"live"` from status.
+
 ## 1. Prerequisites
 
 You need these tools before you publish or deploy the demos:
@@ -42,7 +117,7 @@ cd agent-ready-component
 npm install
 ```
 
-`npm install` installs the root component plus both demo apps: `example-react` and `example-svelte`.
+`npm install` installs the root component plus all demo apps: `example-react`, `example-svelte`, and `example-expo`.
 
 ## 3. Configure a Convex dev deployment
 
@@ -76,7 +151,16 @@ Confirm these files exist before publishing:
 - `dist/component/_generated/api.js`
 - `dist/react/index.js`
 - `dist/svelte/index.js`
+- `dist/expo/index.js`
 - `dist/test/index.js`
+
+Confirm the shared wrapper validator is exported from the package root. Consumer wrapper functions import this so their `getCacheStatus` return validators never go stale on upgrades:
+
+```bash
+grep -l "cacheStatusValidator" dist/client/index.js dist/client/index.d.ts
+```
+
+Both files should print. If either is missing, the scaffolded wrappers and INTEGRATION.md snippet will fail to import it.
 
 ## 6. Type check
 
@@ -138,6 +222,17 @@ The printed file list must include:
 - `INTEGRATION.md`
 - `LICENSE`
 
+Spot-check these specific files inside those folders. They are easy to lose to an `.npmignore` edit and each one breaks a real flow if missing:
+
+- `docs/upgrading.md` (linked from the README, the 0.2.x to 0.3.0 upgrade guide)
+- `cli/lib/wrappers.mjs` (stale wrapper detection used by `sync` and `setup`)
+
+```bash
+npm pack --dry-run 2>&1 | grep -E "docs/upgrading.md|cli/lib/wrappers.mjs"
+```
+
+Both lines should print.
+
 It must not include:
 
 - `example-react/`
@@ -192,7 +287,11 @@ gh release create v0.1.0 --generate-notes
 
 ## 12. Demo apps (optional)
 
-The `example-react` and `example-svelte` directories are working Convex apps that show how to register the component, wire the widget, and serve live discovery files. `example-react` uses React + Vite with the React widget. `example-svelte` uses SvelteKit with the Svelte widget.
+The `example-react` and `example-svelte` directories are working Convex apps that show how to register the component, wire the widget, serve live discovery files, and expose `/markdown`. `example-react` uses React + Vite with the React widget. `example-svelte` uses SvelteKit with the Svelte widget.
+
+The `example-expo` directory is a mobile demo. It does not host Convex HTTP routes itself. It points the Expo widget at a Convex `.site` deployment from the React or Svelte demo, or any app that has `registerRoutes` and `registerMarkdownRoutes` mounted.
+
+The setup wizard treats the markdown site and widget tab as separate choices. You can enable `/markdown` for agents, search, and answer engines, then answer no to "Show MARKDOWN tab in the widget?" if you want the widget to stay simpler.
 
 You do not need these demo apps to use `@waynesutton/agent-ready` in your own project. If you forked this repo to build your own product, you can ignore them.
 
@@ -305,13 +404,18 @@ The browser `unload` permission warning and a missing `favicon.ico` request are 
 ```bash
 cd example-react
 npx convex login
-npx convex dev
+npm run dev
 ```
 
-In a second terminal:
+This pushes Convex functions first, then runs `node setup.mjs`, then starts Vite through `npx convex dev --run-sh`.
+
+If you prefer two terminals:
 
 ```bash
-npm run dev
+npx convex dev
+# second terminal
+node setup.mjs
+vite
 ```
 
 Stop both processes after local verification.
@@ -359,19 +463,24 @@ npx agent-ready regenerate --prod
 npm run deploy
 ```
 
-Open `https://quixotic-viper-800.convex.site`. You should see the cream demo UI, the widget in the bottom right, and the file sidebar linking to `/llms.txt`, `/agents.md`, and `/llms-status`.
+Open `https://quixotic-viper-800.convex.site`. You should see the cream demo UI, the widget in the bottom right, and the file sidebar linking to `/llms.txt`, `/agents.md`, `/llms-status`, and `/markdown`.
 
 ### Deploy the Svelte demo
 
 ```bash
 cd ../example-svelte
-npx convex dev
+npm run dev
 ```
 
-In a second terminal:
+This pushes Convex functions first, then runs `node setup.mjs`, then starts SvelteKit through `npx convex dev --run-sh`.
+
+If you prefer two terminals:
 
 ```bash
-npm run dev
+npx convex dev
+# second terminal
+node setup.mjs
+vite dev
 ```
 
 Stop both processes after local verification.
@@ -415,6 +524,24 @@ npm run deploy
 
 SvelteKit uses `@sveltejs/adapter-static`. The uploaded `build/` folder serves from the same deployment URL as the Convex functions.
 
+### Run the Expo demo
+
+Use the `.convex.site` URL from either full demo app:
+
+```bash
+cd ../example-expo
+npm install
+EXPO_PUBLIC_AGENT_READY_URL=https://your-deployment.convex.site npm run start
+```
+
+Optional public domain:
+
+```bash
+EXPO_PUBLIC_SITE_URL=https://yourdomain.com
+```
+
+The Expo widget reads `/llms-status` and `/llms-markdown-index` from `EXPO_PUBLIC_AGENT_READY_URL`. It opens the same `llms.txt`, `agents.md`, `llms-full.txt`, and `/markdown` URLs as the web widgets.
+
 ### Confirm live file URLs
 
 Run these checks against both demo deployments:
@@ -423,17 +550,20 @@ Run these checks against both demo deployments:
 curl -i https://your-deployment.convex.site/llms.txt
 curl -i https://your-deployment.convex.site/agents.md
 curl -i https://your-deployment.convex.site/llms-status
+curl -i https://your-deployment.convex.site/markdown
+curl -i -H "Accept: text/markdown" https://your-deployment.convex.site/markdown
+npx agent-ready scan --url https://your-deployment.convex.site --strict
 ```
 
-While `testMode: true` is on, non-localhost requests return `403`. That is the expected default.
+Files are live by default (`publish: "live"`). If a deployment is in `publish: "draft"` (or has the deprecated `testMode: true`), non-localhost requests return `404` until you go live.
 
-### Flip testMode off
+### Flip a draft install live
 
 ```bash
 npx agent-ready go-live --prod
 ```
 
-The wizard asks for confirmation, prints the file URLs that become public, and flips the `testMode` flag.
+The command asks for confirmation, prints the file URLs that become public, and sets `publish: "live"`.
 
 Repeat for the other demo app, then re-run the curls in section 14. Expect `200 OK` and generated content.
 
@@ -475,7 +605,7 @@ Repeat the same flow against the Svelte demo URL.
 - Widget shows `HUMAN` and `MACHINE` tabs. HUMAN tab includes "Open in ChatGPT / Claude / Perplexity" links. MACHINE tab shows file links with open-in-new-tab icons
 - SCORE tab visible when `widgetShowScoreTab: true` is set in config. Shows readiness score with 11 checks
 - Hidden widget mode verified by setting `widgetVisible: false`, running `npx agent-ready sync --prod`, and confirming generated routes still return `200 OK`
-- `testMode` is off on both demo deployments
+- `publish` is `"live"` on both demo deployments
 - `/llms.txt`, `/agents.md`, and `/llms-status` return `200 OK`
 - `/robots.txt`, `/sitemap.xml`, `/feed.xml`, `/.well-known/agent-skills`, and `/llms-readiness` return `200 OK` when readiness flags are enabled
 - `npx agent-ready scan --url <url>` returns score of 80 or higher
@@ -483,6 +613,9 @@ Repeat the same flow against the Svelte demo URL.
 - ETag returns `304 Not Modified` on unchanged content
 - UpdateBanner reload works end to end
 - `README.md` contains the app developer install guide
+- `README.md` links to `docs/upgrading.md` in the intro and Documentation section
 - `docs/install.md` and `docs/install.html` point readers back to the README install guide
+- Upgrade path verified: in a consumer app with 0.2.x-era wrappers, `npx agent-ready sync` prints the stale wrapper warning with the missing validator fields and the import fix
+- `npx agent-ready go-live` updates the local `agent-ready.config.json` to `publish: "live"` so a later `sync` does not flip the site back to draft
 
 You are shipped.

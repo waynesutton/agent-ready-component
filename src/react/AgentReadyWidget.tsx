@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReadinessReport, WidgetColors, WidgetPosition, WidgetTheme } from "../client/types.js";
+import { injectMarkdownAlternateLink } from "../client/headInjection.js";
 import { useAgentReadyStatus } from "./useAgentReadyStatus.js";
 import { useAgentReadyReadiness } from "./useAgentReadyReadiness.js";
+import { useAgentReadyMarkdownIndex } from "./useAgentReadyMarkdownIndex.js";
 
 export type AgentReadyWidgetProps = {
   /**
@@ -37,6 +39,9 @@ export type AgentReadyWidgetProps = {
   readinessPath?: string;
   rssFeedPath?: string;
   showScoreTab?: boolean;
+  showMarkdownTab?: boolean;
+  markdownIndexPath?: string;
+  markdownSitePath?: string;
   cleanMode?: boolean;
   showHumanTab?: boolean;
   showMachineTab?: boolean;
@@ -59,6 +64,12 @@ export type AgentReadyWidgetProps = {
    * Initial collapsed state on mobile. Default: true.
    */
   defaultMobileCollapsed?: boolean;
+  /**
+   * Inject <link rel="alternate" type="text/markdown"> into document.head for
+   * the per-site markdown file when the host HTML template lacks it. Deduped
+   * by href. Default: true.
+   */
+  injectAlternateLink?: boolean;
   /**
    * Enable the collapsed presentation on desktop too. When true, the widget shows
    * the caret toggle on desktop viewports and starts collapsed by default.
@@ -83,7 +94,7 @@ function sameHost(a: string, b: string): boolean {
   }
 }
 
-type Tab = "HUMAN" | "MACHINE" | "SCORE";
+type Tab = "HUMAN" | "MACHINE" | "SCORE" | "MARKDOWN";
 
 // Inline Phosphor ArrowSquareOut icon (16x16, regular weight).
 function ArrowSquareOutIcon({ color = "currentColor" }: { color?: string }) {
@@ -150,9 +161,13 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
   const statusPath = props.statusPath ?? "/llms-status";
   const readinessPath = props.readinessPath ?? "/llms-readiness";
   const rssFeedPath = props.rssFeedPath ?? "/feed.xml";
+  const markdownIndexPath = props.markdownIndexPath ?? "/llms-markdown-index";
+  const markdownSitePath = props.markdownSitePath ?? "/markdown";
 
   const status = useAgentReadyStatus({ appUrl: props.appUrl, statusPath });
   const readiness = useAgentReadyReadiness({ appUrl: props.appUrl, readinessPath });
+  const markdownTabVisible =
+    props.showMarkdownTab ?? status?.widgetShowMarkdownTab ?? status?.markdownSiteEnabled ?? false;
 
   // Props override config. When prop is undefined, fall back to status endpoint (config-driven).
   const widgetVisible = props.visible ?? status?.widgetVisible ?? true;
@@ -174,6 +189,7 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
   const visibleTabs = [
     humanTabVisible && "HUMAN",
     machineTabVisible && "MACHINE",
+    markdownTabVisible && "MARKDOWN",
     scoreTabVisible && "SCORE",
   ].filter(Boolean) as Tab[];
 
@@ -201,6 +217,15 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
     }
   }, [status, initialVersion]);
 
+  // Head-injection fallback: advertise the per-site markdown file to DOM-reading
+  // crawlers when the host HTML template does not include the alternate link.
+  const injectAlternate = props.injectAlternateLink ?? true;
+  const siteMdPath = status?.siteMdPath ?? null;
+  useEffect(() => {
+    if (!injectAlternate || !siteMdPath) return;
+    injectMarkdownAlternateLink(siteMdPath);
+  }, [injectAlternate, siteMdPath]);
+
   const isStale =
     !!status?.generatedFromVersion &&
     !!initialVersion &&
@@ -226,6 +251,14 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
     }
     return endpointBase;
   }, [props.publicAppUrl, status?.appUrl, endpointBase]);
+
+  const markdownPages = useAgentReadyMarkdownIndex({
+    appUrl: endpointBase,
+    markdownIndexPath,
+    enabled: markdownTabVisible,
+  });
+
+  const markdownSiteUrl = `${endpointBase}${markdownSitePath}`;
 
   // Dev-only warning when the visible URL clearly disagrees with the browser origin
   // in a way that suggests a stale Convex `.site` URL leaked into a production bundle.
@@ -296,7 +329,7 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
       style={{
         ...containerStyle,
         ...colorVars,
-        width: mobileActive ? "min(280px, calc(100vw - 24px))" : 280,
+        width: mobileActive ? "min(280px, calc(100vw - 24px))" : collapseActive && tab === "MARKDOWN" ? 320 : 280,
         maxWidth: mobileActive ? "calc(100vw - 24px)" : undefined,
         background: "var(--agent-ready-bg, #1a1a1a)",
         border: "1px solid var(--agent-ready-panel-border, #333333)",
@@ -322,6 +355,14 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
             label="MACHINE"
             active={tab === "MACHINE"}
             onClick={() => setTab("MACHINE")}
+            compact={collapseActive}
+          />
+        ) : null}
+        {markdownTabVisible ? (
+          <TabButton
+            label="MARKDOWN"
+            active={tab === "MARKDOWN"}
+            onClick={() => setTab("MARKDOWN")}
             compact={collapseActive}
           />
         ) : null}
@@ -351,6 +392,8 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
 
       {!showPanel ? null : tab === "SCORE" ? (
         <ScorePanel readiness={readiness} />
+      ) : tab === "MARKDOWN" ? (
+        <MarkdownPanel pages={markdownPages} siteUrl={markdownSiteUrl} />
       ) : tab === "HUMAN" ? (
         <div style={panelStyle}>
           {effectiveShowAppName ? (
@@ -407,6 +450,7 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
               {status?.hasDrafts ? <p style={metaStyle}>Drafts pending</p> : null}
             </>
           ) : null}
+          <AdvancedSection />
         </div>
       )}
     </div>
@@ -414,6 +458,29 @@ export function AgentReadyWidget(props: AgentReadyWidgetProps) {
 }
 
 // --- Subcomponents ---
+
+function MarkdownPanel(props: {
+  pages: ReturnType<typeof useAgentReadyMarkdownIndex>;
+  siteUrl: string;
+}) {
+  const maxRows = 6;
+  const rows = props.pages?.slice(0, maxRows) ?? [];
+  return (
+    <div style={{ ...panelStyle, maxHeight: 220, overflowY: "auto" }}>
+      <FileRow label="markdown version" url={props.siteUrl} />
+      {props.pages === null ? <p style={metaStyle}>Loading pages...</p> : null}
+      {props.pages !== null && rows.length === 0 ? (
+        <p style={metaStyle}>No markdown pages yet. Add fullContent and regenerate.</p>
+      ) : null}
+      {rows.map((page) => (
+        <FileRow key={page.slug} label={page.title} url={page.htmlUrl} />
+      ))}
+      {props.pages && props.pages.length > maxRows ? (
+        <p style={metaStyle}>+{props.pages.length - maxRows} more on the site</p>
+      ) : null}
+    </div>
+  );
+}
 
 function TabButton(props: { label: string; active: boolean; onClick: () => void; compact?: boolean }) {
   return (
@@ -562,6 +629,46 @@ function ScorePanel(props: { readiness: ReadinessReport | null }) {
             Run npx agent-ready agent-ready to improve
           </p>
         </>
+      ) : null}
+    </div>
+  );
+}
+
+/** Display-only collapsible list of the opt-in advanced features. */
+function AdvancedSection() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        aria-expanded={open}
+        style={{
+          background: "transparent",
+          color: "#666666",
+          border: "none",
+          padding: 0,
+          fontFamily: "inherit",
+          fontSize: 10,
+          letterSpacing: "0.1em",
+          cursor: "pointer",
+        }}
+      >
+        {open ? "advanced [-]" : "advanced [+]"}
+      </button>
+      {open ? (
+        <p style={{ ...metaStyle, marginTop: 4 }}>
+          Opt-in: llms-full.txt, robots.txt, sitemap.xml, RSS, agent skills, readiness
+          score, analytics, Content-Signal.{" "}
+          <a
+            href="https://github.com/waynesutton/agent-ready-component#advanced"
+            target="_blank"
+            rel="noreferrer"
+            style={{ color: "#888888" }}
+          >
+            How to enable
+          </a>
+        </p>
       ) : null}
     </div>
   );

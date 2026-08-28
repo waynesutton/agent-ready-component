@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Agent Ready Expo",
+    "slug": "agent-ready-expo",
+    "version": "0.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}

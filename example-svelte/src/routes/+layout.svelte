@@ -1,7 +1,7 @@
 <script lang="ts">
   import "../app.css";
   import { page } from "$app/stores";
-  import { AgentReadyWidget } from "@waynesutton/agent-ready/svelte";
+  import { AgentLinks, AgentReadyWidget } from "@waynesutton/agent-ready/svelte";
 
   const appUrl = import.meta.env.VITE_CONVEX_SITE_URL as string;
   const publicAppUrl = import.meta.env.VITE_SITE_URL as string | undefined;
@@ -18,6 +18,7 @@
 
   const external = [
     { href: "/llms.txt", label: "llms.txt" },
+    { href: "/agent-ready-sveltekit-demo.md", label: "site .md" },
     { href: "/agents.md", label: "agents.md" },
     { href: "/llms-full.txt", label: "llms-full.txt" },
     { href: "/llms-status", label: "llms-status" },
@@ -100,6 +101,7 @@
 
   <div class="page-footer">
     <span>Hosted on Convex. Served from the same deployment as your app.</span>
+    <AgentLinks siteMdPath="/agent-ready-sveltekit-demo.md" />
     <a href="https://docs.convex.dev/llms.txt" target="_blank" rel="noreferrer">docs.convex.dev/llms.txt</a>
   </div>
 

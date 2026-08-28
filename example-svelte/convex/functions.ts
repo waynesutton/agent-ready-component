@@ -5,7 +5,7 @@ import {
 } from "convex-helpers/server/customFunctions";
 import { query, mutation, action } from "./_generated/server";
 import { ConvexError } from "convex/values";
-import { auth } from "./auth";
+import { auth } from "./auth/core";
 
 export const authQuery = customQuery(query, auth.ctx());
 export const authMutation = customMutation(mutation, auth.ctx());

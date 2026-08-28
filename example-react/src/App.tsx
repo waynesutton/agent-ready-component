@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, Route, Routes, useLocation } from "react-router-dom";
-import { AgentReadyWidget, UpdateBanner } from "@waynesutton/agent-ready/react";
+import { AgentLinks, AgentReadyWidget, UpdateBanner } from "@waynesutton/agent-ready/react";
 import { Window } from "./components/Window";
 import { Sidebar } from "./components/Sidebar";
 import { Tabs } from "./components/Tabs";
@@ -63,6 +63,7 @@ export default function App() {
 
       <div className="page-footer">
         <span>Hosted on Convex. Served from the same deployment as your app.</span>
+        <AgentLinks siteMdPath="/agent-ready-react-demo.md" />
         <a href="https://docs.convex.dev/llms.txt" target="_blank" rel="noreferrer">docs.convex.dev/llms.txt</a>
       </div>
 
@@ -167,8 +168,9 @@ function PipelinePanel() {
 function FilesPanel() {
   const files = [
     { path: "/llms.txt", desc: "Short, LLM-friendly summary + curated links" },
+    { path: "/agent-ready-react-demo.md", desc: "Per-site markdown summary" },
     { path: "/agents.md", desc: "API contract and agent instructions" },
-    { path: "/llms-full.txt", desc: "Long-form docs bundled for context windows" },
+    { path: "/llms-full.txt", desc: "Long-form docs bundled for context windows (advanced opt-in)" },
     { path: "/llms-status", desc: "JSON status endpoint for the widget" },
   ];
 

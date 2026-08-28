@@ -18,5 +18,5 @@
     "types": ["node"]
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "exclude": ["dist", "node_modules", "example-react", "example-svelte"]
+  "exclude": ["dist", "node_modules", "example-react", "example-svelte", "example-expo"]
 }

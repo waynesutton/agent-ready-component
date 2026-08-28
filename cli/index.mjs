@@ -54,10 +54,10 @@ Running with no command runs the setup flow.
 Commands:
   setup                         Interactive first-run wizard (default)
   sync [--dry-run]              Reads agent-ready.config.json, applies to deployment
-  status                        Cache, job, and testMode state
+  status                        Cache, job, and publish state
   regenerate                    Queue a regenerateAll workpool job
   rollback --file <name>        Restore previous cached content
-  go-live                       Disable testMode with confirmation
+  go-live                       Set publish to live (flips a draft install live)
   generate-descriptions [--force]  AI fills empty descriptions
   publish-page --path <path>    Set page to published
   draft-page --path <path>      Set page to draft
@@ -67,7 +67,7 @@ Commands:
   cleanup [--older-than 7d]     Prune old analytics rows
   versions --path <path>        Show page version history
   agent-ready                     Enable all agent-readiness features
-  scan [--url <url>]              Scan deployment for agent readiness score
+  scan [--url <url>] [--strict]   Scan deployment for agent readiness score
   import [--from <path>] [--overwrite] [--dry-run]
                                   Import an existing llms.txt into agent-ready.config.json
   discover                        Print discovery report from local files

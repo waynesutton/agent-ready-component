@@ -7,8 +7,14 @@ import {
 import type { MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
-import { MAX_CACHED_FILE_BYTES, MAX_PAGE_CONTENT_CHARS } from "./lib.js";
 import {
+  MAX_CACHED_FILE_BYTES,
+  MAX_PAGE_CONTENT_CHARS,
+  appNameToSlug,
+  resolvePublishState,
+} from "./lib.js";
+import {
+  cacheStatusValidator,
   cachedFileDocValidator,
   contentStatusValidator,
   endpointDocValidator,
@@ -18,7 +24,10 @@ import {
   settingsDocValidator,
   settingsPatchValidator,
   syncConfigValidator,
+  markdownIndexEntryValidator,
+  pageTwinDocValidator,
 } from "./validators.js";
+import { normalizeBaseUrl } from "./lib.js";
 
 // ---------- Settings ----------
 
@@ -49,7 +58,10 @@ export const upsertSettings = mutation({
         contactEmail: args.patch?.contactEmail,
         widgetPosition: args.patch?.widgetPosition ?? "floating-bottom-right",
         theme: args.patch?.theme ?? "system",
-        testMode: args.patch?.testMode ?? true,
+        // Live by default. testMode: true (deprecated alias) still opts into draft.
+        publish:
+          args.patch?.publish ?? (args.patch?.testMode === true ? "draft" : "live"),
+        testMode: args.patch?.testMode ?? false,
         cronEnabled: args.patch?.cronEnabled ?? true,
         cronIntervalHours: args.patch?.cronIntervalHours ?? 24,
         analyticsEnabled: args.patch?.analyticsEnabled ?? false,
@@ -82,12 +94,23 @@ export const upsertSettings = mutation({
         widgetShowChatGPT: args.patch?.widgetShowChatGPT,
         widgetShowClaude: args.patch?.widgetShowClaude,
         widgetShowPerplexity: args.patch?.widgetShowPerplexity,
+        markdownSiteEnabled: args.patch?.markdownSiteEnabled,
+        widgetShowMarkdownTab: args.patch?.widgetShowMarkdownTab,
+        apiCatalogEnabled: args.patch?.apiCatalogEnabled,
+        notFoundPageEnabled: args.patch?.notFoundPageEnabled,
       });
       const doc = await ctx.db.get(inserted);
       if (!doc) throw new Error("settings insert failed");
       return doc;
     }
-    await ctx.db.patch(existing._id, args.patch ?? {});
+    // Keep publish and the deprecated testMode alias in sync when only one is patched.
+    const patch = { ...(args.patch ?? {}) };
+    if (patch.publish !== undefined && patch.testMode === undefined) {
+      patch.testMode = patch.publish === "draft";
+    } else if (patch.testMode !== undefined && patch.publish === undefined) {
+      patch.publish = patch.testMode ? "draft" : "live";
+    }
+    await ctx.db.patch(existing._id, patch);
     const doc = await ctx.db.get(existing._id);
     if (!doc) throw new Error("settings update failed");
     return doc;
@@ -109,6 +132,65 @@ export const listPages = query({
       : rows.filter((r) => r.status === "published");
     filtered.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     return filtered;
+  },
+});
+
+// Public index of markdown twins for the widget MARKDOWN tab and /llms-markdown-index route.
+export const listMarkdownPages = query({
+  args: {},
+  returns: v.array(markdownIndexEntryValidator),
+  handler: async (ctx) => {
+    const settings = await ctx.db.query("settings").unique();
+    if (
+      !settings ||
+      settings.markdownSiteEnabled === false ||
+      settings.markdownNegotiation === false
+    ) {
+      return [];
+    }
+    const base = normalizeBaseUrl(settings.appUrl);
+    const twins = await ctx.db.query("pageTwins").take(500);
+    twins.sort((a, b) => (a.title < b.title ? -1 : a.title > b.title ? 1 : 0));
+    return twins.map((t) => {
+      const pageUrl = `${base}/markdown/${encodeURIComponent(t.slug)}`;
+      return {
+        path: t.path,
+        slug: t.slug,
+        title: t.title,
+        description: t.description,
+        section: t.section,
+        markdownUrl: pageUrl,
+        htmlUrl: pageUrl,
+      };
+    });
+  },
+});
+
+export const getPageTwinBySlug = query({
+  args: { slug: v.string() },
+  returns: v.union(v.null(), pageTwinDocValidator),
+  handler: async (ctx, args) => {
+    return (
+      (await ctx.db
+        .query("pageTwins")
+        .withIndex("by_slug", (q) => q.eq("slug", args.slug))
+        .unique()) ?? null
+    );
+  },
+});
+
+// Canonical-path lookup for registerCanonicalPageRoutes: serve the twin for a
+// page's real path (e.g. /pricing) instead of the /markdown/{slug} mirror.
+export const getPageTwinByPath = query({
+  args: { path: v.string() },
+  returns: v.union(v.null(), pageTwinDocValidator),
+  handler: async (ctx, args) => {
+    return (
+      (await ctx.db
+        .query("pageTwins")
+        .withIndex("by_path", (q) => q.eq("path", args.path))
+        .unique()) ?? null
+    );
   },
 });
 
@@ -331,38 +413,9 @@ export const getCachedFile = query({
 
 export const getCacheStatus = query({
   args: {},
-  returns: v.object({
-    testMode: v.boolean(),
-    appName: v.union(v.string(), v.null()),
-    appUrl: v.union(v.string(), v.null()),
-    lastGeneratedAt: v.union(v.number(), v.null()),
-    generatedFromVersion: v.union(v.string(), v.null()),
-    generationInProgress: v.boolean(),
-    hasDrafts: v.boolean(),
-    fullTxtEnabled: v.boolean(),
-    widgetVisible: v.boolean(),
-    widgetStatusVisible: v.boolean(),
-    widgetShowFiles: v.boolean(),
-    widgetShowAppName: v.boolean(),
-    widgetShowDescription: v.boolean(),
-    widgetShowMeta: v.boolean(),
-    widgetShowScoreTab: v.boolean(),
-    widgetDesktopCollapse: v.boolean(),
-    widgetCleanMode: v.boolean(),
-    widgetShowHumanTab: v.boolean(),
-    widgetShowMachineTab: v.boolean(),
-    widgetShowChatLinks: v.boolean(),
-    widgetShowChatGPT: v.boolean(),
-    widgetShowClaude: v.boolean(),
-    widgetShowPerplexity: v.boolean(),
-    readinessEndpointEnabled: v.boolean(),
-    robotsTxtEnabled: v.boolean(),
-    sitemapEnabled: v.boolean(),
-    rssEnabled: v.boolean(),
-    agentSkillsEnabled: v.boolean(),
-    discoveryHeaders: v.boolean(),
-    markdownNegotiation: v.boolean(),
-  }),
+  // Shared with consumer wrappers via the package root export so their
+  // return validators never go stale when this shape gains fields.
+  returns: cacheStatusValidator,
   handler: async (ctx) => {
     const settings = await ctx.db.query("settings").unique();
     const files = await ctx.db.query("cachedFiles").collect();
@@ -378,8 +431,12 @@ export const getCacheStatus = query({
       return row.generatedAt > acc ? row.generatedAt : acc;
     }, null);
     const llms = files.find((f) => f.fileType === "llms.txt");
+    const publish = resolvePublishState(settings);
     return {
-      testMode: settings?.testMode ?? true,
+      publish,
+      // Deprecated mirror of publish for older widgets and CLI versions.
+      testMode: publish === "draft",
+      siteSlug: settings ? appNameToSlug(settings.appName) : null,
       appName: settings?.appName ?? null,
       appUrl: settings?.appUrl ?? null,
       lastGeneratedAt: latest,
@@ -403,12 +460,16 @@ export const getCacheStatus = query({
       widgetShowClaude: settings?.widgetShowClaude ?? true,
       widgetShowPerplexity: settings?.widgetShowPerplexity ?? true,
       readinessEndpointEnabled: settings?.readinessEndpointEnabled ?? false,
-      robotsTxtEnabled: settings?.robotsTxtEnabled ?? false,
-      sitemapEnabled: settings?.sitemapEnabled ?? false,
+      // Default on (agent readiness v2): undefined resolves to enabled.
+      robotsTxtEnabled: settings?.robotsTxtEnabled ?? true,
+      sitemapEnabled: settings?.sitemapEnabled ?? true,
       rssEnabled: settings?.rssEnabled ?? false,
       agentSkillsEnabled: settings?.agentSkillsEnabled ?? false,
-      discoveryHeaders: settings?.discoveryHeaders ?? false,
+      discoveryHeaders: settings?.discoveryHeaders ?? true,
       markdownNegotiation: settings?.markdownNegotiation ?? false,
+      markdownSiteEnabled: settings?.markdownSiteEnabled ?? settings?.markdownNegotiation ?? false,
+      widgetShowMarkdownTab:
+        settings?.widgetShowMarkdownTab ?? settings?.markdownNegotiation ?? false,
     };
   },
 });

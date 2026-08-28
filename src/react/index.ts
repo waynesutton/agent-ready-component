@@ -1,5 +1,7 @@
 export { AgentReadyWidget } from "./AgentReadyWidget.js";
 export type { AgentReadyWidgetProps } from "./AgentReadyWidget.js";
+export { AgentLinks } from "./AgentLinks.js";
+export type { AgentLinksProps } from "./AgentLinks.js";
 export { AgentReadySettingsPanel } from "./AgentReadySettingsPanel.js";
 export type { AgentReadySettingsPanelProps } from "./AgentReadySettingsPanel.js";
 export { useAgentReadyStatus } from "./useAgentReadyStatus.js";
@@ -8,3 +10,5 @@ export { UpdateBanner } from "./UpdateBanner.js";
 export type { UpdateBannerProps } from "./UpdateBanner.js";
 export { useAgentReadyReadiness } from "./useAgentReadyReadiness.js";
 export type { UseAgentReadyReadinessOptions } from "./useAgentReadyReadiness.js";
+export { useAgentReadyMarkdownIndex } from "./useAgentReadyMarkdownIndex.js";
+export type { UseAgentReadyMarkdownIndexOptions } from "./useAgentReadyMarkdownIndex.js";

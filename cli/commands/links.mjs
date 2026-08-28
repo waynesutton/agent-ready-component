@@ -11,6 +11,8 @@ const ROUTES = [
   { label: "sitemap.xml", path: "/sitemap.xml", setting: "sitemapEnabled" },
   { label: "agent skills", path: "/.well-known/agent-skills", setting: "agentSkillsEnabled" },
   { label: "RSS feed", path: "/feed.xml", setting: "rssEnabled" },
+  { label: "markdown site", path: "/markdown", setting: "markdownSiteEnabled" },
+  { label: "markdown index", path: "/llms-markdown-index", setting: "markdownSiteEnabled" },
   { label: "readiness", path: "/llms-readiness", setting: "readinessEndpointEnabled" },
   { label: "status", path: "/llms-status", setting: null },
 ];

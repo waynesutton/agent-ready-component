@@ -28,7 +28,7 @@
       "accent": "#ffffff"
     },
     "theme": "dark",
-    "testMode": true,
+    "publish": "live",
     "cronEnabled": true,
     "cronIntervalHours": 24,
     "analyticsEnabled": true,
@@ -40,6 +40,8 @@
     "versioningEnabled": true,
     "contentSignals": { "aiTrain": true, "search": true, "aiInput": true },
     "markdownNegotiation": true,
+    "markdownSiteEnabled": true,
+    "widgetShowMarkdownTab": true,
     "discoveryHeaders": true,
     "robotsTxtEnabled": true,
     "robotsTxtAllowAiBots": true,
@@ -53,6 +55,7 @@
       "title": "Overview",
       "path": "/",
       "description": "Landing page for the React demo.",
+      "fullContent": "The React demo shows the @waynesutton/agent-ready Convex component with HUMAN, MACHINE, MARKDOWN, and optional SCORE widget tabs.",
       "status": "published",
       "order": 10
     },
@@ -60,6 +63,7 @@
       "title": "Settings",
       "path": "/settings",
       "description": "Settings panel with draft, publish, archive, rollback, and version history controls.",
+      "fullContent": "Use Settings to publish pages, roll back cached files, and inspect version history for llms.txt and agents.md.",
       "status": "published",
       "order": 20
     },
@@ -67,6 +71,7 @@
       "title": "Analytics",
       "path": "/analytics",
       "description": "Agent request dashboard showing traffic by agent and by file type.",
+      "fullContent": "Analytics tracks GPTBot, ClaudeBot, PerplexityBot, and other agents as they read your discovery files.",
       "status": "published",
       "order": 30
     }

@@ -6,6 +6,78 @@ All notable changes to `@waynesutton/agent-ready` (formerly `@convex-dev/llms-tx
 
 ### Added
 
+- Agent readiness v2 (`prds/agent-readiness-v2.md`). Simple mode defaults flipped on: `robots.txt` with AI bot rules and a Content-Signal block, `sitemap.xml`, the `Content-Signal` header (all-yes default), and discovery `Link` headers now serve without any flags, with zero-config fallbacks before the first sync. Set `robotsTxtEnabled: false`, `sitemapEnabled: false`, or `discoveryHeaders: false` to opt out
+- YAML frontmatter (`title`, `description`) on every markdown twin, matching Cloudflare's Markdown for Agents shape. Frontmatter is stripped before HTML twin rendering
+- `x-original-tokens` response header on markdown twins alongside `x-markdown-tokens`, so agents can compare markdown versus original HTML token cost
+- `/.well-known/agent-skills/index.json`: SHA-256 digest index for the agent-skills endpoint, served whenever `agentSkillsEnabled` is on
+- Optional `/.well-known/api-catalog` (RFC 9727) built from synced `apiEndpoints`, behind the new `apiCatalogEnabled` flag
+- Agent-friendly 404 page at `/404.md` behind the new `notFoundPageEnabled` flag, linked from `llms.txt` under an Errors section, pointing agents at the sitemap, `llms.txt`, and `/markdown`
+- `registerCanonicalPageRoutes(http, component, { paths })`: canonical-path `Accept: text/markdown` negotiation on real page URLs (not only `/markdown/*`), with `Vary: Accept` and `406 Not Acceptable` when the client rejects every offered type. Explicit opt in because these routes shadow SPA paths under static hosting
+- `406 Not Acceptable` responses on `/markdown` and `/markdown/*` when the request's `Accept` header rejects both markdown and HTML
+- Setup wizard now inspects `convex/convex.config.ts`: warns when `httpPrefix` is set (it moves `/llms.txt` and every discovery route under the prefix where scanners never look) and prints the app-owned root routing mount order when `@convex-dev/static-hosting` is detected
+- `npx agent-ready agent-ready` also enables `apiCatalogEnabled` and `notFoundPageEnabled`
+- Backward compatibility audit for the 0.2.x to 0.3.0 upgrade, documented in `prds/backward-compat-0-3-0.md`. Verified safe: draft installs stay draft (`testMode: true` resolves to `publish: "draft"` everywhere), live installs stay live, old config files sync correctly, `/llms-status` keeps the deprecated `testMode` mirror for older widgets, stored `fullTxtEnabled` values win over the new-install default flip, the per-site markdown route is collision-guarded with a `siteMdPath: false` opt-out, and legacy env var names still resolve
+- `cacheStatusValidator` exported from the package root as the single source of truth for the `getCacheStatus` return shape. The component query, the setup wizard scaffold, both demo wrappers, and the INTEGRATION.md snippet now share it, so consumer wrapper validators can never go stale on future upgrades. Import with `import { cacheStatusValidator } from "@waynesutton/agent-ready"`
+- Stale wrapper detection in the CLI (`cli/lib/wrappers.mjs`). `npx agent-ready sync` and `npx agent-ready setup` now scan `convex/agentReady/content.ts` for wrappers scaffolded by 0.2.x, list the exact missing validator fields, and print the import-based fix. This is the one real 0.3.0 upgrade break: inlined `cacheStatusValidator` copies throw `ReturnsValidationError` once the component returns `publish`, `siteSlug`, and the markdown fields
+- `docs/upgrading.md`: what's new in 0.3.0, a 0.2.x vs 0.3.0 comparison table, backward compatibility guarantees, upgrade steps, the wrapper validator fix, route opt-outs, and verification commands. Linked from the README intro and Documentation section and shipped in the npm package
+- "Quick release with folder checks" section at the top of `SETUP.md`: a five-step fast path with an explicit `cd` and `pwd` check per step covering commit and tag, npm publish, React demo redeploy via `deploy:full`, Svelte demo redeploy via `deploy:static`, and production curl verification of the describedby Link header, markdown negotiation, and `publish: "live"`
+- Release guide checks in `SETUP.md` for the new backward compatibility pieces: a build-step grep that confirms `cacheStatusValidator` is exported from `dist/client`, an npm pack spot-check that `docs/upgrading.md` and `cli/lib/wrappers.mjs` ship in the tarball, and final checklist items for the README upgrading link, the stale wrapper warning on `sync`, and `go-live` updating the local config
+
+### Changed
+
+- `npx agent-ready scan` retuned: essential checks (discovery files, markdown negotiation, a real 404 probe) are scored; optional protocol endpoints (agent-skills, api-catalog, `404.md`, RSS, readiness) are reported but never lower the score. An SPA fallback answering 200 for unknown paths is reported as a known limit and not counted against the site. New informational homepage checks: `llms.txt` Link header, thin HTML, missing `<h1>`
+- `/llms-readiness` now reports unscored bonus checks for the agent-skills digest index, API catalog, and `404.md`, and resolves default-on flags (robots, sitemap, discovery headers) the same way the routes do
+- `scan --strict` verifies a real page markdown twin and prints its `x-original-tokens` value
+- INTEGRATION.md documents route ownership for static hosting: required mount order (`registerRoutes`, `registerMarkdownRoutes`, `registerStaticRoutes`), the `httpPrefix` trap, and the SPA fallback 404 tradeoff. README simple-vs-advanced table updated for the new defaults and flags
+
+### Fixed
+
+- `npx agent-ready go-live` now also updates `agent-ready.config.json` (or the legacy `llms-txt.config.json`) to `publish: "live"`, so a later `npx agent-ready sync` no longer silently flips the site back to draft
+- INTEGRATION.md wrapper snippet was stale: its inlined `getCacheStatus` validator was missing every widget field added since 0.2.x and its page validator was missing `section`. Both now match the component, and the cache status validator is imported from the package
+- README widget display modes table now documents `widgetStatusVisible`, `widgetShowFiles`, `widgetShowAppName`, `widgetShowDescription`, and `widgetShowMeta`, and corrects the `widgetShowMarkdownTab` default: unset, it follows `markdownSiteEnabled`, so the MARKDOWN tab is hidden in simple mode
+
+## [0.3.0] - 2026-08-15
+
+### Added
+
+- Simple mode first: zero-config install now serves `/llms.txt`, `/agents.md`, and the per-site markdown file immediately after `app.use(agentReady)` plus `registerRoutes`, with generated fallback content when no settings exist yet
+- `publish` setting with values `live` and `draft`. New installs default to `live`. `publish: "draft"` returns 404 with a short body on public discovery routes while localhost preview keeps working. `npx agent-ready go-live` flips a draft install live
+- Per-site markdown route at `/{site-name}.md`. The slug comes from `appName` (lowercase, hyphenated), an explicit `siteMdPath` option on `registerRoutes`, or the `AGENT_READY_SITE_SLUG` env var, with `/site.md` as the fallback. Served with ETag/304 caching and a collision guard against existing routes. New `site.md` file type in the generation pipeline (`renderSiteMd`), schema, validators, and client types. `siteSlug` and `siteMdPath` are exposed on `/llms-status`
+- Always-on RFC 8288 discovery header: every component-served response now includes `Link: </llms.txt>; rel="describedby"; type="text/markdown"`, appended to richer discovery links when `discoveryHeaders` is enabled, including on 304 responses and markdown site pages
+- `Accept: text/markdown` content negotiation wired into `/markdown` and `/markdown/*`: agents asking for markdown get raw markdown, browsers get the HTML twin, and every negotiated response sets `Vary: Accept`
+- `AgentLinks` footer component for React (`@waynesutton/agent-ready/react`) and Svelte (`@waynesutton/agent-ready/svelte`): two muted anchors for `llms.txt` and the per-site markdown file, optional `className`/`class` override, and automatic `<link rel="alternate" type="text/markdown">` head injection (deduped by href). Plain HTML snippet documented in the README
+- Shared browser-safe head-injection util (`injectMarkdownAlternateLink`); the React and Svelte widgets inject the alternate link tag on mount (`injectAlternateLink` prop, default on)
+- Collapsible Advanced section on the widget MACHINE tab linking to the README advanced docs, in both React and Svelte widgets
+- One-time console nudge after the first codegen on dev deployments, pointing at the live files, the alternate link tag, and the advanced docs; recorded via `nudgePrintedAt` on the settings singleton
+- PRD: `prds/simple-mode-first-migration.md`
+
+### Changed
+
+- Publishing is live by default. New installs no longer require `npx agent-ready go-live`; the command remains for draft installs
+- Draft gating returns 404 instead of 403 so unpublished sites do not advertise the component
+- Setup wizard defaults: `publish` defaults to `live` with `draft` as an opt-in, and `fullTxtEnabled` defaults to `false` for new installs
+- `npx agent-ready status` prints the publish state first with go-live guidance when in draft
+- README rewritten around the zero-config quick start, copy-this-prompt block, simple vs advanced table, `AgentLinks`, and the `#advanced` anchor. INTEGRATION.md, SETUP.md, docs/install.md, docs/install.html, and the npm `description` updated to match
+- Demos: React, Svelte, and Expo configs switched to `publish: "live"`; React and Svelte demos add the alternate `<link>` tag, the `AgentLinks` footer, and pass `siteMdPath` to `registerRoutes`
+
+### Deprecated
+
+- `testMode` is now a deprecated alias for `publish`. `testMode: true` maps to `publish: "draft"` and existing configs keep working; the two fields stay in sync on patch and sync operations
+
+### Fixed
+
+- `generationInProgress` no longer sticks at `true` after a regeneration where file content did not change. `writeGenerationResult` now resets rows marked `generating` by `invalidateCache` back to `current` when the content hash matches
+- Demo wrapper `getCacheStatus` validators updated to accept the new `publish` and `siteSlug` fields so the wrapper query does not throw after upgrading
+
+### Added
+
+- Markdown site viewer with per-page twins for SEO, AEO, and GEO. New `pageTwins` table stores cached markdown and HTML per published page. `registerMarkdownRoutes(http, component, options)` (alias `mountMarkdownNegotiation`) serves `/markdown` (human HTML index), `/markdown/*` (per-page HTML with Accept negotiation for agents), and `/llms-markdown-index` (JSON for the widget). Settings: `markdownSiteEnabled` and `widgetShowMarkdownTab` (default on when `markdownNegotiation` is true). Generation writes `markdown-site.html` and page twins when both flags are enabled. Raw markdown responses include `Content-Signal`, `x-markdown-tokens`, and `X-Robots-Tag: noindex`; HTML pages are indexable with canonical URLs, JSON-LD, and meta tags. `llms.txt`, `sitemap.xml`, `robots.txt`, `/.well-known/agent-skills`, and discovery `Link` headers now reference the markdown site
+- MARKDOWN tab on React and Svelte widgets. Lists the markdown site link and up to six page links from `/llms-markdown-index`. New hook `useAgentReadyMarkdownIndex`. Props: `showMarkdownTab`, `markdownIndexPath`, `markdownSitePath`. Tab order: HUMAN, MACHINE, MARKDOWN, SCORE. Panel widens to 320px on desktop when MARKDOWN is active
+- Expo widget export at `@waynesutton/agent-ready/expo` with HUMAN, MACHINE, and MARKDOWN tabs for React Native apps. New `example-expo` demo reads `EXPO_PUBLIC_AGENT_READY_URL` and opens the same Convex `.site` discovery and markdown routes as the web demos
+- Demo wiring: React and Svelte call `registerMarkdownRoutes` before static SPA fallback. React, Svelte, and Expo configs include `markdownSiteEnabled`, `widgetShowMarkdownTab`, and sample `fullContent` on pages
+- CLI: `npx agent-ready setup` asks separately about the `/markdown` site and the MARKDOWN widget tab, so pages can stay live while the tab is hidden. `npx agent-ready links` prints `/markdown` and `/llms-markdown-index`. `npx agent-ready agent-ready` enables the markdown site while preserving an existing hidden MARKDOWN tab. `npx agent-ready scan --strict` checks `/markdown`, `/llms-markdown-index`, and one real page markdown response with `noindex`
+- PRD: `prds/markdown-tab-and-site-viewer.md`
+- `.codex/skills/`: Single deduplicated Codex skills bundle (46 skills) consolidated from `.agents/skills`, `.claude/skills`, and `.cursor/skills`, plus `agent-ready-interface` pointing at project design context in `references/system.md`
 - Opt-in RSS 2.0 feed at `/feed.xml` generated from the pages table. Enable with `rssEnabled: true` in `agent-ready.config.json` or run `npx agent-ready agent-ready` to enable everything. The feed includes all published pages with XML-escaped titles, descriptions, and permanent links. Route is skippable via `skipRoutes: ["/feed.xml"]` for apps that already serve their own feed. Threaded through component schema, validators, generation pipeline (`renderRssFeed`), cached file storage, HTTP route registration, `getCacheStatus` query, `applySyncConfig` mutation, `AgentReadySettings` and `AgentReadyStatus` client types, React and Svelte widget MACHINE tabs, both example configs and wrapper validators, CLI setup wizard, `npx agent-ready agent-ready` one-command enable, `npx agent-ready scan` endpoint check, `npx agent-ready links` URL output, and readiness self-score (bonus check, zero points so existing scores are unchanged). Discovery `Link` headers include the feed URL when both `discoveryHeaders` and `rssEnabled` are true. Content type is `application/rss+xml`
 - PRD: `prds/rss-feed.md`
 - Updated INTEGRATION.md, docs/install.md, docs/install.html, and SETUP.md with `/feed.xml` route references, `rssEnabled` in the readiness feature table, and `skipRoutes` examples. Updated Svelte settings page fileType union to include `rss.xml`
@@ -30,6 +102,7 @@ All notable changes to `@waynesutton/agent-ready` (formerly `@convex-dev/llms-tx
 
 ### Changed
 
+- React and Svelte demo `dev` scripts now use the current Convex CLI `--run-sh` flag instead of the removed `--start` flag. Setup now runs after Convex pushes the updated component functions, so new settings like `markdownSiteEnabled` validate correctly on first local run
 - Made `README.md` the canonical app developer install guide. `docs/install.md` and `docs/install.html` now point readers back to the README install section. Added internal README-style `/docs` pages to both demo apps, pointed demo `Docs` links to those pages, and kept `https://diffs.com/docs` as a Diffs by Pierre reference resource
 - Expanded GitHub OAuth setup docs across `SETUP.md`, `docs/install.md`, `docs/install.html`, `INTEGRATION.md`, and `README.md` with the production login recovery checklist: Convex callback URL, `SITE_URL`, production auth secrets, root auth initialization, `state.isAuthenticated`, `ADMIN_EMAILS`, and wrapper validator parity
 - Simplified SETUP.md production deploy instructions for both React and Svelte demos. Replaced `cat > <<'EOF'` heredoc with plain "create a file" instructions. Replaced `export` shell variables in the Svelte section with a persistent `.env.production.local` file. Added one sentence explaining why the file matters. Written for new developers who may not know shell tricks
@@ -62,6 +135,7 @@ All notable changes to `@waynesutton/agent-ready` (formerly `@convex-dev/llms-tx
 
 ### Fixed
 
+- Fixed React and Svelte demo local dev auth bundling by moving both demos to `@robelest/convex-auth@0.0.4-preview.37`, restoring the lightweight `convex/auth/core.ts` context files, and mounting HTTP routes from `auth.http()` before agent-ready and static hosting routes. This resolves `Could not resolve "@robelest/convex-auth/core"`, missing GitHub provider files, and `auth.http.add is not a function` during `npm run dev`
 - Fixed Svelte demo `npm run check` failures. Regenerated package component bindings and Svelte demo Convex bindings, updated `AuthGate.svelte` to use `state.isAuthenticated`, changed analytics and settings pages to read `convex-svelte` query result objects through `.data`, moved Svelte `{@const}` declarations to valid positions, and narrowed rollback file type arguments
 - Fixed React demo GitHub OAuth gate so successful sign-ins unlock `/settings` and `/analytics`. The auth client now initializes at the app root to catch OAuth callback codes, and `AuthGate` checks `state.isAuthenticated` from `@robelest/convex-auth` instead of a nonexistent `state.userId`
 - Fixed demo wrapper `getCacheStatus` return validators for React and Svelte so newer widget display mode fields from the component no longer trigger Convex `ReturnsValidationError`

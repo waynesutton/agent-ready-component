@@ -18,6 +18,7 @@
     | "llms.txt"
     | "agents.md"
     | "llms-full.txt"
+    | "site.md"
     | "robots.txt"
     | "sitemap.xml"
     | "agent-skills.json"

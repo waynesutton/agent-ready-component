@@ -1,12 +1,16 @@
 import { query } from "../_generated/server";
 import { components } from "../_generated/api";
 import { v } from "convex/values";
+// Shared return validator for getCacheStatus. Imported from the package so
+// it stays in sync with the component when upgrades add fields.
+import { cacheStatusValidator } from "@waynesutton/agent-ready";
 import { authMutation, authAction, assertAdmin } from "../functions";
 
 const fileTypeValidator = v.union(
   v.literal("llms.txt"),
   v.literal("agents.md"),
   v.literal("llms-full.txt"),
+  v.literal("site.md"),
   v.literal("robots.txt"),
   v.literal("sitemap.xml"),
   v.literal("agent-skills.json"),
@@ -32,39 +36,6 @@ const pageValidator = v.object({
   section: v.optional(v.string()),
   descriptionGeneratedByAi: v.optional(v.boolean()),
   deletedAt: v.optional(v.number()),
-});
-
-const cacheStatusValidator = v.object({
-  testMode: v.boolean(),
-  appName: v.union(v.string(), v.null()),
-  appUrl: v.union(v.string(), v.null()),
-  lastGeneratedAt: v.union(v.number(), v.null()),
-  generatedFromVersion: v.union(v.string(), v.null()),
-  generationInProgress: v.boolean(),
-  hasDrafts: v.boolean(),
-  fullTxtEnabled: v.boolean(),
-  widgetVisible: v.boolean(),
-  widgetStatusVisible: v.boolean(),
-  widgetShowFiles: v.boolean(),
-  widgetShowAppName: v.boolean(),
-  widgetShowDescription: v.boolean(),
-  widgetShowMeta: v.boolean(),
-  widgetShowScoreTab: v.boolean(),
-  widgetDesktopCollapse: v.boolean(),
-  widgetCleanMode: v.boolean(),
-  widgetShowHumanTab: v.boolean(),
-  widgetShowMachineTab: v.boolean(),
-  widgetShowChatLinks: v.boolean(),
-  widgetShowChatGPT: v.boolean(),
-  widgetShowClaude: v.boolean(),
-  widgetShowPerplexity: v.boolean(),
-  readinessEndpointEnabled: v.boolean(),
-  robotsTxtEnabled: v.boolean(),
-  sitemapEnabled: v.boolean(),
-  rssEnabled: v.boolean(),
-  agentSkillsEnabled: v.boolean(),
-  discoveryHeaders: v.boolean(),
-  markdownNegotiation: v.boolean(),
 });
 
 // Public read-only queries (no auth needed for status/page listing)

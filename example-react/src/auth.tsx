@@ -2,8 +2,8 @@ import { useState, useCallback, useSyncExternalStore } from "react";
 import { useConvex } from "convex/react";
 import { client as createBrowserAuth } from "@robelest/convex-auth/browser";
 import { api } from "../convex/_generated/api";
-import type { BrowserAuthClient } from "@robelest/convex-auth/browser";
 
+type BrowserAuthClient = ReturnType<typeof createBrowserAuth>;
 let authClient: BrowserAuthClient | null = null;
 
 function getAuth(convex: ReturnType<typeof useConvex>): BrowserAuthClient {

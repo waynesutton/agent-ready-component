@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
   import { createAgentReadyStatusStore } from "./store.js";
-  import type { AgentReadyStatus, ReadinessReport, WidgetColors, WidgetPosition, WidgetTheme } from "../client/types.js";
+  import { injectMarkdownAlternateLink } from "../client/headInjection.js";
+  import type { AgentReadyStatus, MarkdownIndexEntry, ReadinessReport, WidgetColors, WidgetPosition, WidgetTheme } from "../client/types.js";
 
   export let appUrl: string;
   /**
@@ -21,6 +22,9 @@
   export let showDescription: boolean | undefined = undefined;
   export let showMeta: boolean | undefined = undefined;
   export let showScoreTab: boolean | undefined = undefined;
+  export let showMarkdownTab: boolean | undefined = undefined;
+  export let markdownIndexPath: string = "/llms-markdown-index";
+  export let markdownSitePath: string = "/markdown";
   export let cleanMode: boolean | undefined = undefined;
   export let showHumanTab: boolean | undefined = undefined;
   export let showMachineTab: boolean | undefined = undefined;
@@ -42,9 +46,14 @@
   export let defaultMobileCollapsed: boolean = true;
   // Desktop collapse opt-in. Resolves from prop, then status.widgetDesktopCollapse, then true.
   export let desktopCollapse: boolean | undefined = undefined;
+  // Inject <link rel="alternate" type="text/markdown"> into document.head for the
+  // per-site markdown file when the host HTML template lacks it. Deduped by href.
+  export let injectAlternateLink: boolean = true;
 
-  type Tab = "HUMAN" | "MACHINE" | "SCORE";
+  type Tab = "HUMAN" | "MACHINE" | "SCORE" | "MARKDOWN";
   let tab: Tab = "HUMAN";
+  // Display-only collapsible list of opt-in advanced features (MACHINE tab).
+  let advancedOpen: boolean = false;
 
   // Mobile viewport detection via matchMedia. SSR safe: stays false on the server.
   let isMobile: boolean = false;
@@ -101,6 +110,11 @@
 
   onDestroy(() => unsubscribe());
 
+  // Head-injection fallback for the per-site markdown alternate link.
+  $: if (injectAlternateLink && currentStatus?.siteMdPath) {
+    injectMarkdownAlternateLink(currentStatus.siteMdPath);
+  }
+
   // Readiness report polling (60s interval, matches React hook)
   let readiness: ReadinessReport | null = null;
   let readinessInterval: ReturnType<typeof setInterval> | null = null;
@@ -119,6 +133,10 @@
   }
 
   $: scoreTabVisible = showScoreTab ?? currentStatus?.widgetShowScoreTab ?? false;
+  $: markdownTabVisible =
+    showMarkdownTab ?? currentStatus?.widgetShowMarkdownTab ?? currentStatus?.markdownSiteEnabled ?? false;
+
+  let markdownPages: Array<MarkdownIndexEntry> | null = null;
 
   $: if (scoreTabVisible) {
     void fetchReadiness();
@@ -158,13 +176,35 @@
   $: effectiveShowAppName = resolvedCleanMode ? false : resolvedShowAppName;
   $: effectiveShowDescription = resolvedCleanMode ? false : resolvedShowDescription;
 
-  $: anyTabVisible = resolvedVisible && (resolvedHumanTab || resolvedMachineTab || scoreTabVisible);
+  $: anyTabVisible =
+    resolvedVisible &&
+    (resolvedHumanTab || resolvedMachineTab || markdownTabVisible || scoreTabVisible);
 
   // Endpoint base: where the widget fetches /llms-status and /llms-readiness.
   $: endpointBase = (appUrl || (typeof window !== "undefined" ? window.location.origin : "")).replace(
     /\/+$/,
     "",
   );
+
+  $: markdownIndexUrl = `${endpointBase}${markdownIndexPath}`;
+  $: markdownSiteUrl = `${endpointBase}${markdownSitePath}`;
+
+  async function fetchMarkdownIndex(): Promise<void> {
+    try {
+      const res = await fetch(markdownIndexUrl, { cache: "no-store" });
+      if (!res.ok) return;
+      const body = (await res.json()) as { pages: Array<MarkdownIndexEntry> };
+      markdownPages = body.pages ?? [];
+    } catch {
+      // Degrade gracefully.
+    }
+  }
+
+  $: if (markdownTabVisible) {
+    void fetchMarkdownIndex();
+  } else {
+    markdownPages = null;
+  }
 
   // Visible base: shown to humans and AI agents in the file links and chat prompts.
   // Precedence: publicAppUrl prop -> status.appUrl -> window.location.origin -> appUrl.
@@ -262,6 +302,9 @@
     {#if resolvedMachineTab}
       <button class:active={tab === "MACHINE"} on:click={() => (tab = "MACHINE")}>MACHINE</button>
     {/if}
+    {#if markdownTabVisible}
+      <button class:active={tab === "MARKDOWN"} on:click={() => (tab = "MARKDOWN")}>MARKDOWN</button>
+    {/if}
     {#if scoreTabVisible}
       <button class:active={tab === "SCORE"} on:click={() => (tab = "SCORE")}>SCORE</button>
     {/if}
@@ -313,6 +356,29 @@
           <div class="divider"></div>
           <p class="hint">Run npx agent-ready agent-ready to improve</p>
         {/if}
+      {/if}
+    </div>
+  {:else if tab === "MARKDOWN"}
+    <div class="panel markdown-panel">
+      <div class="row">
+        <a href={markdownSiteUrl} target="_blank" rel="noreferrer">markdown version</a>
+        <a class="icon-link" href={markdownSiteUrl} target="_blank" rel="noreferrer" title="Open markdown version">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="#888888"><path d="M224,104a8,8,0,0,1-16,0V59.31l-66.34,66.35a8,8,0,0,1-11.32-11.32L196.69,48H152a8,8,0,0,1,0-16h64a8,8,0,0,1,8,8Zm-40,24a8,8,0,0,0-8,8v72H48V80h72a8,8,0,0,0,0-16H48A16,16,0,0,0,32,80V208a16,16,0,0,0,16,16H176a16,16,0,0,0,16-16V136A8,8,0,0,0,184,128Z"/></svg>
+        </a>
+      </div>
+      {#if markdownPages === null}
+        <p class="meta">Loading pages...</p>
+      {:else if markdownPages.length === 0}
+        <p class="meta">No markdown pages yet. Add fullContent and regenerate.</p>
+      {:else}
+        {#each markdownPages.slice(0, 6) as page (page.slug)}
+          <div class="row">
+            <a href={page.htmlUrl} target="_blank" rel="noreferrer">{page.title}</a>
+            <a class="icon-link" href={page.htmlUrl} target="_blank" rel="noreferrer" title={`Open ${page.title}`}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="#888888"><path d="M224,104a8,8,0,0,1-16,0V59.31l-66.34,66.35a8,8,0,0,1-11.32-11.32L196.69,48H152a8,8,0,0,1,0-16h64a8,8,0,0,1,8,8Zm-40,24a8,8,0,0,0-8,8v72H48V80h72a8,8,0,0,0,0-16H48A16,16,0,0,0,32,80V208a16,16,0,0,0,16,16H176a16,16,0,0,0,16-16V136A8,8,0,0,0,184,128Z"/></svg>
+            </a>
+          </div>
+        {/each}
       {/if}
     </div>
   {:else if tab === "HUMAN"}
@@ -387,6 +453,23 @@
         {#if currentStatus?.generationInProgress}<p class="meta">Generating...</p>{/if}
         {#if currentStatus?.hasDrafts}<p class="meta">Drafts pending</p>{/if}
       {/if}
+      <div>
+        <button
+          type="button"
+          class="advanced-toggle"
+          aria-expanded={advancedOpen}
+          on:click={() => (advancedOpen = !advancedOpen)}
+        >
+          {advancedOpen ? "advanced [-]" : "advanced [+]"}
+        </button>
+        {#if advancedOpen}
+          <p class="meta">
+            Opt-in: llms-full.txt, robots.txt, sitemap.xml, RSS, agent skills, readiness
+            score, analytics, Content-Signal.
+            <a class="advanced-link" href="https://github.com/waynesutton/agent-ready-component#advanced" target="_blank" rel="noreferrer">How to enable</a>
+          </p>
+        {/if}
+      </div>
     </div>
   {/if}
 </div>
@@ -602,5 +685,18 @@
     margin: 0;
     color: #888888;
     font-size: 10px;
+  }
+  .advanced-toggle {
+    background: transparent;
+    color: #666666;
+    border: none;
+    padding: 0;
+    font: inherit;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+  }
+  .advanced-link {
+    color: #888888;
   }
 </style>

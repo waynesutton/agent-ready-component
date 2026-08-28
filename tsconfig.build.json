@@ -9,5 +9,5 @@
     "rootDir": "./src"
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "exclude": ["dist", "node_modules", "example-react", "example-svelte", "**/*.test.ts"]
+  "exclude": ["dist", "node_modules", "example-react", "example-svelte", "example-expo", "**/*.test.ts"]
 }

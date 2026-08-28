@@ -49,7 +49,10 @@ export const applySyncConfig = internalMutation({
           description: settings.description ?? "",
           widgetPosition: settings.widgetPosition ?? "floating-bottom-right",
           theme: settings.theme ?? "system",
-          testMode: settings.testMode ?? true,
+          // Live by default. testMode: true (deprecated alias) still opts into draft.
+          publish:
+            settings.publish ?? (settings.testMode === true ? "draft" : "live"),
+          testMode: settings.testMode ?? false,
           cronEnabled: settings.cronEnabled ?? true,
           cronIntervalHours: settings.cronIntervalHours ?? 24,
           analyticsEnabled: settings.analyticsEnabled ?? false,
@@ -78,9 +81,20 @@ export const applySyncConfig = internalMutation({
           widgetShowChatGPT: settings.widgetShowChatGPT,
           widgetShowClaude: settings.widgetShowClaude,
           widgetShowPerplexity: settings.widgetShowPerplexity,
+          markdownSiteEnabled: settings.markdownSiteEnabled,
+          widgetShowMarkdownTab: settings.widgetShowMarkdownTab,
+          apiCatalogEnabled: settings.apiCatalogEnabled,
+          notFoundPageEnabled: settings.notFoundPageEnabled,
         });
       } else {
-        await ctx.db.patch(existing._id, settings);
+        // Keep publish and the deprecated testMode alias in sync when only one is synced.
+        const patch = { ...settings };
+        if (patch.publish !== undefined && patch.testMode === undefined) {
+          patch.testMode = patch.publish === "draft";
+        } else if (patch.testMode !== undefined && patch.publish === undefined) {
+          patch.publish = patch.testMode ? "draft" : "live";
+        }
+        await ctx.db.patch(existing._id, patch);
       }
     }
     if (Array.isArray(pages)) {

@@ -28,7 +28,7 @@
       "accent": "#ffffff"
     },
     "theme": "dark",
-    "testMode": true,
+    "publish": "live",
     "cronEnabled": true,
     "cronIntervalHours": 24,
     "analyticsEnabled": true,
@@ -40,6 +40,8 @@
     "versioningEnabled": true,
     "contentSignals": { "aiTrain": true, "search": true, "aiInput": true },
     "markdownNegotiation": true,
+    "markdownSiteEnabled": true,
+    "widgetShowMarkdownTab": true,
     "discoveryHeaders": true,
     "robotsTxtEnabled": true,
     "robotsTxtAllowAiBots": true,
@@ -49,9 +51,9 @@
     "readinessEndpointEnabled": true
   },
   "pages": [
-    { "title": "Overview", "path": "/", "description": "Landing page for the Svelte demo.", "status": "published", "order": 10 },
-    { "title": "Settings", "path": "/settings", "description": "Settings controls.", "status": "published", "order": 20 },
-    { "title": "Analytics", "path": "/analytics", "description": "Analytics dashboard.", "status": "published", "order": 30 }
+    { "title": "Overview", "path": "/", "description": "Landing page for the Svelte demo.", "fullContent": "The SvelteKit demo shows the agent-ready widget with HUMAN, MACHINE, and MARKDOWN tabs.", "status": "published", "order": 10 },
+    { "title": "Settings", "path": "/settings", "description": "Settings controls.", "fullContent": "Publish pages, roll back versions, and manage agent-ready cache files.", "status": "published", "order": 20 },
+    { "title": "Analytics", "path": "/analytics", "description": "Analytics dashboard.", "fullContent": "Track agent traffic by bot and by discovery file.", "status": "published", "order": 30 }
   ],
   "endpoints": []
 }

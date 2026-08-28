@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { convexRun, formatError } from "../lib/convex.mjs";
+import { checkWrapperFreshness, printWrapperWarning } from "../lib/wrappers.mjs";
 
 export async function sync(args) {
   const explicit = args.config ? path.resolve(args.config) : null;
@@ -23,6 +24,10 @@ export async function sync(args) {
     const result = await convexRun("agentReady:content:sync", { config }, { prod: args.prod });
     console.log("Sync complete.");
     console.log(JSON.stringify(result, null, 2));
+    // Surface stale wrapper validators from older scaffolds right where
+    // upgrades are usually applied, before the app hits ReturnsValidationError.
+    const staleness = await checkWrapperFreshness();
+    if (staleness) printWrapperWarning(staleness);
   } catch (err) {
     console.error("Sync failed:", formatError(err));
     process.exitCode = 1;

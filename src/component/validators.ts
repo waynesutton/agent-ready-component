@@ -14,7 +14,11 @@ export const fileTypeValidator = v.union(
   v.literal("sitemap.xml"),
   v.literal("agent-skills.json"),
   v.literal("rss.xml"),
+  v.literal("markdown-site.html"),
+  v.literal("site.md"),
 );
+
+export const publishStateValidator = v.union(v.literal("live"), v.literal("draft"));
 
 export const contentSignalsValidator = v.object({
   aiTrain: v.boolean(),
@@ -70,7 +74,9 @@ export const settingsPatchValidator = v.object({
   widgetShowPerplexity: v.optional(v.boolean()),
   widgetColors: v.optional(widgetColorsValidator),
   theme: v.optional(themeValidator),
+  publish: v.optional(publishStateValidator),
   testMode: v.optional(v.boolean()),
+  nudgePrintedAt: v.optional(v.number()),
   cronEnabled: v.optional(v.boolean()),
   cronIntervalHours: v.optional(v.number()),
   analyticsEnabled: v.optional(v.boolean()),
@@ -91,6 +97,10 @@ export const settingsPatchValidator = v.object({
   rssEnabled: v.optional(v.boolean()),
   agentSkillsEnabled: v.optional(v.boolean()),
   readinessEndpointEnabled: v.optional(v.boolean()),
+  markdownSiteEnabled: v.optional(v.boolean()),
+  widgetShowMarkdownTab: v.optional(v.boolean()),
+  apiCatalogEnabled: v.optional(v.boolean()),
+  notFoundPageEnabled: v.optional(v.boolean()),
   onGenerationComplete: v.optional(v.string()),
   onAnalyticsThreshold: v.optional(v.string()),
 });
@@ -121,7 +131,9 @@ export const settingsDocValidator = v.object({
   widgetShowPerplexity: v.optional(v.boolean()),
   widgetColors: v.optional(widgetColorsValidator),
   theme: themeValidator,
+  publish: v.optional(publishStateValidator),
   testMode: v.boolean(),
+  nudgePrintedAt: v.optional(v.number()),
   cronEnabled: v.boolean(),
   cronIntervalHours: v.number(),
   analyticsEnabled: v.boolean(),
@@ -142,8 +154,77 @@ export const settingsDocValidator = v.object({
   rssEnabled: v.optional(v.boolean()),
   agentSkillsEnabled: v.optional(v.boolean()),
   readinessEndpointEnabled: v.optional(v.boolean()),
+  markdownSiteEnabled: v.optional(v.boolean()),
+  widgetShowMarkdownTab: v.optional(v.boolean()),
+  apiCatalogEnabled: v.optional(v.boolean()),
+  notFoundPageEnabled: v.optional(v.boolean()),
   onGenerationComplete: v.optional(v.string()),
   onAnalyticsThreshold: v.optional(v.string()),
+});
+
+// Return shape of content.getCacheStatus. Exported from the package root so
+// consumer wrapper functions can import it instead of inlining a copy that
+// goes stale when the component adds fields. Keep this as the single source
+// of truth: the component query and every scaffolded wrapper reference it.
+export const cacheStatusValidator = v.object({
+  publish: publishStateValidator,
+  testMode: v.boolean(),
+  siteSlug: v.union(v.string(), v.null()),
+  appName: v.union(v.string(), v.null()),
+  appUrl: v.union(v.string(), v.null()),
+  lastGeneratedAt: v.union(v.number(), v.null()),
+  generatedFromVersion: v.union(v.string(), v.null()),
+  generationInProgress: v.boolean(),
+  hasDrafts: v.boolean(),
+  fullTxtEnabled: v.boolean(),
+  widgetVisible: v.boolean(),
+  widgetStatusVisible: v.boolean(),
+  widgetShowFiles: v.boolean(),
+  widgetShowAppName: v.boolean(),
+  widgetShowDescription: v.boolean(),
+  widgetShowMeta: v.boolean(),
+  widgetShowScoreTab: v.boolean(),
+  widgetDesktopCollapse: v.boolean(),
+  widgetCleanMode: v.boolean(),
+  widgetShowHumanTab: v.boolean(),
+  widgetShowMachineTab: v.boolean(),
+  widgetShowChatLinks: v.boolean(),
+  widgetShowChatGPT: v.boolean(),
+  widgetShowClaude: v.boolean(),
+  widgetShowPerplexity: v.boolean(),
+  readinessEndpointEnabled: v.boolean(),
+  robotsTxtEnabled: v.boolean(),
+  sitemapEnabled: v.boolean(),
+  rssEnabled: v.boolean(),
+  agentSkillsEnabled: v.boolean(),
+  discoveryHeaders: v.boolean(),
+  markdownNegotiation: v.boolean(),
+  markdownSiteEnabled: v.boolean(),
+  widgetShowMarkdownTab: v.boolean(),
+});
+
+export const pageTwinDocValidator = v.object({
+  _id: v.id("pageTwins"),
+  _creationTime: v.number(),
+  path: v.string(),
+  slug: v.string(),
+  title: v.string(),
+  description: v.string(),
+  section: v.optional(v.string()),
+  markdown: v.string(),
+  html: v.string(),
+  generatedFromVersion: v.string(),
+  generatedAt: v.number(),
+});
+
+export const markdownIndexEntryValidator = v.object({
+  path: v.string(),
+  slug: v.string(),
+  title: v.string(),
+  description: v.string(),
+  section: v.optional(v.string()),
+  markdownUrl: v.string(),
+  htmlUrl: v.string(),
 });
 
 export const pageDocValidator = v.object({

@@ -1,6 +1,6 @@
-import { createAuth } from "@robelest/convex-auth/server";
+import { createAuth } from "@robelest/convex-auth/component";
+import { github } from "@robelest/convex-auth/providers";
 import { components } from "./_generated/api";
-import { github } from "@robelest/convex-auth/providers/github";
 
 export const auth = createAuth(components.auth, {
   providers: [

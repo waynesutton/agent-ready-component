@@ -1,6 +1,6 @@
 # INTEGRATION.md
 
-> For LLMs: `@waynesutton/agent-ready` is a Convex component that generates, caches, and serves `llms.txt`, `agents.md`, and `llms-full.txt` from a Convex backend. It ships with drop-in React and Svelte widgets. This file contains complete integration instructions.
+> For LLMs: `@waynesutton/agent-ready` is a Convex component that generates, caches, and serves `llms.txt`, `agents.md`, `llms-full.txt`, and `/markdown` pages from a Convex backend. It ships with drop-in React, Svelte, and Expo widgets. This file contains complete integration instructions.
 > Follow sections in order. Each section is self-contained. Code blocks are intended to be copy-pasted verbatim.
 
 ## SECTION: Installation
@@ -56,7 +56,7 @@ app.use(staticHosting);
 ```ts
 // convex/http.ts
 import { httpRouter } from "convex/server";
-import { registerRoutes } from "@waynesutton/agent-ready";
+import { registerRoutes, registerMarkdownRoutes } from "@waynesutton/agent-ready";
 import { components, internal } from "./_generated/api";
 
 const http = httpRouter();
@@ -68,6 +68,12 @@ registerRoutes(http, components.agentReady, {
   fullTxtPath: "/llms-full.txt",
   analyticsPath: "/llms-analytics",
   statusPath: "/llms-status",
+
+  // Per-site markdown file. Resolution order: this option, the
+  // AGENT_READY_SITE_SLUG env var (serves /{slug}.md), then "/site.md".
+  // Set false to disable the route. Collisions with other routes are
+  // detected and skipped with a warning.
+  siteMdPath: "/site.md",
 
   // Skip routes your app already owns. Prevents "Path already in use" errors.
   // Valid values: "/robots.txt", "/sitemap.xml", "/.well-known/agent-skills",
@@ -94,8 +100,55 @@ registerRoutes(http, components.agentReady, {
   onAnalyticsThreshold: internal.myApp.handleAnalyticsThreshold,
 });
 
+// Mount after registerRoutes and before any SPA/static fallback.
+registerMarkdownRoutes(http, components.agentReady, {
+  markdownIndexPath: "/llms-markdown-index",
+  markdownSitePath: "/markdown",
+});
+
 export default http;
 ```
+
+## SECTION: markdown site routes
+
+`registerMarkdownRoutes` adds three routes:
+
+| Route | Human response | Agent response |
+|---|---|---|
+| `/markdown` | HTML index of published pages | Markdown index when `Accept: text/markdown` or a known bot user agent is present |
+| `/markdown/*` | HTML page with canonical metadata and JSON-LD | Raw markdown twin with `X-Robots-Tag: noindex` |
+| `/llms-markdown-index` | JSON page list for widgets | JSON page list |
+
+The markdown site uses cached `pageTwins`. Each twin comes from the page title, path, description, section, and `fullContent`.
+
+Use `fullContent` for every important page. Without it, the markdown twin falls back to the page description, which is readable but thin.
+
+The markdown site and widget tab are separate settings:
+
+```json
+{
+  "settings": {
+    "markdownSiteEnabled": true,
+    "markdownNegotiation": true,
+    "widgetShowMarkdownTab": false
+  }
+}
+```
+
+That config keeps `/markdown`, `/markdown/*`, and `/llms-markdown-index` live for agents and SEO while hiding the MARKDOWN tab in React, Svelte, and Expo widgets.
+
+Route order matters:
+
+```ts
+registerRoutes(http, components.agentReady);
+registerMarkdownRoutes(http, components.agentReady);
+registerStaticRoutes(http, components.selfHosting, {
+  pathPrefix: "/",
+  spaFallback: true,
+});
+```
+
+Convex HTTP routes are fixed at deploy time, so the component uses `/markdown/{slug}` instead of dynamic `.md` suffix routes like `/pricing.md`. If you need suffix URLs, put a CDN or host rewrite in front of Convex.
 
 ## SECTION: Route ownership and hosting setups
 
@@ -110,6 +163,18 @@ The component installs HTTP routes on your Convex deployment. Some hosts also se
 | Existing `public/llms.txt` you want to keep | Static host serves the legacy file | `["/llms.txt"]`, then run `npx agent-ready import --from public/llms.txt` to bring its content into the component |
 
 `npx agent-ready setup` detects existing `public/llms.txt`, `public/agents.md`, `public/llms-full.txt`, `public/robots.txt`, `public/sitemap.xml`, and `public/feed.xml` files and suggests a matching `skipRoutes` list. If you change frontends later, edit `convex/http.ts` directly.
+
+### Never use httpPrefix with this component
+
+`@convex-dev/static-hosting` 0.2 suggests `defineApp({ httpPrefix: "/api" })` in `convex/convex.config.ts`. Do not pair that with agent-ready. The prefix moves every route in `convex/http.ts`, including `/llms.txt` and `/robots.txt`, under `/api`. Agent scanners only check root paths, so all discovery files become invisible.
+
+Use app-owned root routing instead: no `httpPrefix`, agent-ready routes registered first, then the static catch-all. The setup wizard warns when it finds `httpPrefix` in `convex/convex.config.ts`.
+
+### SPA fallback and 404 behavior
+
+Without static hosting, unknown paths on your Convex deployment return a real 404. That is what agent-experience scanners want.
+
+With `registerStaticRoutes(..., { spaFallback: true })`, unknown paths return 200 with `index.html` so client-side routing works. Scanners that probe a nonexistent path will flag this. It is the same tradeoff as Vercel SPA rewrites. Do not break client routing to chase that check. Instead, enable `notFoundPageEnabled` so agents get a `/404.md` recovery page linked from `llms.txt`.
 
 ## SECTION: typed client setup
 
@@ -151,7 +216,7 @@ export default function App() {
 
 The widget has two URL jobs:
 
-1. Endpoint base: where it fetches `/llms-status` and `/llms-readiness`. This is your Convex deployment, usually `*.convex.site`. Pass it as `appUrl`.
+1. Endpoint base: where it fetches `/llms-status`, `/llms-readiness`, and `/llms-markdown-index`. This is your Convex deployment, usually `*.convex.site`. Pass it as `appUrl`.
 2. Visible base: shown in copy links and AI chat prompts. Pass your production domain as `publicAppUrl` when it differs from the endpoint base.
 
 When `publicAppUrl` is omitted, the widget falls back to `status.appUrl` from your component config, then `window.location.origin`, then `appUrl`. This keeps existing apps working without changes.
@@ -167,7 +232,7 @@ Vite tip: set `VITE_CONVEX_SITE_URL` to your Convex `.site` URL and `VITE_SITE_U
 | `visible` | `boolean` | config value | Show or hide the entire widget. When `false`, generated files and HTTP routes stay active |
 | `position` | `"footer" \| "floating-bottom-right" \| "floating-bottom-left" \| "floating-center"` | `"floating-bottom-right"` | Layout mode. `floating-center` pins the widget to the bottom center of the viewport |
 | `theme` | `"light" \| "dark" \| "system"` | `"system"` | Color theme |
-| `showTestModeBadge` | `boolean` | `true` | Display the `testMode` badge |
+| `showTestModeBadge` | `boolean` | `true` | Display the draft-mode badge (shown when `publish` is `"draft"`) |
 | `showStatus` | `boolean` | config value | Show the status row in the MACHINE tab. When omitted, reads `widgetStatusVisible` from `agent-ready.config.json` via the status endpoint |
 | `showFiles` | `boolean` | config value | Show the file copy rows (llms.txt, agents.md, llms-full.txt) in the HUMAN tab |
 | `showAppName` | `boolean` | config value | Show the app name heading in the HUMAN tab |
@@ -198,7 +263,7 @@ Set `widgetVisible: false` when you want the app to keep generating `llms.txt`, 
 
 ### Tab behavior
 
-The HUMAN tab shows file URLs with copy buttons, then "Open in ChatGPT", "Open in Claude", and "Open in Perplexity" links that send your `llms.txt` URL to each AI chat service. The MACHINE tab shows raw file links with open-in-new-tab icons (Phosphor ArrowSquareOut) and optional status metadata.
+The HUMAN tab shows file URLs with copy buttons, then "Open in ChatGPT", "Open in Claude", and "Open in Perplexity" links that send your `llms.txt` URL to each AI chat service. The MACHINE tab shows raw file links with open-in-new-tab icons (Phosphor ArrowSquareOut) and optional status metadata. The MARKDOWN tab opens `/markdown` and lists individual page twins from `/llms-markdown-index`.
 
 ```tsx
 // Live status subscription
@@ -227,6 +292,32 @@ Same widget for SvelteKit apps. Import from the `svelte` subpath export.
 
 URL handling matches the React widget. Pass `appUrl` for the Convex endpoint base. Pass `publicAppUrl` for the public production domain shown in copy links and AI chat prompts.
 
+## SECTION: Expo widget
+
+Expo apps do not serve the Convex HTTP routes themselves. Point the widget at the Convex `.site` deployment that has `registerRoutes` and `registerMarkdownRoutes` mounted.
+
+```tsx
+import { AgentReadyExpoWidget } from "@waynesutton/agent-ready/expo";
+
+export default function App() {
+  return (
+    <AgentReadyExpoWidget
+      appUrl={process.env.EXPO_PUBLIC_AGENT_READY_URL!}
+      publicAppUrl={process.env.EXPO_PUBLIC_SITE_URL}
+    />
+  );
+}
+```
+
+Set:
+
+```bash
+EXPO_PUBLIC_AGENT_READY_URL=https://your-deployment.convex.site
+EXPO_PUBLIC_SITE_URL=https://your-public-domain.com
+```
+
+The Expo widget shows HUMAN, MACHINE, and MARKDOWN tabs. It uses the same `/llms-status` and `/llms-markdown-index` endpoints as the web widgets.
+
 ### Svelte custom colors example
 
 ```svelte
@@ -250,6 +341,39 @@ URL handling matches the React widget. Pass `appUrl` for the Convex endpoint bas
 {/if}
 ```
 
+## SECTION: AgentLinks footer
+
+Tiny dependency-free nav advertising the discovery files. Mounting it also injects `<link rel="alternate" type="text/markdown">` into `document.head` (deduped with the widget's injection).
+
+React:
+
+```tsx
+import { AgentLinks } from "@waynesutton/agent-ready/react";
+
+<AgentLinks siteMdPath="/your-site-name.md" />
+```
+
+Svelte:
+
+```svelte
+<script lang="ts">
+  import { AgentLinks } from "@waynesutton/agent-ready/svelte";
+</script>
+
+<AgentLinks siteMdPath="/your-site-name.md" />
+```
+
+Plain HTML for any other stack:
+
+```html
+<nav aria-label="AI agent resources" class="agent-links">
+  <a href="/llms.txt" rel="describedby">llms.txt</a>
+  <a href="/your-site-name.md" rel="alternate" type="text/markdown">your-site-name.md</a>
+</nav>
+```
+
+Props: `llmsTxtPath` (default `/llms.txt`), `siteMdPath` (default `/site.md`), `injectHeadLink` (default `true`), `className` (React) / `class` (Svelte) to replace the muted default styling.
+
 ## SECTION: Convex wrapper functions
 
 The component runs inside the [Convex component boundary](https://docs.convex.dev/components) with its own isolated tables. Browser clients cannot call component functions directly. You need thin wrapper functions in your own `convex/` directory that delegate to the component.
@@ -262,6 +386,10 @@ The `npx agent-ready setup` wizard scaffolds these automatically at `convex/agen
 import { action, mutation, query } from "../_generated/server";
 import { components } from "../_generated/api";
 import { v } from "convex/values";
+// Shared return validator for getCacheStatus. Import it from the package so
+// it stays in sync with the component when upgrades add fields. Do not inline
+// a copy: inlined copies throw ReturnsValidationError after upgrades.
+import { cacheStatusValidator } from "@waynesutton/agent-ready";
 
 const fileTypeValidator = v.union(
   v.literal("llms.txt"),
@@ -285,19 +413,9 @@ const pageValidator = v.object({
   status: pageStatusValidator,
   isOptional: v.optional(v.boolean()),
   order: v.optional(v.number()),
+  section: v.optional(v.string()),
   descriptionGeneratedByAi: v.optional(v.boolean()),
   deletedAt: v.optional(v.number()),
-});
-
-const cacheStatusValidator = v.object({
-  testMode: v.boolean(),
-  appName: v.union(v.string(), v.null()),
-  appUrl: v.union(v.string(), v.null()),
-  lastGeneratedAt: v.union(v.number(), v.null()),
-  generatedFromVersion: v.union(v.string(), v.null()),
-  generationInProgress: v.boolean(),
-  hasDrafts: v.boolean(),
-  fullTxtEnabled: v.boolean(),
 });
 
 export const getCacheStatus = query({
@@ -455,10 +573,10 @@ The settings panel is React only. For Svelte, Vue, or other frameworks, use the 
 npx agent-ready setup                                 # interactive first-run wizard
 npx agent-ready sync                                  # apply agent-ready.config.json to deployment
 npx agent-ready sync --dry-run                        # preview changes only
-npx agent-ready status                                # cache, job, and testMode state
+npx agent-ready status                                # cache, job, and publish state
 npx agent-ready regenerate                            # queue a regenerateAll workpool job
 npx agent-ready rollback --file llms.txt              # restore previous cached content
-npx agent-ready go-live                               # disable testMode with confirmation
+npx agent-ready go-live                               # set publish live (draft installs)
 npx agent-ready generate-descriptions                 # AI fills empty descriptions
 npx agent-ready generate-descriptions --force         # overwrites existing descriptions
 npx agent-ready publish-page --path /dashboard        # set page to published
@@ -599,11 +717,13 @@ Calls to `upsertPage` and `deletePage` mark the component as dirty. The next sch
 
 ## SECTION: static-hosting integration (Convex demo apps)
 
-Both demo apps host their React/Svelte frontends on the same Convex deployment using `@convex-dev/static-hosting`.
+Static hosting is optional. Agent files are Convex HTTP routes on `https://<deployment>.convex.site` whether or not the frontend lives there. Both demo apps host their React/Svelte frontends on the same Convex deployment using `@convex-dev/static-hosting` with app-owned root routing.
+
+Required mount order: agent-ready exact routes first, markdown routes second, static catch-all last. Exact paths with extensions (`/llms.txt`, `/robots.txt`) win over the SPA fallback.
 
 ```ts
 // convex/http.ts
-import { registerRoutes } from "@waynesutton/agent-ready";
+import { registerRoutes, registerMarkdownRoutes } from "@waynesutton/agent-ready";
 import { registerStaticRoutes } from "@convex-dev/static-hosting";
 import { components } from "./_generated/api";
 import { httpRouter } from "convex/server";
@@ -611,6 +731,7 @@ import { httpRouter } from "convex/server";
 const http = httpRouter();
 
 registerRoutes(http, components.agentReady, {});
+registerMarkdownRoutes(http, components.agentReady);
 registerStaticRoutes(http, components.staticHosting, {
   pathPrefix: "/",
   spaFallback: true,
@@ -618,6 +739,8 @@ registerStaticRoutes(http, components.staticHosting, {
 
 export default http;
 ```
+
+Do not set `httpPrefix` in `convex/convex.config.ts`. See "Never use httpPrefix with this component" above.
 
 ```ts
 // convex/staticHosting.ts
@@ -647,19 +770,44 @@ npx agent-ready agent-ready
 
 This sets all readiness flags in `agent-ready.config.json`, syncs to your deployment, and triggers regeneration.
 
-### What gets enabled
+### What is on by default (simple mode)
+
+These ship on after a plain install. Set the flag to `false` to turn one off.
 
 | Feature | Route | Config flag |
 |---|---|---|
-| Content-Signal headers | All content routes | `contentSignals` |
-| Token count header | All content routes | Always on |
+| Content-Signal header and robots.txt block | All content routes, `/robots.txt` | `contentSignals` (defaults all-yes) |
+| Token count headers (`X-Markdown-Tokens`, `X-Original-Tokens`) | All content routes | Always on |
 | Link discovery headers | All content routes | `discoveryHeaders` |
 | robots.txt with AI bot rules | `/robots.txt` | `robotsTxtEnabled` |
 | sitemap.xml | `/sitemap.xml` | `sitemapEnabled` |
+
+### What `npx agent-ready agent-ready` adds (advanced mode)
+
+| Feature | Route | Config flag |
+|---|---|---|
 | RSS feed | `/feed.xml` | `rssEnabled` |
+| Markdown site and negotiation | `/markdown`, `/markdown/*` | `markdownSiteEnabled`, `markdownNegotiation` |
 | Agent skills endpoint | `/.well-known/agent-skills` | `agentSkillsEnabled` |
+| Agent skills digest index | `/.well-known/agent-skills/index.json` | `agentSkillsEnabled` |
+| API catalog (RFC 9727) | `/.well-known/api-catalog` | `apiCatalogEnabled` |
+| Agent-friendly 404 page | `/404.md` | `notFoundPageEnabled` |
 | Readiness self-score | `/llms-readiness` | `readinessEndpointEnabled` |
-| Markdown negotiation | Vary header | `markdownNegotiation` |
+
+### Canonical page negotiation
+
+For page paths you register explicitly, agents that send `Accept: text/markdown` on the canonical URL (not just `/markdown/*`) get the markdown twin with `Vary: Accept`. Clients that reject every offered type get `406`.
+
+```ts
+import { registerCanonicalPageRoutes } from "@waynesutton/agent-ready";
+
+// After registerRoutes and registerMarkdownRoutes, before any static catch-all.
+registerCanonicalPageRoutes(http, components.agentReady, {
+  paths: ["/pricing", "/docs/getting-started"],
+});
+```
+
+Only list paths your frontend does not need to own for HTML rendering on the Convex deployment, or paths where the component's HTML twin is acceptable for browsers.
 
 ### Scanning your score
 
@@ -707,17 +855,19 @@ The SCORE tab appears automatically when `readinessEndpointEnabled` is true. Ove
 
 ## SECTION: testMode — going to production
 
-Default is `testMode: true`. File endpoints respond `403` to non-localhost requests until you run:
+Files are live by default (`publish: "live"`). To review before publishing, opt into draft mode. Draft file endpoints respond `404` to non-localhost requests until you run:
 
 ```bash
 npx agent-ready go-live
 ```
 
-The wizard confirms before flipping the flag. To flip back for debugging:
+The command confirms before setting `publish: "live"`. To switch to draft for review:
 
 ```bash
-npx convex run agentReady:content:upsertSettings --arg '{"testMode": true}'
+npx convex run agentReady:content:upsertSettings --arg '{"patch": {"publish": "draft"}}'
 ```
+
+Backward compatibility: `testMode: true` from 0.2.x still works as a deprecated alias and maps to `publish: "draft"`. Existing draft installs keep gating.
 
 ## SECTION: environment variables
 
@@ -736,7 +886,7 @@ npx convex env set AGENT_READY_ANALYTICS_SECRET your-secret
 
 ## SECTION: troubleshooting
 
-**Files return 403.** `testMode` is still enabled. Run `npx agent-ready go-live`.
+**Files return 404 with a short body.** The install is in `publish: "draft"` (or has the deprecated `testMode: true`). Run `npx agent-ready go-live`.
 
 **`/llms-analytics` returns 401.** Check `AGENT_READY_ANALYTICS_SECRET` (or legacy `LLMS_ANALYTICS_SECRET`) is set on the deployment and the request includes `Authorization: Bearer <secret>`.
 
@@ -869,4 +1019,4 @@ export const publishPage = mutation({
 
 Set `permissiveMode: false` in `agent-ready.config.json` for production. This activates the production guard that blocks unsafe operations when the deployment is not in dev mode.
 
-Set `testMode: true` until you are ready to go live. Test mode blocks all external file serving, returning 403 to non-localhost requests.
+Files are live by default. Set `publish: "draft"` when you want editorial review before serving. Draft mode blocks all external file serving, returning 404 to non-localhost requests. The deprecated `testMode: true` maps to draft.

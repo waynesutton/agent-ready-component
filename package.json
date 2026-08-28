@@ -1,7 +1,7 @@
 {
   "name": "@waynesutton/agent-ready",
-  "version": "0.2.6",
-  "description": "Convex component and React/Svelte widget that auto-generates, caches, and serves llms.txt, agents.md, and llms-full.txt from your Convex backend with ETag-aware HTTP handlers, dynamic cron scheduling, opt-in analytics, and AI descriptions.",
+  "version": "0.3.0",
+  "description": "Convex component that makes your app readable by AI agents out of the box: serves llms.txt, agents.md, and a per-site markdown file live by default with ETag caching, RFC 8288 Link headers, and Accept: text/markdown negotiation. Advanced opt-ins: llms-full.txt, readiness score, robots.txt, sitemap, RSS, analytics, React/Svelte/Expo widgets.",
   "keywords": [
     "convex",
     "convex-component",
@@ -55,6 +55,10 @@
       "import": "./dist/svelte/index.js",
       "svelte": "./dist/svelte/index.js"
     },
+    "./expo": {
+      "types": "./dist/expo/index.d.ts",
+      "import": "./dist/expo/index.js"
+    },
     "./test": {
       "types": "./dist/test/index.d.ts",
       "import": "./dist/test/index.js"
@@ -74,7 +78,7 @@
     "agent-ready": "./cli/bin.mjs"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && cp src/svelte/AgentReadyWidget.svelte dist/svelte/AgentReadyWidget.svelte",
+    "build": "tsc -p tsconfig.build.json && cp src/svelte/AgentReadyWidget.svelte dist/svelte/AgentReadyWidget.svelte && cp src/svelte/AgentLinks.svelte dist/svelte/AgentLinks.svelte",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "dev:example-react": "npm run dev --workspace example-react",
     "dev:example-svelte": "npm run dev --workspace example-svelte",
@@ -82,14 +86,17 @@
   },
   "workspaces": [
     "example-react",
-    "example-svelte"
+    "example-svelte",
+    "example-expo"
   ],
   "peerDependencies": {
     "@convex-dev/crons": "^0.2.0",
     "@convex-dev/workpool": "^0.3.0",
     "convex": "^1.28.0",
-    "convex-helpers": "^0.1.94",
+    "convex-helpers": "^0.1.118",
+    "expo": ">=51.0.0",
     "react": "^18.0.0 || ^19.0.0",
+    "react-native": ">=0.74.0",
     "svelte": "^4.0.0 || ^5.0.0"
   },
   "peerDependenciesMeta": {
@@ -98,12 +105,18 @@
     },
     "svelte": {
       "optional": true
+    },
+    "expo": {
+      "optional": true
+    },
+    "react-native": {
+      "optional": true
     }
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
-    "convex": "^1.36.0",
+    "convex": "^1.39.1",
     "convex-test": "^0.0.37",
     "react": "^19.0.0",
     "svelte": "^5.0.0",
