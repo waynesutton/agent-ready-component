@@ -10,6 +10,7 @@ The component ships strong agent discovery files, but simple mode leaves the hig
 
 - Cloudflare `isitagentready.com` checks robots.txt with AI bot rules, sitemap.xml, Content-Signal (header and robots.txt), Link discovery headers, and well-known endpoints.
 - Ora `is-agentic.com` checks agent experience: markdown negotiation on real pages, recoverable 404s, discoverable developer resources, and honest HTTP behavior.
+- Sourcey [Agent Readiness](https://sourcey.com/agent-readiness/methodology) is a complementary service-lifecycle assessment: it tests whether an authorized agent can evaluate, sign up for, pay for, provision, and operate one exact service funnel. It explicitly describes this as a different scope rather than a universal standard, so it is useful alongside the web-discoverability checks above when debugging where an otherwise discoverable service still needs a human-only handoff.
 
 Second problem: users pairing this component with `@convex-dev/static-hosting` can silently break every discovery route by using static-hosting 0.2's suggested `defineApp({ httpPrefix: "/api" })`, which moves `/llms.txt` to `/api/llms.txt` where no scanner looks.
 
